@@ -1,0 +1,31 @@
+{
+  "name": "andals-server",
+  "version": "0.0.1",
+  "description": "Andals.io Server Project",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "loadtest": "colyseus-loadtest loadtest/example.ts --room game_room --numClients 2",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Roeefl, Webiya",
+  "license": "UNLICENSED",
+  "homepage": "localhost:3000",
+  "dependencies": {
+    "@colyseus/monitor": "^0.11.0",
+    "@colyseus/social": "^0.10.2",
+    "@types/serve-index": "^1.7.30",
+    "colyseus": "^0.12.0",
+    "cors": "^2.8.5",
+    "express": "^4.16.4",
+    "express-jwt": "^5.3.1",
+    "serve-index": "^1.9.1"
+  },
+  "devDependencies": {
+    "@colyseus/loadtest": "^0.12.0",
+    "@types/cors": "^2.8.6",
+    "@types/express": "^4.17.1",
+    "ts-node": "^8.1.0",
+    "typescript": "^3.4.5"
+  }
+}
