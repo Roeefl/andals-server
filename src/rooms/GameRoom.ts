@@ -2,33 +2,56 @@ import { Room, Client } from 'colyseus';
 import { type, Schema, MapSchema, ArraySchema } from '@colyseus/schema';
 import Player from '../schemas/Player';
 import Tile from '../schemas/Tile';
-import Harbor from '../schemas/Harbor';
+import Structure from '../schemas/Structure';
+import Road from '../schemas/Road';
 import ResourceCard from '../schemas/ResourceCard';
 import GameCard from '../schemas/GameCard';
-import { MESSAGE_ROOM_STATE, MESSAGE_CHAT } from '../constants';
+import DiceRoll from '../schemas/DiceRoll';
 
 import {
-  resourceCardTypes, DESERT,
+  MESSAGE_GAME_LOG,
+  MESSAGE_CHAT,
+  MESSAGE_GAME_ACTION,
+  MESSAGE_READY,
+  MESSAGE_ROLL_DICE,
+  MESSAGE_FINISH_TURN
+} from '../constants';
+
+import {
+  tileMap,
+  TILE_RESOURCE, TILE_WATER, TILE_SPACER,
+  resourceCardTypes, DESERT, WATER,
   availableInitialTileTypes, availableInitialTileValues,
-  availableInitialGameCards
+  availableInitialGameCards,
+  availableInitialHarborTypes, harborIndices
 } from '../manifest';
 
-const maxClients = 4;
+const MAX_CLIENTS: number = 3;
+const LAST_PLAYER: number = MAX_CLIENTS - 1;
 const maxReconnectionTime = 1; // 60;
 
-const totalTiles = 19;
-
 const totalResourceCards = 19;
-
-// 25 development cards consisting of 14 knight/soldier cards, 6 progress cards, and 5 victory points.
-// Four building costs cards, one for each player.
-// "Longest Road" and "Largest Army" award cards.
-// Two dice, one red, one yellow.
-// Extra harbor pieces for placement of random harbors (optional).
-
 class State extends Schema {
   @type("number")
   currentTurn: number = -1;
+
+  @type("number")
+  currentRound: number = 0;
+
+  @type("number")
+  roundStarter: number = -1;
+
+  @type("boolean")
+  isGameReady: boolean = false;
+
+  @type("boolean")
+  isTurnOrderPhase: boolean = false;
+
+  @type("boolean")
+  isSetupPhase: boolean = false;
+
+  @type("boolean")
+  setupPhaseTurns: number = 0;
 
   @type("boolean")
   isGameStarted: boolean = false;
@@ -51,16 +74,23 @@ class State extends Schema {
   @type([GameCard])
   gameCards: GameCard[]
 
-  @type([Harbor])
-  harbors: Harbor[] = new ArraySchema<Harbor>();
+  @type([Road])
+  roads: Road[]
+
+  @type([Structure])
+  structures: Structure[]
 
   constructor(board: Tile[], resourceCards: ResourceCard[], gameCards: GameCard[]) {
     super();
     
     this.board = new ArraySchema<Tile>(...board);
+
     this.resourceCards = new ArraySchema<ResourceCard>(...resourceCards);
     this.gameCards = new ArraySchema<GameCard>(...gameCards);
     this.robberPosition = board.findIndex(tile => tile.resource === DESERT);
+
+    this.roads = new ArraySchema<Road>();
+    this.structures = new ArraySchema<Structure>();
   }
 };
 
@@ -76,8 +106,9 @@ class GameRoom extends Room<State> {
     this.setState(gameState);
   };
 
+  // Total of 49 tiles
   initialBoard() {
-    const board = [];
+    const board: Tile[] = [];
 
     let availableTileTypes: string[] = [
       ...availableInitialTileTypes
@@ -87,21 +118,49 @@ class GameRoom extends Room<State> {
       ...availableInitialTileValues
     ];
 
-    for (let t = 0; t < totalTiles; t++) {
-      const randomTypeIndex = Math.floor(Math.random() * availableTileTypes.length);
-      const randomType = availableTileTypes[randomTypeIndex];
+    let availableHarborTypes: string[] = [
+      ...availableInitialHarborTypes
+    ];
 
-      const randomValueIndex = Math.floor(Math.random() * availableTileValues.length);
-      const randomValue = randomType === DESERT
-        ? 0
-        : availableTileValues[randomValueIndex];
+    for (let r = 0; r < tileMap.length; r++) {
+      for (let t = 0; t < tileMap[r].length; t++) {
+        const currentTile = tileMap[r][t];
 
-      const tile = new Tile(randomType, randomValue);
+        if (currentTile === TILE_SPACER) {
+          const tile = new Tile(TILE_SPACER);
+          board.push(tile);
+        } else if (currentTile === TILE_WATER) {
+          const tileIndex: number = r * 7 + t;
 
-      board.push(tile);
+          if (harborIndices.includes(tileIndex)) {
+            const randomTypeIndex =  Math.floor(Math.random() * availableHarborTypes.length);
+            const randomType = availableHarborTypes[randomTypeIndex];
 
-      availableTileTypes.splice(randomTypeIndex, 1);
-      availableTileValues.splice(randomValueIndex, 1);
+            const tile = new Tile(TILE_WATER, randomType);
+            board.push(tile);       
+
+            availableHarborTypes.splice(randomTypeIndex, 1);
+          } else { // Just water, no harbor
+            const waterTile = new Tile(TILE_WATER);
+            board.push(waterTile);  
+          }
+        } else {
+          // === TILE_RESOURCE
+          const randomTypeIndex = Math.floor(Math.random() * availableTileTypes.length);
+          const randomType = availableTileTypes[randomTypeIndex];
+    
+          const randomValueIndex = Math.floor(Math.random() * availableTileValues.length);
+          const randomValue = randomType === DESERT
+            ? 0
+            : availableTileValues[randomValueIndex];
+
+          const tile = new Tile(TILE_RESOURCE, randomType, randomValue);
+          board.push(tile);
+
+          availableTileTypes.splice(randomTypeIndex, 1);
+          availableTileValues.splice(randomValueIndex, 1);
+        }
+      }
     }
 
     return board;
@@ -144,22 +203,18 @@ class GameRoom extends Room<State> {
     return cards;
   }
 
-  // 2 Special Cards: Longest Road & Largest Army
-  // 4 Building Costs Cards
-  initialIfoCards() {
-    return [];
-  }
-
   onJoin(client: Client, options: any) {
     this.broadcast({
-      type: MESSAGE_ROOM_STATE,
+      type: MESSAGE_GAME_LOG,
       sender: 'GameRoom',
       message: `${options.nickname || client.sessionId} has joined the room.`
+    }, {
+      except: client
     });
 
     this.state.players[client.sessionId] = new Player(client.sessionId, options);
   
-    if (Object.keys(this.state.players).length >= maxClients)
+    if (Object.keys(this.state.players).length >= MAX_CLIENTS)
       this.lock();
   };
 
@@ -168,9 +223,11 @@ class GameRoom extends Room<State> {
     this.state.players[client.sessionId].isConnected = false;
 
     this.broadcast({
-      type: MESSAGE_ROOM_STATE,
+      type: MESSAGE_GAME_LOG,
       sender: 'GameRoom',
       message: `${this.state.players[client.sessionId].nickname || client.sessionId} has left the room.`
+    }, {
+      except: client
     });
 
     try {
@@ -187,26 +244,204 @@ class GameRoom extends Room<State> {
 
   onMessage(client: Client, data: any) {
     const { sessionId = '' } = client;
-    const { message = '' } = data;
 
-    const player = this.state.players[client.sessionId];
+    const {
+      type = MESSAGE_GAME_ACTION,
+      message = ''
+    } = data;
 
-    console.info(`GameRoom received message | from ${sessionId} | ${message}`);
-    
-    this.broadcast({
-      type: MESSAGE_CHAT,
-      sender: player.nickname || sessionId,
-      message
-    });
+    const player: Player = this.state.players[client.sessionId];
 
-    if (message.command === "left") {
-      player.x -= 1;
-    } else if (message.command === "right") {
-      player.x += 1;
+    // console.info(`GameRoom received message | from ${sessionId} | ${message}`);
+
+    switch (type) {
+      case MESSAGE_CHAT:
+        this.onChatMessage(player.nickname || sessionId, message);
+        break;
+
+      case MESSAGE_ROLL_DICE:
+        this.onDiceRoll(data, player);
+        break;
+
+      case MESSAGE_FINISH_TURN:
+        this.onTurnFinish(player);
+        break;
+
+      case MESSAGE_READY:
+        this.onPlayerReady(client, player);
+        break;
+
+      default:
+        break;
     }
   };
 
-  onDispose(){
+  onChatMessage(sender: String, message: String) {
+    this.broadcast({
+      type: MESSAGE_CHAT,
+      sender,
+      message
+    });
+  }
+
+  onDiceRoll(data: any, player: Player) {
+    const { dice = [3, 3] } = data;
+    this.state.dice = new ArraySchema<Number>(...dice);
+
+    const roll = new DiceRoll(dice);
+
+    const updatedRolls = [
+      ...player.rolls,
+      roll
+    ];
+
+    player.rolls = new ArraySchema<DiceRoll>(...updatedRolls);
+  }
+
+  onTurnFinish(player: Player) {
+    const {
+      isSetupPhase,
+      isTurnOrderPhase,
+      roundStarter,
+      currentTurn,
+      setupPhaseTurns,
+      currentRound
+    } = this.state;
+
+    const isEndOfTurnOrderPhase: Boolean = currentTurn === LAST_PLAYER;
+    if (isTurnOrderPhase && isEndOfTurnOrderPhase) {
+      this.state.isTurnOrderPhase = false;
+      
+      const initialRolls = Object
+        .values(this.state.players)
+        .map((player: Player, playerIndex: number) => ({
+          playerIndex,
+          nickname: player.nickname,
+          initialRoll: player.rolls[0].value
+        }));
+
+      const sortedInitialRolls = initialRolls
+        .sort((a, b) => a.initialRoll <= b.initialRoll ? 1 : -1);
+        
+      const { playerIndex, nickname } = sortedInitialRolls[0];
+      
+      this.state.currentTurn = playerIndex;
+      this.state.roundStarter = playerIndex;
+      this.state.isSetupPhase = true;
+
+      this.broadcast({
+        type: MESSAGE_GAME_LOG,
+        sender: 'GameRoom',
+        message: `Turn determination phase finished. ${nickname} is first to play`
+      });
+
+      return;
+    }
+
+    if (isSetupPhase) {
+      if (setupPhaseTurns === LAST_PLAYER) {
+        // Give last player in the round another turn and reverse turn order until end of setup phase
+        this.state.setupPhaseTurns++;
+
+        this.broadcast({
+          type: MESSAGE_GAME_LOG,
+          sender: 'GameRoom',
+          message: `${player.nickname} is last in the setup phase and plays a double turn`
+        });
+        
+        return;
+      }
+
+      if (setupPhaseTurns === (MAX_CLIENTS * 2 - 1)) {
+        // END OF SETUP PHASE
+        this.state.currentTurn = this.state.roundStarter;
+        this.state.isSetupPhase = false;
+        this.state.isGameStarted = true;
+
+        this.broadcast({
+          type: MESSAGE_GAME_LOG,
+          sender: 'GameRoom',
+          message: 'Setup phase is complete. Game started!'
+        });
+        
+        return;
+      }
+
+      if (setupPhaseTurns > LAST_PLAYER) {
+        // Reverse turn order phase
+        this.state.currentTurn = (currentTurn - 1) % MAX_CLIENTS;
+        if (this.state.currentTurn < 0)
+          this.state.currentTurn = MAX_CLIENTS - 1;
+
+        this.state.setupPhaseTurns++;
+
+        this.finishTurnBroadcast(player);
+        return;
+      }
+
+      this.state.currentTurn = (currentTurn + 1) % MAX_CLIENTS;
+      this.state.setupPhaseTurns++;
+      this.finishTurnBroadcast(player);
+      return;
+    }
+     
+    // Not turn order phase - round consists of MAX_CLIENTS turns
+    this.state.currentTurn = (currentTurn + 1) % MAX_CLIENTS;
+    const isEndOfRound: Boolean = currentTurn === roundStarter;
+
+    this.finishTurnBroadcast(player);
+    if (isEndOfRound) {
+      this.broadcast({
+        type: MESSAGE_GAME_LOG,
+        sender: 'GameRoom',
+        message: `Round ${currentRound} complete. Starting Round ${currentRound + 1}`
+      });
+
+      this.state.currentRound++;
+    }
+  }
+
+  finishTurnBroadcast(player: Player) {
+    this.broadcast({
+      type: MESSAGE_GAME_LOG,
+      sender: 'GameRoom',
+      message: `${player.nickname} finished his turn`
+    });
+  }
+
+  onPlayerReady(client: Client, player: Player) {
+    player.isReady = !player.isReady;
+
+    this.broadcast({
+      type: MESSAGE_GAME_LOG,
+      sender: 'GameRoom',
+      message: `${player.nickname} is ${player.isReady ? '' : 'not'} ready`
+    }, {
+      except: client
+    });
+
+    const activeClients: number = Object.keys(this.state.players).length;
+
+    if (activeClients >= MAX_CLIENTS) {
+      const isAllReady = Object
+        .values(this.state.players)
+        .every(playerData => playerData.isReady);
+        
+      if (isAllReady) {
+        this.state.isGameReady = true;
+        this.state.isTurnOrderPhase = true;
+        this.state.currentTurn = 0;
+
+        this.broadcast({
+          type: MESSAGE_GAME_LOG,
+          sender: 'GameRoom',
+          message: 'All Players Ready --- Starting turn order determination phase'
+        });
+      }
+    }
+  }
+
+  onDispose() {
     console.log("GameRoom -> onDispose -> onDispose");
   };
 };

@@ -1,6 +1,7 @@
-import { type, Schema, MapSchema, ArraySchema } from '@colyseus/schema';
-import Building from './Building';
-import Road from './Road';
+import { type, Schema, ArraySchema } from '@colyseus/schema';
+import ResourceCard from './ResourceCard';
+import GameCard from '../schemas/GameCard';
+import DiceRoll from './DiceRoll';
 
 interface PlayerOptions {
   nickname: string
@@ -22,6 +23,12 @@ class Player extends Schema {
   @type("boolean")
   isConnected: boolean = false;
 
+  @type([DiceRoll])
+  rolls: DiceRoll[]
+
+  @type("boolean")
+  isReady: boolean = false;
+
   @type("number")
   settlements: number = 5;
 
@@ -30,6 +37,18 @@ class Player extends Schema {
 
   @type("number")
   roads: number = 15;
+
+  @type([ResourceCard])
+  resourceCards: ResourceCard[];
+
+  @type([GameCard])
+  gameCards: GameCard[];
+
+  @type("boolean")
+  hasLongestRoad: boolean = false;
+
+  @type("boolean")
+  hasLargestArmy: boolean = false;
 
   constructor(sessionId: string, options: PlayerOptions) {
     super();
@@ -43,6 +62,9 @@ class Player extends Schema {
     this.isConnected = true;
     this.nickname = nickname;
     this.color = color;
+    this.resourceCards = new ArraySchema<ResourceCard>();
+    this.gameCards = new ArraySchema<GameCard>();
+    this.rolls = new ArraySchema<DiceRoll>();
   }
 };
 

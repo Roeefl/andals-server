@@ -8,7 +8,7 @@ export function onJoin(this: Room) {
     console.log(this.sessionId, "joined.");
 }
 
-export function onMessage(this: Room, message) {
+export function onMessage(this: Room, message: any) {
     console.log(this.sessionId, "received:", message);
 }
 

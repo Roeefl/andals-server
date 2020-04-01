@@ -1,10 +1,65 @@
-export const resourceTypes: string[] = ['lumber', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'water', 'harbor'];
-export const [LUMBER, BRICK, SHEEP, WHEAT, ORE, DESERT, WATER, HARBOR] = resourceTypes;
+export const resourceTypes: string[] = ['lumber', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'water', 'harborGeneric'];
+export const [LUMBER, BRICK, SHEEP, WHEAT, ORE, DESERT, WATER, HARBOR_GENERIC] = resourceTypes;
 
 export const gameCardTypes: string[] = ['knight', 'victoryPoint', 'roadBuilding', 'yearOfPlenty', 'monopoly'];
 export const [CARD_KNIGHT, CARD_VICTORY_POINT, CARD_ROAD_BUILDING, CARD_YEAR_PLENTY, CARD_MONOPOLY] = gameCardTypes;
 
 export const resourceCardTypes = [LUMBER, BRICK, SHEEP, WHEAT, ORE];
+
+export const structureTypes: string[] = ['settlement', 'city'];
+export const [STRUCTURE_SETTLEMENT, STRUCTURE_CITY] = structureTypes;
+
+const tileTypes  = ['resource', 'water', 'spacer'];
+export const [
+  TILE_RESOURCE,
+  TILE_WATER,
+  TILE_SPACER
+] = tileTypes;
+
+// Total of 49 tiles
+export const tileMap = [
+  [
+    TILE_SPACER,
+    TILE_WATER, TILE_WATER, TILE_WATER, TILE_WATER,
+    TILE_SPACER, TILE_SPACER
+  ],
+  [
+    TILE_SPACER,
+    TILE_WATER,
+    TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE,
+    TILE_WATER,
+    TILE_SPACER
+  ],
+  [
+    TILE_WATER,
+    TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE,
+    TILE_WATER,
+    TILE_SPACER
+  ]
+  ,[
+    TILE_WATER,
+    TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE,
+    TILE_WATER
+  ],
+  [
+    TILE_WATER,
+    TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE,
+    TILE_WATER,
+    TILE_SPACER
+  ],
+  [
+    TILE_SPACER,
+    TILE_WATER,
+    TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE,
+    TILE_WATER,
+    TILE_SPACER
+  ],
+  [
+    TILE_SPACER,
+    TILE_WATER, TILE_WATER, TILE_WATER, TILE_WATER,
+    TILE_SPACER, TILE_SPACER
+  ]
+];
 
 // 19 terrain hexes (four sheep, four wheat, four wood, three brick, three ore, and 1 desert)
 export const availableInitialTileTypes: string[] = [
@@ -40,4 +95,23 @@ export const availableInitialGameCards: string[] = [
   ...new Array(2).fill(CARD_ROAD_BUILDING),
   ...new Array(2).fill(CARD_YEAR_PLENTY),
   ...new Array(2).fill(CARD_MONOPOLY)
+];
+
+export const availableInitialHarborTypes: string[] = [
+  ...new Array(4).fill(HARBOR_GENERIC),
+  SHEEP,
+  LUMBER,
+  BRICK,
+  WHEAT,
+  ORE
+];
+
+export const harborIndices = [
+  1, 3,
+  12,
+  14,
+  27,
+  28,
+  40,
+  43, 45
 ];

@@ -1,16 +1,20 @@
 import { type, Schema } from '@colyseus/schema';
-import { LUMBER, BRICK, SHEEP, WHEAT, ORE, DESERT } from '../manifest';
+// import { TILE_SPACER, LUMBER, BRICK, SHEEP, WHEAT, ORE, DESERT } from '../manifest';
 
 class Tile extends Schema {
   @type("string")
-  resource: string = DESERT;
+  type: string
+
+  @type("string")
+  resource: string | null
 
   @type("number")
-  value: number = 0;
+  value: number
 
-  constructor(resource: string, value: number) {
+  constructor(type: string, resource: string | null = null, value: number = 0) {
     super();
 
+    this.type = type;
     this.resource = resource;
     this.value = value;
   }
