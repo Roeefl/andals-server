@@ -4,11 +4,22 @@ class Road extends Schema {
   @type("string")
   ownerId: string
 
-  constructor(ownerId: string) {
+  @type("number")
+  row: number
+
+  @type("number")
+  col: number
+
+
+  constructor(ownerId: string, row: number, col: number) {
     super();
     
     this.ownerId = ownerId;
+    this.row = row;
+    this.col = col;
   }
 };
 
+
 export default Road;
+

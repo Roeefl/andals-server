@@ -1,5 +1,4 @@
 import { type, Schema } from '@colyseus/schema';
-import { STRUCTURE_SETTLEMENT } from '../manifest';
 
 class Structure extends Schema {
   @type("string")
@@ -8,11 +7,19 @@ class Structure extends Schema {
   @type("string")
   ownerId: string
 
-  constructor(ownerId: string, type: string = STRUCTURE_SETTLEMENT) {
+  @type("number")
+  row: number
+
+  @type("number")
+  col: number
+
+  constructor(ownerId: string, type: string, row: number, col: number) {
     super();
     
     this.ownerId = ownerId;
     this.type = type;
+    this.row = row;
+    this.col = col;
   }
 };
 

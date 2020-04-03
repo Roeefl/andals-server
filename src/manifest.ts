@@ -16,51 +16,6 @@ export const [
   TILE_SPACER
 ] = tileTypes;
 
-// Total of 49 tiles
-export const tileMap = [
-  [
-    TILE_SPACER,
-    TILE_WATER, TILE_WATER, TILE_WATER, TILE_WATER,
-    TILE_SPACER, TILE_SPACER
-  ],
-  [
-    TILE_SPACER,
-    TILE_WATER,
-    TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE,
-    TILE_WATER,
-    TILE_SPACER
-  ],
-  [
-    TILE_WATER,
-    TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE,
-    TILE_WATER,
-    TILE_SPACER
-  ]
-  ,[
-    TILE_WATER,
-    TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE,
-    TILE_WATER
-  ],
-  [
-    TILE_WATER,
-    TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE,
-    TILE_WATER,
-    TILE_SPACER
-  ],
-  [
-    TILE_SPACER,
-    TILE_WATER,
-    TILE_RESOURCE, TILE_RESOURCE, TILE_RESOURCE,
-    TILE_WATER,
-    TILE_SPACER
-  ],
-  [
-    TILE_SPACER,
-    TILE_WATER, TILE_WATER, TILE_WATER, TILE_WATER,
-    TILE_SPACER, TILE_SPACER
-  ]
-];
-
 // 19 terrain hexes (four sheep, four wheat, four wood, three brick, three ore, and 1 desert)
 export const availableInitialTileTypes: string[] = [
   ...new Array(4).fill(SHEEP),

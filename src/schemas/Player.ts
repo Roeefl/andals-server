@@ -1,12 +1,11 @@
-import { type, Schema, ArraySchema } from '@colyseus/schema';
-import ResourceCard from './ResourceCard';
+import { type, Schema, ArraySchema, MapSchema } from '@colyseus/schema';
 import GameCard from '../schemas/GameCard';
 import DiceRoll from './DiceRoll';
 
 interface PlayerOptions {
   nickname: string
   color: string
-}
+};
 
 // Four sets of wooden player pieces in four different colors
 // each containing five settlements, four cities, and 15 roads.
@@ -38,8 +37,8 @@ class Player extends Schema {
   @type("number")
   roads: number = 15;
 
-  @type([ResourceCard])
-  resourceCards: ResourceCard[];
+  @type({ map: "number" })
+  resourceCounts = new MapSchema<Number>();
 
   @type([GameCard])
   gameCards: GameCard[];
@@ -62,9 +61,16 @@ class Player extends Schema {
     this.isConnected = true;
     this.nickname = nickname;
     this.color = color;
-    this.resourceCards = new ArraySchema<ResourceCard>();
     this.gameCards = new ArraySchema<GameCard>();
     this.rolls = new ArraySchema<DiceRoll>();
+
+    this.resourceCounts = new MapSchema<Number>({
+      lumber: 2,
+      sheep: 2,
+      brick: 2,
+      wheat: 2,
+      ore: 2
+    });
   }
 };
 

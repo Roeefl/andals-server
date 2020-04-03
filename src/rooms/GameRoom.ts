@@ -14,19 +14,26 @@ import {
   MESSAGE_GAME_ACTION,
   MESSAGE_READY,
   MESSAGE_ROLL_DICE,
-  MESSAGE_FINISH_TURN
+  MESSAGE_FINISH_TURN,
+  MESSAGE_PLACE_ROAD,
+  MESSAGE_PLACE_STRUCTURE
 } from '../constants';
 
 import {
-  tileMap,
   TILE_RESOURCE, TILE_WATER, TILE_SPACER,
-  resourceCardTypes, DESERT, WATER,
+  resourceCardTypes, DESERT,
   availableInitialTileTypes, availableInitialTileValues,
   availableInitialGameCards,
-  availableInitialHarborTypes, harborIndices
+  availableInitialHarborTypes, harborIndices,
+  STRUCTURE_SETTLEMENT, STRUCTURE_CITY
 } from '../manifest';
 
-const MAX_CLIENTS: number = 3;
+import hexTileMap from '../tilemaps/hexes';
+// import initialStructureTileMap from '../tilemaps/structures';
+
+const ROOM_NAME = 'GameRoom';
+
+const MAX_CLIENTS: number = 2;
 const LAST_PLAYER: number = MAX_CLIENTS - 1;
 const maxReconnectionTime = 1; // 60;
 
@@ -122,9 +129,9 @@ class GameRoom extends Room<State> {
       ...availableInitialHarborTypes
     ];
 
-    for (let r = 0; r < tileMap.length; r++) {
-      for (let t = 0; t < tileMap[r].length; t++) {
-        const currentTile = tileMap[r][t];
+    for (let r = 0; r < hexTileMap.length; r++) {
+      for (let t = 0; t < hexTileMap[r].length; t++) {
+        const currentTile = hexTileMap[r][t];
 
         if (currentTile === TILE_SPACER) {
           const tile = new Tile(TILE_SPACER);
@@ -206,7 +213,7 @@ class GameRoom extends Room<State> {
   onJoin(client: Client, options: any) {
     this.broadcast({
       type: MESSAGE_GAME_LOG,
-      sender: 'GameRoom',
+      sender: ROOM_NAME,
       message: `${options.nickname || client.sessionId} has joined the room.`
     }, {
       except: client
@@ -224,7 +231,7 @@ class GameRoom extends Room<State> {
 
     this.broadcast({
       type: MESSAGE_GAME_LOG,
-      sender: 'GameRoom',
+      sender: ROOM_NAME,
       message: `${this.state.players[client.sessionId].nickname || client.sessionId} has left the room.`
     }, {
       except: client
@@ -263,6 +270,14 @@ class GameRoom extends Room<State> {
         this.onDiceRoll(data, player);
         break;
 
+      case MESSAGE_PLACE_ROAD:
+        this.onPlacingRoad(data, client.sessionId, player.nickname);
+        break;
+
+      case MESSAGE_PLACE_STRUCTURE:
+        this.onPlacingStructure(data, client.sessionId, player.nickname);
+        break;
+
       case MESSAGE_FINISH_TURN:
         this.onTurnFinish(player);
         break;
@@ -271,12 +286,13 @@ class GameRoom extends Room<State> {
         this.onPlayerReady(client, player);
         break;
 
+
       default:
         break;
     }
   };
 
-  onChatMessage(sender: String, message: String) {
+  onChatMessage(sender: string, message: string) {
     this.broadcast({
       type: MESSAGE_CHAT,
       sender,
@@ -296,6 +312,73 @@ class GameRoom extends Room<State> {
     ];
 
     player.rolls = new ArraySchema<DiceRoll>(...updatedRolls);
+
+    this.broadcast({
+      type: MESSAGE_ROLL_DICE,
+      sender: ROOM_NAME,
+      playerName: player.nickname,
+      dice
+    });
+  }
+
+  onPlacingStructure(data: any, ownerId: string, nickname: string) {
+    const { row, col } = data;
+
+    const structure = new Structure(ownerId, STRUCTURE_SETTLEMENT, row, col);
+    
+    const updatedStructures = [
+      ...this.state.structures,
+      structure
+    ];
+    
+    this.state.structures = new ArraySchema<Structure>(
+      ...updatedStructures
+    );
+
+    const { resourceCounts } = this.state.players[ownerId];
+
+    this.state.players[ownerId].resourceCounts = new MapSchema<Number>({
+      ...resourceCounts,
+      lumber: resourceCounts.lumber - 1, 
+      brick: resourceCounts.brick - 1,
+      wheat: resourceCounts.wheat - 1,
+      sheep: resourceCounts.sheep - 1
+    });
+
+    this.broadcast({
+      type: MESSAGE_GAME_LOG,
+      sender: ROOM_NAME,
+      message: `${nickname} built a settlement`
+    });
+  }
+
+  onPlacingRoad(data: any, ownerId: string, nickname: string) {
+    const { row, col } = data;
+
+    const road = new Road(ownerId, row, col);
+
+    const updatedRoads = [
+      ...this.state.roads,
+      road
+    ];
+    
+    this.state.roads = new ArraySchema<Road>(
+      ...updatedRoads
+    );
+
+    const { resourceCounts } = this.state.players[ownerId];
+
+    this.state.players[ownerId].resourceCounts = new MapSchema<Number>({
+      ...resourceCounts,
+      lumber: resourceCounts.lumber - 1, 
+      brick: resourceCounts.brick - 1
+    });
+
+    this.broadcast({
+      type: MESSAGE_GAME_LOG,
+      sender: ROOM_NAME,
+      message: `${nickname} built a road`
+    });
   }
 
   onTurnFinish(player: Player) {
@@ -331,8 +414,14 @@ class GameRoom extends Room<State> {
 
       this.broadcast({
         type: MESSAGE_GAME_LOG,
-        sender: 'GameRoom',
-        message: `Turn determination phase finished. ${nickname} is first to play`
+        sender: ROOM_NAME,
+        message: `Turn determination phase finished.`
+      });
+
+      this.broadcast({
+        type: MESSAGE_GAME_LOG,
+        sender: ROOM_NAME,
+        message: `Setup phase is starting. ${nickname} is first to play`
       });
 
       return;
@@ -345,7 +434,7 @@ class GameRoom extends Room<State> {
 
         this.broadcast({
           type: MESSAGE_GAME_LOG,
-          sender: 'GameRoom',
+          sender: ROOM_NAME,
           message: `${player.nickname} is last in the setup phase and plays a double turn`
         });
         
@@ -360,7 +449,7 @@ class GameRoom extends Room<State> {
 
         this.broadcast({
           type: MESSAGE_GAME_LOG,
-          sender: 'GameRoom',
+          sender: ROOM_NAME,
           message: 'Setup phase is complete. Game started!'
         });
         
@@ -393,7 +482,7 @@ class GameRoom extends Room<State> {
     if (isEndOfRound) {
       this.broadcast({
         type: MESSAGE_GAME_LOG,
-        sender: 'GameRoom',
+        sender: ROOM_NAME,
         message: `Round ${currentRound} complete. Starting Round ${currentRound + 1}`
       });
 
@@ -404,7 +493,7 @@ class GameRoom extends Room<State> {
   finishTurnBroadcast(player: Player) {
     this.broadcast({
       type: MESSAGE_GAME_LOG,
-      sender: 'GameRoom',
+      sender: ROOM_NAME,
       message: `${player.nickname} finished his turn`
     });
   }
@@ -414,7 +503,7 @@ class GameRoom extends Room<State> {
 
     this.broadcast({
       type: MESSAGE_GAME_LOG,
-      sender: 'GameRoom',
+      sender: ROOM_NAME,
       message: `${player.nickname} is ${player.isReady ? '' : 'not'} ready`
     }, {
       except: client
@@ -434,8 +523,14 @@ class GameRoom extends Room<State> {
 
         this.broadcast({
           type: MESSAGE_GAME_LOG,
-          sender: 'GameRoom',
-          message: 'All Players Ready --- Starting turn order determination phase'
+          sender: ROOM_NAME,
+          message: 'All Players Ready'
+        });
+
+        this.broadcast({
+          type: MESSAGE_GAME_LOG,
+          sender: ROOM_NAME,
+          message: 'Starting turn order determination phase'
         });
       }
     }
