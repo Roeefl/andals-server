@@ -6,8 +6,8 @@ export const [CARD_KNIGHT, CARD_VICTORY_POINT, CARD_ROAD_BUILDING, CARD_YEAR_PLE
 
 export const resourceCardTypes = [LUMBER, BRICK, SHEEP, WHEAT, ORE];
 
-export const structureTypes: string[] = ['settlement', 'city'];
-export const [STRUCTURE_SETTLEMENT, STRUCTURE_CITY] = structureTypes;
+export const purchaseTypes: string[] = ['road', 'settlement', 'city', 'gameCard'];
+export const [PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_CITY, PURCHASE_CARD] = purchaseTypes;
 
 const tileTypes  = ['resource', 'water', 'spacer'];
 export const [
@@ -16,11 +16,11 @@ export const [
   TILE_SPACER
 ] = tileTypes;
 
-// 19 terrain hexes (four sheep, four wheat, four wood, three brick, three ore, and 1 desert)
+// 19 terrain hexes (4 lumber, 4 sheep, 4 wheat, 3 brick, 3 ore, and 1 desert)
 export const availableInitialTileTypes: string[] = [
+  ...new Array(4).fill(LUMBER),
   ...new Array(4).fill(SHEEP),
   ...new Array(4).fill(WHEAT),
-  ...new Array(4).fill(LUMBER),
   ...new Array(3).fill(BRICK),
   ...new Array(3).fill(ORE),
   DESERT
@@ -70,3 +70,29 @@ export const harborIndices = [
   40,
   43, 45
 ];
+
+export const playerColors = ['#5E35B1', '#039BE5', '#FB8C00', '#388E3C', '#FF1744'];
+
+export interface Loot {
+  [key: string]: number
+};
+
+export interface AvailableLoot {
+  [key: string]: Loot
+};
+
+export const initialAvailableLoot: Loot = {
+  lumber: 0,
+  sheep: 0,
+  brick: 0,
+  wheat: 0,
+  ore: 0
+};
+
+export const initialAvailablResourceCounts: Loot = {
+  lumber: 0,
+  sheep: 0,
+  brick: 0,
+  wheat: 0,
+  ore: 0
+};
