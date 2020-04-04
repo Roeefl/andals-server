@@ -5,7 +5,7 @@ class DiceRoll extends Schema {
   dice: Number[]
 
   @type("number")
-  value: Number
+  value: number
 
   constructor(dice: number[]) {
     super();

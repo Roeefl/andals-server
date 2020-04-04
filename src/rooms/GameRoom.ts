@@ -1,10 +1,9 @@
 import { Room, Client } from 'colyseus';
 import { type, Schema, MapSchema, ArraySchema } from '@colyseus/schema';
 import Player from '../schemas/Player';
-import Tile from '../schemas/Tile';
+import HexTile from '../schemas/HexTile';
 import Structure from '../schemas/Structure';
 import Road from '../schemas/Road';
-import ResourceCard from '../schemas/ResourceCard';
 import GameCard from '../schemas/GameCard';
 import DiceRoll from '../schemas/DiceRoll';
 
@@ -21,11 +20,14 @@ import {
 
 import {
   TILE_RESOURCE, TILE_WATER, TILE_SPACER,
-  resourceCardTypes, DESERT,
+  DESERT,
   availableInitialTileTypes, availableInitialTileValues,
   availableInitialGameCards,
   availableInitialHarborTypes, harborIndices,
-  STRUCTURE_SETTLEMENT, STRUCTURE_CITY
+  PURCHASE_SETTLEMENT, PURCHASE_ROAD, PURCHASE_CITY,
+  playerColors,
+  initialAvailableLoot,
+  Loot, AvailableLoot
 } from '../manifest';
 
 import hexTileMap from '../tilemaps/hexes';
@@ -36,14 +38,20 @@ const ROOM_NAME = 'GameRoom';
 const MAX_CLIENTS: number = 2;
 const LAST_PLAYER: number = MAX_CLIENTS - 1;
 const maxReconnectionTime = 1; // 60;
-
 const totalResourceCards = 19;
+
 class State extends Schema {
+  @type("string")
+  roomTitle: string
+
   @type("number")
   currentTurn: number = -1;
 
+  @type("boolean")
+  isDiceRolled: boolean = false;
+
   @type("number")
-  currentRound: number = 0;
+  currentRound: number = 1;
 
   @type("number")
   roundStarter: number = -1;
@@ -72,11 +80,11 @@ class State extends Schema {
   @type(["number"])
   dice = new ArraySchema<Number>(0, 0);
 
-  @type([Tile])
-  board: Tile[]
+  @type([HexTile])
+  board: HexTile[]
 
-  @type([ResourceCard])
-  resourceCards: ResourceCard[]
+  @type({ map: "number" })
+  resourceCounts = new MapSchema<Number>();
 
   @type([GameCard])
   gameCards: GameCard[]
@@ -87,12 +95,22 @@ class State extends Schema {
   @type([Structure])
   structures: Structure[]
 
-  constructor(board: Tile[], resourceCards: ResourceCard[], gameCards: GameCard[]) {
+  constructor(roomTitle: string, board: HexTile[], gameCards: GameCard[]) {
     super();
-    
-    this.board = new ArraySchema<Tile>(...board);
 
-    this.resourceCards = new ArraySchema<ResourceCard>(...resourceCards);
+    this.roomTitle = roomTitle;
+    
+    this.board = new ArraySchema<HexTile>(...board);
+
+    // 19 Resource cards of each terrain tile
+    this.resourceCounts = new MapSchema<Number>({
+      lumber: totalResourceCards,
+      sheep: totalResourceCards,
+      brick: totalResourceCards,
+      wheat: totalResourceCards,
+      ore: totalResourceCards
+    });
+
     this.gameCards = new ArraySchema<GameCard>(...gameCards);
     this.robberPosition = board.findIndex(tile => tile.resource === DESERT);
 
@@ -103,19 +121,19 @@ class State extends Schema {
 
 class GameRoom extends Room<State> {
   onCreate(options: any) {
-    console.log("GameRoom -> onCreate -> options", options);
+    console.info("GameRoom -> onCreate -> options", options);
+    const { roomTitle = 'firstmen.io game room' } = options;
 
     const initialBoard = this.initialBoard();
-    const initialResourceCards = this.initialResourceCards();
     const initialGameCards = this.initialGameCards();
     
-    const gameState = new State(initialBoard, initialResourceCards, initialGameCards);
+    const gameState = new State(roomTitle , initialBoard, initialGameCards);
     this.setState(gameState);
   };
 
   // Total of 49 tiles
   initialBoard() {
-    const board: Tile[] = [];
+    const board: HexTile[] = [];
 
     let availableTileTypes: string[] = [
       ...availableInitialTileTypes
@@ -134,7 +152,7 @@ class GameRoom extends Room<State> {
         const currentTile = hexTileMap[r][t];
 
         if (currentTile === TILE_SPACER) {
-          const tile = new Tile(TILE_SPACER);
+          const tile = new HexTile(TILE_SPACER, r, t);
           board.push(tile);
         } else if (currentTile === TILE_WATER) {
           const tileIndex: number = r * 7 + t;
@@ -143,50 +161,37 @@ class GameRoom extends Room<State> {
             const randomTypeIndex =  Math.floor(Math.random() * availableHarborTypes.length);
             const randomType = availableHarborTypes[randomTypeIndex];
 
-            const tile = new Tile(TILE_WATER, randomType);
+            const tile = new HexTile(TILE_WATER, r, t, randomType);
             board.push(tile);       
 
             availableHarborTypes.splice(randomTypeIndex, 1);
           } else { // Just water, no harbor
-            const waterTile = new Tile(TILE_WATER);
+            const waterTile = new HexTile(TILE_WATER, r, t);
             board.push(waterTile);  
           }
         } else {
           // === TILE_RESOURCE
           const randomTypeIndex = Math.floor(Math.random() * availableTileTypes.length);
           const randomType = availableTileTypes[randomTypeIndex];
-    
-          const randomValueIndex = Math.floor(Math.random() * availableTileValues.length);
-          const randomValue = randomType === DESERT
-            ? 0
-            : availableTileValues[randomValueIndex];
 
-          const tile = new Tile(TILE_RESOURCE, randomType, randomValue);
-          board.push(tile);
+          let tile = null;
+          if (randomType === DESERT) {
+            tile = new HexTile(TILE_RESOURCE, r, t, randomType, 0);
+          } else {
+            const randomValueIndex = Math.floor(Math.random() * availableTileValues.length);
+            const randomValue = availableTileValues[randomValueIndex];
+
+            tile = new HexTile(TILE_RESOURCE, r, t, randomType, randomValue);
+            availableTileValues.splice(randomValueIndex, 1);
+          };
 
           availableTileTypes.splice(randomTypeIndex, 1);
-          availableTileValues.splice(randomValueIndex, 1);
+          board.push(tile);
         }
       }
     }
 
     return board;
-  }
-
-  // 19 Resource cards of each terrain tile
-  initialResourceCards() {
-    const allCards: ResourceCard[] = [];
-
-    for (let r = 0; r < resourceCardTypes.length; r++) {
-      const currentType = resourceCardTypes[r];
-
-      for (let c = 0; c < totalResourceCards; c++) {
-        const card = new ResourceCard(currentType);
-        allCards.push(card);
-      }
-    }
-
-    return allCards;
   }
 
   initialGameCards() {
@@ -210,18 +215,27 @@ class GameRoom extends Room<State> {
     return cards;
   }
 
+  get activeClients() {
+    return Object
+      .keys(this.state.players)
+      .length;
+  }
+
   onJoin(client: Client, options: any) {
+    const color = playerColors[this.activeClients];
+    const addedPlayer = new Player(client.sessionId, options, color);
+    
+    this.state.players[client.sessionId] = addedPlayer;
+    
     this.broadcast({
       type: MESSAGE_GAME_LOG,
       sender: ROOM_NAME,
-      message: `${options.nickname || client.sessionId} has joined the room.`
+      message: `${addedPlayer.nickname || client.sessionId} has joined the room.`
     }, {
       except: client
     });
-
-    this.state.players[client.sessionId] = new Player(client.sessionId, options);
   
-    if (Object.keys(this.state.players).length >= MAX_CLIENTS)
+    if (this.activeClients >= MAX_CLIENTS)
       this.lock();
   };
 
@@ -263,7 +277,7 @@ class GameRoom extends Room<State> {
 
     switch (type) {
       case MESSAGE_CHAT:
-        this.onChatMessage(player.nickname || sessionId, message);
+        this.onChatMessage(player.nickname ,sessionId, message);
         break;
 
       case MESSAGE_ROLL_DICE:
@@ -271,11 +285,11 @@ class GameRoom extends Room<State> {
         break;
 
       case MESSAGE_PLACE_ROAD:
-        this.onPlacingRoad(data, client.sessionId, player.nickname);
+        this.onPurchaseRoad(data, client.sessionId, player.nickname);
         break;
 
       case MESSAGE_PLACE_STRUCTURE:
-        this.onPlacingStructure(data, client.sessionId, player.nickname);
+        this.onPurchaseStructure(data, client.sessionId, player.nickname, PURCHASE_SETTLEMENT); //@TODO: ALlow city as well.
         break;
 
       case MESSAGE_FINISH_TURN:
@@ -286,16 +300,16 @@ class GameRoom extends Room<State> {
         this.onPlayerReady(client, player);
         break;
 
-
       default:
         break;
     }
   };
 
-  onChatMessage(sender: string, message: string) {
+  onChatMessage(sender: string, senderSessionId: string, message: string) {
     this.broadcast({
       type: MESSAGE_CHAT,
       sender,
+      senderSessionId,
       message
     });
   }
@@ -303,6 +317,7 @@ class GameRoom extends Room<State> {
   onDiceRoll(data: any, player: Player) {
     const { dice = [3, 3] } = data;
     this.state.dice = new ArraySchema<Number>(...dice);
+    this.state.isDiceRolled = true;
 
     const roll = new DiceRoll(dice);
 
@@ -319,12 +334,68 @@ class GameRoom extends Room<State> {
       playerName: player.nickname,
       dice
     });
+    
+    if (this.state.isGameStarted) this.setResourcesLoot(roll.value);
   }
 
-  onPlacingStructure(data: any, ownerId: string, nickname: string) {
+  setResourcesLoot(diceTotal: number) {
+    const updatedLoot = Object
+      .keys(this.state.players)
+      .reduce((acc, ownerId) => {
+        acc[ownerId] = {
+          ...initialAvailableLoot
+        };
+
+        return acc;
+      }, {} as AvailableLoot);
+      
+    
+    // Game started - round 1 or higher - allocate resources from stash to players according to hexes state
+    this.state.board
+      .filter(({ type, resource }, index) => type === TILE_RESOURCE && !!resource && resource !== DESERT && index !== this.state.robberPosition)
+      .filter(({ value }) => value === diceTotal)
+      // 18 Resource-type tiles left to loop over
+      .forEach(({ resource, row: tileRow, col: tileCol }) => {
+        console.log("GameRoom -> setResourcesLoot -> resource row col", resource, tileRow, tileCol)
+
+        const tileStructureIndices = [
+          [tileRow, tileCol * 2], [tileRow, tileCol * 2 + 1], [tileRow, tileCol * 2 + 2], // top-left, top, top-right
+          [tileRow + 1, tileCol * 2 + 1], [tileRow + 1, tileCol * 2 + 2], [tileRow + 1, tileCol * 2 + 3], // bottom-left, bottom, bottom-right
+        ];
+        console.log("GameRoom -> setResourcesLoot -> tileStructureIndices", tileStructureIndices)
+
+        this.state.structures
+          .forEach(({ row, col, ownerId, type }) => {
+          console.log("GameRoom -> setResourcesLoot -> row", row, col, ownerId, type )
+            if (!!resource && tileStructureIndices.some(([sRow, sCol]) => sRow === row && sCol === col)) {
+              const addedValue = type === PURCHASE_CITY ? 2 : 1;
+              console.log("GameRoom -> setResourcesLoot -> addedValue", addedValue)
+              updatedLoot[ownerId][resource] += addedValue;
+            }
+          });
+      });
+
+      console.log("GameRoom -> setResourcesLoot -> final updatedLoot", updatedLoot)
+
+
+    Object
+      .entries(this.state.players)
+      .forEach(([sessionId, player]) => {
+        const playerUpdatedLoot = updatedLoot[sessionId];
+        console.log("GameRoom -> playerUpdatedLoot", playerUpdatedLoot)
+
+        player.availableLoot = new MapSchema<Number>({
+          ...playerUpdatedLoot
+        });
+
+        console.log('player available loot: ', player.availableLoot);
+      });
+  }
+
+  onPurchaseStructure(data: any, ownerId: string, nickname: string, type: string = PURCHASE_SETTLEMENT) {
     const { row, col } = data;
 
-    const structure = new Structure(ownerId, STRUCTURE_SETTLEMENT, row, col);
+    const structure = new Structure(ownerId, type, row, col);
     
     const updatedStructures = [
       ...this.state.structures,
@@ -335,15 +406,9 @@ class GameRoom extends Room<State> {
       ...updatedStructures
     );
 
-    const { resourceCounts } = this.state.players[ownerId];
-
-    this.state.players[ownerId].resourceCounts = new MapSchema<Number>({
-      ...resourceCounts,
-      lumber: resourceCounts.lumber - 1, 
-      brick: resourceCounts.brick - 1,
-      wheat: resourceCounts.wheat - 1,
-      sheep: resourceCounts.sheep - 1
-    });
+   const owner: Player = this.state.players[ownerId];
+   owner.onPurchase(type, this.state.isSetupPhase);
+   owner.saveLastStructure(structure);
 
     this.broadcast({
       type: MESSAGE_GAME_LOG,
@@ -352,7 +417,7 @@ class GameRoom extends Room<State> {
     });
   }
 
-  onPlacingRoad(data: any, ownerId: string, nickname: string) {
+  onPurchaseRoad(data: any, ownerId: string, nickname: string) {
     const { row, col } = data;
 
     const road = new Road(ownerId, row, col);
@@ -366,19 +431,28 @@ class GameRoom extends Room<State> {
       ...updatedRoads
     );
 
-    const { resourceCounts } = this.state.players[ownerId];
-
-    this.state.players[ownerId].resourceCounts = new MapSchema<Number>({
-      ...resourceCounts,
-      lumber: resourceCounts.lumber - 1, 
-      brick: resourceCounts.brick - 1
-    });
+    const owner: Player = this.state.players[ownerId];
+    owner.onPurchase(PURCHASE_ROAD, this.state.isSetupPhase);
 
     this.broadcast({
       type: MESSAGE_GAME_LOG,
       sender: ROOM_NAME,
       message: `${nickname} built a road`
     });
+  }
+
+  initializeSetupPhase() {
+    Object
+      .values(this.state.players)
+      .forEach(player => player.initializeSetupPhase());
+  }
+
+  initializeFirstRoundStart() {
+    Object
+      .values(this.state.players)
+      .forEach(player => player.giveInitialResources());
+
+    // player.giveResources(this.state.structures, this.state.dice);
   }
 
   onTurnFinish(player: Player) {
@@ -390,6 +464,8 @@ class GameRoom extends Room<State> {
       setupPhaseTurns,
       currentRound
     } = this.state;
+
+    this.state.isDiceRolled = false;
 
     const isEndOfTurnOrderPhase: Boolean = currentTurn === LAST_PLAYER;
     if (isTurnOrderPhase && isEndOfTurnOrderPhase) {
@@ -412,24 +488,34 @@ class GameRoom extends Room<State> {
       this.state.roundStarter = playerIndex;
       this.state.isSetupPhase = true;
 
+      this.initializeSetupPhase();
+
       this.broadcast({
         type: MESSAGE_GAME_LOG,
         sender: ROOM_NAME,
-        message: `Turn determination phase finished.`
+        message: 'Turn determination phase finished.'
       });
 
       this.broadcast({
         type: MESSAGE_GAME_LOG,
         sender: ROOM_NAME,
-        message: `Setup phase is starting. ${nickname} is first to play`
+        message: 'Setup phase is starting.'
+      });
+
+      this.broadcast({
+        type: MESSAGE_GAME_LOG,
+        sender: ROOM_NAME,
+        message: `${nickname} is first to play`
       });
 
       return;
     }
 
     if (isSetupPhase) {
+      player.initializeSetupPhase();
+
       if (setupPhaseTurns === LAST_PLAYER) {
-        // Give last player in the round another turn and reverse turn order until end of setup phase
+        // Give last player in the round another turn
         this.state.setupPhaseTurns++;
 
         this.broadcast({
@@ -445,7 +531,9 @@ class GameRoom extends Room<State> {
         // END OF SETUP PHASE
         this.state.currentTurn = this.state.roundStarter;
         this.state.isSetupPhase = false;
+
         this.state.isGameStarted = true;
+        this.initializeFirstRoundStart();
 
         this.broadcast({
           type: MESSAGE_GAME_LOG,
@@ -457,7 +545,7 @@ class GameRoom extends Room<State> {
       }
 
       if (setupPhaseTurns > LAST_PLAYER) {
-        // Reverse turn order phase
+        // Reverse turn order until the end of setup phase
         this.state.currentTurn = (currentTurn - 1) % MAX_CLIENTS;
         if (this.state.currentTurn < 0)
           this.state.currentTurn = MAX_CLIENTS - 1;
@@ -470,6 +558,7 @@ class GameRoom extends Room<State> {
 
       this.state.currentTurn = (currentTurn + 1) % MAX_CLIENTS;
       this.state.setupPhaseTurns++;
+
       this.finishTurnBroadcast(player);
       return;
     }
@@ -478,7 +567,9 @@ class GameRoom extends Room<State> {
     this.state.currentTurn = (currentTurn + 1) % MAX_CLIENTS;
     const isEndOfRound: Boolean = currentTurn === roundStarter;
 
-    this.finishTurnBroadcast(player);
+    if (!this.state.isTurnOrderPhase)
+      this.finishTurnBroadcast(player);
+    
     if (isEndOfRound) {
       this.broadcast({
         type: MESSAGE_GAME_LOG,
@@ -509,9 +600,7 @@ class GameRoom extends Room<State> {
       except: client
     });
 
-    const activeClients: number = Object.keys(this.state.players).length;
-
-    if (activeClients >= MAX_CLIENTS) {
+    if (this.activeClients >= MAX_CLIENTS) {
       const isAllReady = Object
         .values(this.state.players)
         .every(playerData => playerData.isReady);
@@ -537,7 +626,7 @@ class GameRoom extends Room<State> {
   }
 
   onDispose() {
-    console.log("GameRoom -> onDispose -> onDispose");
+    console.info("GameRoom -> onDispose -> onDispose");
   };
 };
 
