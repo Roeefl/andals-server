@@ -3,7 +3,7 @@ import GameCard from '../schemas/GameCard';
 import DiceRoll from './DiceRoll';
 import Structure from './Structure';
 import buildingCosts, { BuildingCost } from '../buildingCosts';
-import { purchaseTypes, resourceCardTypes, PURCHASE_SETTLEMENT, initialAvailableLoot, initialAvailablResourceCounts } from '../manifest';
+import { purchaseTypes, resourceCardTypes, PURCHASE_SETTLEMENT, PURCHASE_CARD, PURCHASE_CITY, initialAvailableLoot, initialAvailablResourceCounts, Loot, PURCHASE_ROAD } from '../manifest';
 
 interface PlayerOptions {
   nickname: string
@@ -55,13 +55,13 @@ class Player extends Schema {
   gameCards: GameCard[];
 
   @type({ map: "number" })
-  resourceCounts: MapSchema<Number>
+  resourceCounts: MapSchema<Number> // Loot
 
   @type({ map: "number" })
-  availableLoot: MapSchema<Number>
+  availableLoot: MapSchema<Number> // Loot
 
   @type({ map: "boolean" })
-  hasResources: MapSchema<Boolean>
+  hasResources: MapSchema<Boolean> 
 
   @type("boolean")
   hasLongestRoad: boolean = false;
@@ -111,6 +111,14 @@ class Player extends Schema {
   }
 
   onPurchase(type: string, isSetupPhase: boolean = false, isEndSetupPhase: boolean = false) {
+    if (type === PURCHASE_ROAD) {
+      this.roads = this.roads - 1;
+    } else if (type === PURCHASE_SETTLEMENT) {
+      this.settlements = this.settlements - 1;
+    } else {
+      this.cities = this.cities - 1;
+    }
+
     if (isSetupPhase) {
       if (type === PURCHASE_SETTLEMENT) {
         this.hasResources = new MapSchema<Boolean>({
@@ -153,27 +161,35 @@ class Player extends Schema {
     this.lastStructureBuilt = new Structure(this.playerSessionId, structure.type, structure.row, structure.col);
   }
 
-  giveInitialResources() {
-    if (!this.lastStructureBuilt) return;
-    const { type, row, col } = this.lastStructureBuilt;
+  // Object
+  //   .values(this.state.players)
+  //   .forEach(player => player.giveInitialResources());
+  // giveInitialResources() {
+  //   if (!this.lastStructureBuilt) return;
+  //   const { type, row, col } = this.lastStructureBuilt; // @TODO: Use this
 
-    this.resourceCounts = new MapSchema<Number>({
-      lumber: 3,
-      sheep: 3,
-      brick: 3,
-      wheat: 3,
-      ore: 3
-    });
+  //   this.resourceCounts = new MapSchema<Number>({
+  //     lumber: 3,
+  //     sheep: 3,
+  //     brick: 3,
+  //     wheat: 3,
+  //     ore: 3
+  //   });
 
-    this.onPurchase('NONE', false, true);
-  }
+  //   this.onPurchase('NONE', false, true);
+  // }
 
-  giveResources(allStructures: Structure[], dice: Number[]) {
-    allStructures
-      .filter(({ ownerId }) => ownerId === this.playerSessionId)
-      .forEach(({ type, row, col }) => {
+  onCollectLoot() {
+    const updatedResourceCounts = resourceCardTypes.reduce((acc, name) => {
+      acc[name] = this.resourceCounts[name] + this.availableLoot[name];
+      return acc;
+    }, {} as BuildingCost);
+    this.resourceCounts = new MapSchema<Number>(updatedResourceCounts);
 
-      });
+    const updatedAvailableLoot: Loot = {
+      ...initialAvailableLoot
+    };
+    this.availableLoot = new MapSchema<Number>(updatedAvailableLoot);
   }
 };
 

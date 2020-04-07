@@ -13,6 +13,7 @@ import {
   MESSAGE_GAME_ACTION,
   MESSAGE_READY,
   MESSAGE_ROLL_DICE,
+  MESSAGE_COLLECT_ALL_LOOT,
   MESSAGE_FINISH_TURN,
   MESSAGE_PLACE_ROAD,
   MESSAGE_PLACE_STRUCTURE
@@ -284,6 +285,17 @@ class GameRoom extends Room<State> {
         this.onDiceRoll(data, player);
         break;
 
+      case MESSAGE_COLLECT_ALL_LOOT:
+        this.broadcast({
+          type: MESSAGE_COLLECT_ALL_LOOT,
+          sender: ROOM_NAME,
+          playerName: player.nickname,
+          loot: player.availableLoot
+        });
+
+        player.onCollectLoot();
+        break;
+
       case MESSAGE_PLACE_ROAD:
         this.onPurchaseRoad(data, client.sessionId, player.nickname);
         break;
@@ -338,7 +350,22 @@ class GameRoom extends Room<State> {
     if (this.state.isGameStarted) this.setResourcesLoot(roll.value);
   }
 
-  setResourcesLoot(diceTotal: number) {
+  initializeSetupPhase() {
+    Object
+      .values(this.state.players)
+      .forEach(player => player.initializeSetupPhase());
+  }
+
+  initializeFirstRoundStart() {
+    // same method with no diceTotal should loop over ALL hexes instead of ones matching the diceValue.
+    this.setResourcesLoot();
+  }
+
+  setResourcesLoot(diceTotal?: number) {
+    const updatedResourceCounts: Loot = {
+      ...this.state.resourceCounts
+    };
+
     const updatedLoot = Object
       .keys(this.state.players)
       .reduce((acc, ownerId) => {
@@ -348,48 +375,46 @@ class GameRoom extends Room<State> {
 
         return acc;
       }, {} as AvailableLoot);
-      
     
-    // Game started - round 1 or higher - allocate resources from stash to players according to hexes state
+    // Game started - round 1 or higher - allocate resources from the bank to players according to hexes state
     this.state.board
       .filter(({ type, resource }, index) => type === TILE_RESOURCE && !!resource && resource !== DESERT && index !== this.state.robberPosition)
-      .filter(({ value }) => value === diceTotal)
+      .filter(({ value }) => !diceTotal || value === diceTotal)
       // 18 Resource-type tiles left to loop over
       .forEach(({ resource, row: tileRow, col: tileCol }) => {
-        console.log("GameRoom -> setResourcesLoot -> resource row col", resource, tileRow, tileCol)
+
+        // offset by +2 for even rows only
+        const colOffset = tileRow % 2 === 0 ? 2 : 0;
 
         const tileStructureIndices = [
           [tileRow, tileCol * 2], [tileRow, tileCol * 2 + 1], [tileRow, tileCol * 2 + 2], // top-left, top, top-right
-          [tileRow + 1, tileCol * 2 + 1], [tileRow + 1, tileCol * 2 + 2], [tileRow + 1, tileCol * 2 + 3], // bottom-left, bottom, bottom-right
+          [tileRow + 1, tileCol * 2 - 1 + colOffset], [tileRow + 1, tileCol * 2 + colOffset], [tileRow + 1, tileCol * 2 + 1 + colOffset] // bottom-left, bottom, bottom-right
         ];
-        console.log("GameRoom -> setResourcesLoot -> tileStructureIndices", tileStructureIndices)
 
         this.state.structures
           .forEach(({ row, col, ownerId, type }) => {
-          console.log("GameRoom -> setResourcesLoot -> row", row, col, ownerId, type )
             if (!!resource && tileStructureIndices.some(([sRow, sCol]) => sRow === row && sCol === col)) {
               const addedValue = type === PURCHASE_CITY ? 2 : 1;
-              console.log("GameRoom -> setResourcesLoot -> addedValue", addedValue)
+
               updatedLoot[ownerId][resource] += addedValue;
+              updatedResourceCounts[resource] -= addedValue;
             }
           });
       });
-
-      console.log("GameRoom -> setResourcesLoot -> final updatedLoot", updatedLoot)
-
 
     Object
       .entries(this.state.players)
       .forEach(([sessionId, player]) => {
         const playerUpdatedLoot = updatedLoot[sessionId];
-        console.log("GameRoom -> playerUpdatedLoot", playerUpdatedLoot)
 
         player.availableLoot = new MapSchema<Number>({
           ...playerUpdatedLoot
         });
-
-        console.log('player available loot: ', player.availableLoot);
       });
+
+    this.state.resourceCounts = new MapSchema<Number>({
+      ...updatedResourceCounts
+    });
   }
 
   onPurchaseStructure(data: any, ownerId: string, nickname: string, type: string = PURCHASE_SETTLEMENT) {
@@ -439,20 +464,6 @@ class GameRoom extends Room<State> {
       sender: ROOM_NAME,
       message: `${nickname} built a road`
     });
-  }
-
-  initializeSetupPhase() {
-    Object
-      .values(this.state.players)
-      .forEach(player => player.initializeSetupPhase());
-  }
-
-  initializeFirstRoundStart() {
-    Object
-      .values(this.state.players)
-      .forEach(player => player.giveInitialResources());
-
-    // player.giveResources(this.state.structures, this.state.dice);
   }
 
   onTurnFinish(player: Player) {
