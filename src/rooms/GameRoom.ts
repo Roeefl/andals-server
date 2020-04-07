@@ -16,7 +16,12 @@ import {
   MESSAGE_COLLECT_ALL_LOOT,
   MESSAGE_FINISH_TURN,
   MESSAGE_PLACE_ROAD,
-  MESSAGE_PLACE_STRUCTURE
+  MESSAGE_PLACE_STRUCTURE,
+  MESSAGE_TRADE_REQUEST,
+  MESSAGE_TRADE_ADD_CARD,
+  MESSAGE_TRADE_REMOVE_CARD,
+  MESSAGE_TRADE_CONFIRM,
+  MESSAGE_TRADE_REFUSE
 } from '../constants';
 
 import {
@@ -27,7 +32,7 @@ import {
   availableInitialHarborTypes, harborIndices,
   PURCHASE_SETTLEMENT, PURCHASE_ROAD, PURCHASE_CITY,
   playerColors,
-  initialAvailableLoot,
+  initialResourceCounts,
   Loot, AvailableLoot
 } from '../manifest';
 
@@ -272,50 +277,83 @@ class GameRoom extends Room<State> {
       message = ''
     } = data;
 
-    const player: Player = this.state.players[client.sessionId];
-
+    const currentPlayer: Player = this.state.players[client.sessionId];
     // console.info(`GameRoom received message | from ${sessionId} | ${message}`);
 
     switch (type) {
       case MESSAGE_CHAT:
-        this.onChatMessage(player.nickname ,sessionId, message);
+        this.onChatMessage(currentPlayer.nickname ,sessionId, message);
         break;
 
       case MESSAGE_ROLL_DICE:
-        this.onDiceRoll(data, player);
+        this.onDiceRoll(data, currentPlayer);
         break;
 
       case MESSAGE_COLLECT_ALL_LOOT:
         this.broadcast({
           type: MESSAGE_COLLECT_ALL_LOOT,
           sender: ROOM_NAME,
-          playerName: player.nickname,
-          loot: player.availableLoot
+          playerName: currentPlayer.nickname,
+          loot: currentPlayer.availableLoot
         });
 
-        player.onCollectLoot();
+        currentPlayer.onCollectLoot();
         break;
 
       case MESSAGE_PLACE_ROAD:
-        this.onPurchaseRoad(data, client.sessionId, player.nickname);
+        this.onPurchaseRoad(data, client.sessionId, currentPlayer.nickname);
         break;
 
       case MESSAGE_PLACE_STRUCTURE:
-        this.onPurchaseStructure(data, client.sessionId, player.nickname, PURCHASE_SETTLEMENT); //@TODO: ALlow city as well.
+        this.onPurchaseStructure(data, client.sessionId, currentPlayer.nickname, PURCHASE_SETTLEMENT); //@TODO: ALlow city as well.
+        break;
+        
+      case MESSAGE_TRADE_ADD_CARD:
+      case MESSAGE_TRADE_REMOVE_CARD:
+          const { resource } = data;
+          currentPlayer.updateTradeCounts(resource, type === MESSAGE_TRADE_REMOVE_CARD);
+          break;
+            
+      case MESSAGE_TRADE_REQUEST:
+      case MESSAGE_TRADE_CONFIRM:
+      case MESSAGE_TRADE_REFUSE:
+        const { otherPlayerSessionId } = data;
+        const otherPlayer: Player = this.state.players[otherPlayerSessionId];
+
+        if (type === MESSAGE_TRADE_REQUEST) {
+          otherPlayer.pendingTrade = currentPlayer.playerSessionId;
+        } else if (type === MESSAGE_TRADE_REFUSE) {
+          currentPlayer.cancelTrade();
+          otherPlayer.cancelTrade();
+        } else {
+          currentPlayer.isTradeConfirmed = !currentPlayer.isTradeConfirmed;
+          
+          if (otherPlayer.isTradeConfirmed)
+            this.onExecuteTrade(currentPlayer, otherPlayer);
+        }
+
         break;
 
       case MESSAGE_FINISH_TURN:
-        this.onTurnFinish(player);
+        this.onTurnFinish(currentPlayer);
         break;
 
       case MESSAGE_READY:
-        this.onPlayerReady(client, player);
+        this.onPlayerReady(client, currentPlayer);
         break;
 
       default:
         break;
     }
   };
+
+  onExecuteTrade(player1: Player, player2: Player) {
+    player1.performTrade(player2.tradeCounts);
+    player2.performTrade(player1.tradeCounts);
+
+    player1.resetTradeCounts();
+    player2.resetTradeCounts();
+  }
 
   onChatMessage(sender: string, senderSessionId: string, message: string) {
     this.broadcast({
@@ -370,7 +408,7 @@ class GameRoom extends Room<State> {
       .keys(this.state.players)
       .reduce((acc, ownerId) => {
         acc[ownerId] = {
-          ...initialAvailableLoot
+          ...initialResourceCounts
         };
 
         return acc;

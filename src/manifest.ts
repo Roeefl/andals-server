@@ -81,15 +81,7 @@ export interface AvailableLoot {
   [key: string]: Loot
 };
 
-export const initialAvailableLoot: Loot = {
-  lumber: 0,
-  sheep: 0,
-  brick: 0,
-  wheat: 0,
-  ore: 0
-};
-
-export const initialAvailablResourceCounts: Loot = {
+export const initialResourceCounts: Loot = {
   lumber: 0,
   sheep: 0,
   brick: 0,

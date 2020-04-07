@@ -3,7 +3,7 @@ import GameCard from '../schemas/GameCard';
 import DiceRoll from './DiceRoll';
 import Structure from './Structure';
 import buildingCosts, { BuildingCost } from '../buildingCosts';
-import { purchaseTypes, resourceCardTypes, PURCHASE_SETTLEMENT, PURCHASE_CARD, PURCHASE_CITY, initialAvailableLoot, initialAvailablResourceCounts, Loot, PURCHASE_ROAD } from '../manifest';
+import { purchaseTypes, resourceCardTypes, PURCHASE_SETTLEMENT, PURCHASE_CARD, PURCHASE_CITY, initialResourceCounts, Loot, PURCHASE_ROAD } from '../manifest';
 
 interface PlayerOptions {
   nickname: string
@@ -60,6 +60,15 @@ class Player extends Schema {
   @type({ map: "number" })
   availableLoot: MapSchema<Number> // Loot
 
+  @type({ map: "number" })
+  tradeCounts: Loot
+
+  @type("string")
+  pendingTrade: string = ''
+
+  @type("boolean")
+  isTradeConfirmed: boolean = false
+
   @type({ map: "boolean" })
   hasResources: MapSchema<Boolean> 
 
@@ -91,11 +100,15 @@ class Player extends Schema {
     this.color = color;
 
     this.resourceCounts = new MapSchema<Number>({
-      ...initialAvailablResourceCounts
+      ...initialResourceCounts
     });
 
     this.availableLoot = new MapSchema<Number>({
-      ...initialAvailableLoot
+      ...initialResourceCounts
+    });
+
+    this.tradeCounts = new MapSchema<Number>({
+      ...initialResourceCounts
     });
 
     this.hasResources = new MapSchema<Boolean>(initialHasResources);
@@ -187,9 +200,52 @@ class Player extends Schema {
     this.resourceCounts = new MapSchema<Number>(updatedResourceCounts);
 
     const updatedAvailableLoot: Loot = {
-      ...initialAvailableLoot
+      ...initialResourceCounts
     };
     this.availableLoot = new MapSchema<Number>(updatedAvailableLoot);
+  }
+
+  updateTradeCounts(resource: string, isRemove: boolean = false) {
+    this.resourceCounts = new MapSchema<Number>({
+      ...this.resourceCounts,
+      [resource]: this.resourceCounts[resource] + (isRemove ? 1 : -1)
+    });
+
+    this.tradeCounts = new MapSchema<Number>({
+      ...this.tradeCounts,
+      [resource]: this.tradeCounts[resource] + (isRemove ? -1 : 1)
+    });
+  }
+
+  resetTradeCounts() {
+    this.tradeCounts = new MapSchema<Number>({
+      ...initialResourceCounts
+    });
+  }
+
+  cancelTrade() {
+    const updatedResourceCounts = resourceCardTypes.reduce((acc, name) => {
+      acc[name] = this.resourceCounts[name] + this.tradeCounts[name];
+      return acc;
+    }, {} as BuildingCost);
+    
+    this.resourceCounts = new MapSchema<Number>({
+      ...updatedResourceCounts
+    });
+
+    this.resetTradeCounts();
+    this.pendingTrade = '';
+  }
+
+  performTrade(otherPlayerTradeCounts: Loot) {
+    const updatedResourceCounts = resourceCardTypes.reduce((acc, name) => {
+      acc[name] = this.resourceCounts[name] + otherPlayerTradeCounts[name];
+      return acc;
+    }, {} as BuildingCost);
+    
+    this.resourceCounts = new MapSchema<Number>({
+      ...updatedResourceCounts
+    });
   }
 };
 
