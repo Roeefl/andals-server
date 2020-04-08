@@ -169,7 +169,7 @@ class GameRoom extends Room<GameState> {
         break;
 
       case MESSAGE_FINISH_TURN:
-        TurnManager.finishTurn(this.state, currentPlayer, (broadcastType: string, broadcastMessage: string) => this.broadcastToAll(broadcastType, { broadcastMessage }));
+        TurnManager.finishTurn(this.state, currentPlayer, (broadcastType: string, broadcastMessage: string) => this.broadcastToAll(broadcastType, { message: broadcastMessage }));
         break;
 
       case MESSAGE_READY:
