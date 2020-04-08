@@ -60,6 +60,9 @@ class Player extends Schema {
   @type({ map: "number" })
   availableLoot: MapSchema<Number> // Loot
 
+  @type("string")
+  tradingWith: string | null = null
+
   @type({ map: "number" })
   tradeCounts: Loot
 
@@ -68,6 +71,9 @@ class Player extends Schema {
 
   @type("boolean")
   isTradeConfirmed: boolean = false
+
+  @type("boolean")
+  isWaitingTradeRequest: boolean = false
 
   @type({ map: "boolean" })
   hasResources: MapSchema<Boolean> 
@@ -159,6 +165,10 @@ class Player extends Schema {
       this.resourceCounts = new MapSchema<Number>(updatedResourceCounts);
     }
 
+    this.updateHasResources();
+  }
+
+  updateHasResources() {
     const updatedHasResources = purchaseTypes.reduce((acc, purchaseType) => {
       acc[purchaseType] = Object
         .entries(this.resourceCounts)
@@ -203,6 +213,8 @@ class Player extends Schema {
       ...initialResourceCounts
     };
     this.availableLoot = new MapSchema<Number>(updatedAvailableLoot);
+
+    this.updateHasResources(); 
   }
 
   updateTradeCounts(resource: string, isRemove: boolean = false) {
@@ -223,6 +235,11 @@ class Player extends Schema {
     });
   }
 
+  resetTradeStatus() {
+    this.pendingTrade = '';
+    this.isWaitingTradeRequest = false;
+  }
+
   cancelTrade() {
     const updatedResourceCounts = resourceCardTypes.reduce((acc, name) => {
       acc[name] = this.resourceCounts[name] + this.tradeCounts[name];
@@ -234,7 +251,8 @@ class Player extends Schema {
     });
 
     this.resetTradeCounts();
-    this.pendingTrade = '';
+    this.resetTradeStatus();
+    this.tradingWith = null; 
   }
 
   performTrade(otherPlayerTradeCounts: Loot) {

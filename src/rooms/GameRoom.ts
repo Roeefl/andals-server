@@ -18,6 +18,7 @@ import {
   MESSAGE_PLACE_ROAD,
   MESSAGE_PLACE_STRUCTURE,
   MESSAGE_TRADE_REQUEST,
+  MESSAGE_TRADE_INCOMING_RESPONSE,
   MESSAGE_TRADE_ADD_CARD,
   MESSAGE_TRADE_REMOVE_CARD,
   MESSAGE_TRADE_CONFIRM,
@@ -278,7 +279,6 @@ class GameRoom extends Room<State> {
     } = data;
 
     const currentPlayer: Player = this.state.players[client.sessionId];
-    // console.info(`GameRoom received message | from ${sessionId} | ${message}`);
 
     switch (type) {
       case MESSAGE_CHAT:
@@ -290,14 +290,7 @@ class GameRoom extends Room<State> {
         break;
 
       case MESSAGE_COLLECT_ALL_LOOT:
-        this.broadcast({
-          type: MESSAGE_COLLECT_ALL_LOOT,
-          sender: ROOM_NAME,
-          playerName: currentPlayer.nickname,
-          loot: currentPlayer.availableLoot
-        });
-
-        currentPlayer.onCollectLoot();
+        this.onPlayerCollectAllLoot(currentPlayer);
         break;
 
       case MESSAGE_PLACE_ROAD:
@@ -310,28 +303,25 @@ class GameRoom extends Room<State> {
         
       case MESSAGE_TRADE_ADD_CARD:
       case MESSAGE_TRADE_REMOVE_CARD:
-          const { resource } = data;
-          currentPlayer.updateTradeCounts(resource, type === MESSAGE_TRADE_REMOVE_CARD);
-          break;
-            
-      case MESSAGE_TRADE_REQUEST:
-      case MESSAGE_TRADE_CONFIRM:
-      case MESSAGE_TRADE_REFUSE:
-        const { otherPlayerSessionId } = data;
-        const otherPlayer: Player = this.state.players[otherPlayerSessionId];
+        const { resource } = data;
+        currentPlayer.updateTradeCounts(resource, type === MESSAGE_TRADE_REMOVE_CARD);
 
-        if (type === MESSAGE_TRADE_REQUEST) {
-          otherPlayer.pendingTrade = currentPlayer.playerSessionId;
-        } else if (type === MESSAGE_TRADE_REFUSE) {
-          currentPlayer.cancelTrade();
-          otherPlayer.cancelTrade();
-        } else {
-          currentPlayer.isTradeConfirmed = !currentPlayer.isTradeConfirmed;
-          
-          if (otherPlayer.isTradeConfirmed)
-            this.onExecuteTrade(currentPlayer, otherPlayer);
+        currentPlayer.isTradeConfirmed = false;
+
+        const { tradingWith } = currentPlayer;
+        
+        if (tradingWith) {
+          const otherPlayer: Player = this.state.players[tradingWith];
+          otherPlayer.isTradeConfirmed = false;
         }
-
+        break;
+            
+      case MESSAGE_TRADE_INCOMING_RESPONSE:
+      case MESSAGE_TRADE_REQUEST:
+      case MESSAGE_TRADE_REFUSE:
+      case MESSAGE_TRADE_CONFIRM:
+        const { isAgreed, withWho } = data;
+        this.onStartEndTrade(type, currentPlayer, withWho, isAgreed);
         break;
 
       case MESSAGE_FINISH_TURN:
@@ -346,6 +336,49 @@ class GameRoom extends Room<State> {
         break;
     }
   };
+  
+  onStartEndTrade(type: string, currentPlayer: Player, withWho?: string, isAgreed?: boolean) {
+    if (type === MESSAGE_TRADE_INCOMING_RESPONSE) {
+      const { pendingTrade } = currentPlayer;
+      const otherPlayer: Player = this.state.players[pendingTrade];
+
+      currentPlayer.resetTradeStatus();
+      otherPlayer.resetTradeStatus();
+
+      if (!isAgreed) return;
+
+      currentPlayer.tradingWith = otherPlayer.playerSessionId;
+      otherPlayer.tradingWith = currentPlayer.playerSessionId;
+      return;
+    }
+
+    if (type === MESSAGE_TRADE_REQUEST) {
+      if (!withWho) return;
+      const otherPlayer: Player = this.state.players[withWho];
+      
+      currentPlayer.isWaitingTradeRequest = true;
+      otherPlayer.pendingTrade = currentPlayer.playerSessionId;
+      return;
+    }
+
+    const { tradingWith } = currentPlayer;
+    if (!tradingWith) return;
+    const otherPlayer: Player = this.state.players[tradingWith];
+
+    if (type === MESSAGE_TRADE_REFUSE) {
+      currentPlayer.cancelTrade();
+      otherPlayer.cancelTrade();
+      return;
+    }
+
+    if (type === MESSAGE_TRADE_CONFIRM) {
+      currentPlayer.isTradeConfirmed = !currentPlayer.isTradeConfirmed;
+
+      if (otherPlayer.isTradeConfirmed) {
+        this.onExecuteTrade(currentPlayer, otherPlayer);
+      }
+    }
+  }
 
   onExecuteTrade(player1: Player, player2: Player) {
     player1.performTrade(player2.tradeCounts);
@@ -353,6 +386,9 @@ class GameRoom extends Room<State> {
 
     player1.resetTradeCounts();
     player2.resetTradeCounts();
+
+    player1.tradingWith = null;
+    player2.tradingWith = null;
   }
 
   onChatMessage(sender: string, senderSessionId: string, message: string) {
@@ -399,6 +435,17 @@ class GameRoom extends Room<State> {
     this.setResourcesLoot();
   }
 
+  onPlayerCollectAllLoot(player: Player) {
+    this.broadcast({
+      type: MESSAGE_COLLECT_ALL_LOOT,
+      sender: ROOM_NAME,
+      playerName: player.nickname,
+      loot: player.availableLoot
+    });
+
+    player.onCollectLoot();
+  }
+
   setResourcesLoot(diceTotal?: number) {
     const updatedResourceCounts: Loot = {
       ...this.state.resourceCounts
@@ -421,7 +468,7 @@ class GameRoom extends Room<State> {
       // 18 Resource-type tiles left to loop over
       .forEach(({ resource, row: tileRow, col: tileCol }) => {
 
-        // offset by +2 for even rows only
+        // offset by +2 for EVEN rows only
         const colOffset = tileRow % 2 === 0 ? 2 : 0;
 
         const tileStructureIndices = [
