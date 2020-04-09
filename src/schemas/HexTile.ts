@@ -12,12 +12,12 @@ class HexTile extends Schema {
   col: number
 
   @type("string")
-  resource: string | null
+  resource: string
 
   @type("number")
   value: number
 
-  constructor(type: string, row: number, col: number, resource: string | null = null, value: number = 0) {
+  constructor(type: string, row: number, col: number, resource: string = '', value: number = 0) {
     super();
 
     this.type = type;

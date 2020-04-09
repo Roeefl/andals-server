@@ -1,3 +1,4 @@
+import { ArraySchema } from '@colyseus/schema';
 import GameState from '../game/GameState';
 import Player from '../schemas/Player';
 
@@ -74,6 +75,15 @@ class TradeManager {
   
     player1.tradingWith = null;
     player2.tradingWith = null;
+  }
+
+  onStealCard(state: GameState, currentPlayer: Player, stealFrom: string, resource: string) {
+    const otherPlayer: Player = state.players[stealFrom];
+    
+    currentPlayer.addResource(resource);
+    otherPlayer.stolenResource(resource);
+
+    currentPlayer.allowStealingFrom = new ArraySchema<string>();
   }
 }
 

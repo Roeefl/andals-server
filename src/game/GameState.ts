@@ -50,7 +50,7 @@ class GameState extends Schema {
   players = new MapSchema<Player>();
 
   @type(["number"])
-  dice = new ArraySchema<Number>(0, 0);
+  dice = new ArraySchema<Number>(6, 6);
 
   @type([HexTile])
   board: HexTile[]
@@ -67,7 +67,7 @@ class GameState extends Schema {
   @type([Structure])
   structures: Structure[]
 
-  constructor(roomTitle: string, board: HexTile[], gameCards: GameCard[]) {
+  constructor(roomTitle: string, maxPlayers: number, board: HexTile[], gameCards: GameCard[]) {
     super();
 
     this.roomTitle = roomTitle;
@@ -89,7 +89,7 @@ class GameState extends Schema {
     this.roads = new ArraySchema<Road>();
     this.structures = new ArraySchema<Structure>();
 
-    this.maxClients = 2; // @TODO: ENable in Creating Room Settings
+    this.maxClients = maxPlayers;
   }
 };
 

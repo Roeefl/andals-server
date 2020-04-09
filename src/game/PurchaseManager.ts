@@ -7,11 +7,11 @@ import Player from '../schemas/Player';
 
 import { PURCHASE_ROAD, PURCHASE_SETTLEMENT } from '../manifest';
 
-class Purchase {
-  structure(state: GameState, data: any, ownerId: string, nickname: string, type: string = PURCHASE_SETTLEMENT) {
+class PurchaseManager {
+  structure(state: GameState, data: any, ownerId: string, nickname: string, structureType: string = PURCHASE_SETTLEMENT) {
     const { row, col } = data;
   
-    const structure = new Structure(ownerId, type, row, col);
+    const structure = new Structure(ownerId, structureType, row, col);
     
     const updatedStructures = [
       ...state.structures,
@@ -23,7 +23,7 @@ class Purchase {
     );
   
    const owner: Player = state.players[ownerId];
-   owner.onPurchase(type, state.isSetupPhase);
+   owner.onPurchase(structureType, state.isSetupPhase);
    owner.saveLastStructure(structure);
   } 
 
@@ -46,4 +46,4 @@ class Purchase {
   }
 }
 
-export default new Purchase();
+export default new PurchaseManager();

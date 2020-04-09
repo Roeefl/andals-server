@@ -57,6 +57,15 @@ class Player extends Schema {
   @type({ map: "number" })
   resourceCounts: MapSchema<Number> // Loot
 
+  @type("boolean")
+  mustDiscardHalfDeck: boolean = false
+
+  @type("boolean")
+  mustMoveRobber: boolean = false
+
+  @type(["string"])
+  allowStealingFrom: string[]
+
   @type({ map: "number" })
   availableLoot: MapSchema<Number> // Loot
 
@@ -117,7 +126,16 @@ class Player extends Schema {
       ...initialResourceCounts
     });
 
-    this.hasResources = new MapSchema<Boolean>(initialHasResources);
+    this.hasResources = new MapSchema<Boolean>({
+      ...initialHasResources
+    });
+
+    this.allowStealingFrom = new ArraySchema<string>();
+  }
+
+  totalResourceCounts() {
+    const counts: number[] = Object.values(this.resourceCounts);
+    return counts.reduce((d1, d2) => d1 + d2, 0);
   }
 
   initializeSetupPhase() {
@@ -150,7 +168,9 @@ class Player extends Schema {
         return;
       }
 
-      this.hasResources = new MapSchema<Boolean>(initialHasResources);
+      this.hasResources = new MapSchema<Boolean>({
+        ...initialHasResources
+      });
       return;
     };
 
@@ -162,7 +182,9 @@ class Player extends Schema {
         return acc;
       }, {} as BuildingCost);
 
-      this.resourceCounts = new MapSchema<Number>(updatedResourceCounts);
+      this.resourceCounts = new MapSchema<Number>({
+        ...updatedResourceCounts
+      });
     }
 
     this.updateHasResources();
@@ -172,12 +194,21 @@ class Player extends Schema {
     const updatedHasResources = purchaseTypes.reduce((acc, purchaseType) => {
       acc[purchaseType] = Object
         .entries(this.resourceCounts)
-        .every(([resource, value]) => value >= buildingCosts[purchaseType][resource])
+        .every(([resource, value]) => {
+          console.log("updateHasResources -> purchaseType", purchaseType)
+        console.log("updateHasResources -> value", value)
+        console.log("updateHasResources -> resource", resource)
+        console.log('112123', buildingCosts[purchaseType][resource]);
+        
+          return value >= buildingCosts[purchaseType][resource];
+        })
 
       return acc;
     }, {} as HasResources);
 
-    this.hasResources = new MapSchema<Boolean>(updatedHasResources);
+    this.hasResources = new MapSchema<Boolean>({
+      ...updatedHasResources
+    });
   }
 
   saveLastStructure(structure: Structure) {
@@ -191,14 +222,6 @@ class Player extends Schema {
   //   if (!this.lastStructureBuilt) return;
   //   const { type, row, col } = this.lastStructureBuilt; // @TODO: Use this
 
-  //   this.resourceCounts = new MapSchema<Number>({
-  //     lumber: 3,
-  //     sheep: 3,
-  //     brick: 3,
-  //     wheat: 3,
-  //     ore: 3
-  //   });
-
   //   this.onPurchase('NONE', false, true);
   // }
 
@@ -207,12 +230,16 @@ class Player extends Schema {
       acc[name] = this.resourceCounts[name] + this.availableLoot[name];
       return acc;
     }, {} as BuildingCost);
-    this.resourceCounts = new MapSchema<Number>(updatedResourceCounts);
+    this.resourceCounts = new MapSchema<Number>({
+      ...updatedResourceCounts
+    });
 
     const updatedAvailableLoot: Loot = {
       ...initialResourceCounts
     };
-    this.availableLoot = new MapSchema<Number>(updatedAvailableLoot);
+    this.availableLoot = new MapSchema<Number>({
+      ...updatedAvailableLoot
+    });
 
     this.updateHasResources(); 
   }
@@ -263,6 +290,33 @@ class Player extends Schema {
     
     this.resourceCounts = new MapSchema<Number>({
       ...updatedResourceCounts
+    });
+
+    this.updateHasResources();
+  }
+
+  discardResources(discardedCounts: Loot = {}) {
+    const updatedResourceCounts = resourceCardTypes.reduce((acc, name) => {
+      acc[name] = this.resourceCounts[name] - discardedCounts[name];
+      return acc;
+    }, {} as BuildingCost);
+    
+    this.resourceCounts = new MapSchema<Number>({
+      ...updatedResourceCounts
+    });
+  }
+
+  addResource(resource: string) {
+    this.resourceCounts = new MapSchema<Number>({
+      ...this.resourceCounts,
+      [resource]: this.resourceCounts[resource] + 1
+    });
+  }
+
+  stolenResource(resource: string) {
+    this.resourceCounts = new MapSchema<Number>({
+      ...this.resourceCounts,
+      [resource]: this.resourceCounts[resource] - 1
     });
   }
 };

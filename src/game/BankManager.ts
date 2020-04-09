@@ -2,8 +2,10 @@ import { MapSchema } from '@colyseus/schema';
 
 import GameState from '../game/GameState';
 import Player from '../schemas/Player';
+import TileManager from './TileManager';
 
 import {
+  resourceCardTypes,
   TILE_RESOURCE,
   DESERT,
   PURCHASE_CITY,
@@ -34,18 +36,11 @@ class BankManager {
       .filter(({ value }) => !diceTotal || value === diceTotal)
       // 18 Resource-type tiles left to loop over
       .forEach(({ resource, row: tileRow, col: tileCol }) => {
-  
-        // offset by +2 for EVEN rows only
-        const colOffset = tileRow % 2 === 0 ? 2 : 0;
-  
-        const tileStructureIndices = [
-          [tileRow, tileCol * 2], [tileRow, tileCol * 2 + 1], [tileRow, tileCol * 2 + 2], // top-left, top, top-right
-          [tileRow + 1, tileCol * 2 - 1 + colOffset], [tileRow + 1, tileCol * 2 + colOffset], [tileRow + 1, tileCol * 2 + 1 + colOffset] // bottom-left, bottom, bottom-right
-        ];
-  
+        const adjacentStructures = TileManager.hexTileAdjacentStructures(tileRow, tileCol);
+
         state.structures
           .forEach(({ row, col, ownerId, type }) => {
-            if (!!resource && tileStructureIndices.some(([sRow, sCol]) => sRow === row && sCol === col)) {
+            if (adjacentStructures.some(([sRow, sCol]) => sRow === row && sCol === col)) {
               const addedValue = type === PURCHASE_CITY ? 2 : 1;
   
               updatedLoot[ownerId][resource] += addedValue;
@@ -55,8 +50,9 @@ class BankManager {
       });
   
     Object
-      .entries(state.players)
-      .forEach(([sessionId, player]) => {
+      .keys(state.players)
+      .forEach(sessionId => {
+        const player: Player = state.players[sessionId];
         const playerUpdatedLoot = updatedLoot[sessionId];
   
         player.availableLoot = new MapSchema<Number>({
@@ -71,6 +67,17 @@ class BankManager {
 
   onPlayerCollectAllLoot(player: Player) {
     player.onCollectLoot();
+  }
+
+  discardToBank(state: GameState, discardedCounts: Loot) {
+    const updatedResourceCounts: Loot = resourceCardTypes.reduce((acc, name) => {
+      acc[name] = state.resourceCounts[name] + discardedCounts[name];
+      return acc;
+    }, {} as Loot);
+    
+    state.resourceCounts = new MapSchema<Number>({
+      ...updatedResourceCounts
+    });
   }
 }
 

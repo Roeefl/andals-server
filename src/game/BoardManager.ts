@@ -1,5 +1,7 @@
+import GameState from '../game/GameState';
 import HexTile from '../schemas/HexTile';
 import hexTileMap from '../tilemaps/hexes';
+import TileManager from './TileManager';
 
 import {
   TILE_RESOURCE, TILE_WATER, TILE_SPACER,
@@ -70,6 +72,24 @@ class BoardManager {
     }
 
     return board;
+  }
+
+  robberAdjacentPlayers(state: GameState) {
+    const { robberPosition } = state;
+    const robberTile: HexTile = state.board[robberPosition];
+    const { row, col } = robberTile;
+
+    const owners: string[] = [];
+    const adjacentStructures = TileManager.hexTileAdjacentStructures(row, col);
+  
+    state.structures
+      .forEach(({ row: sRow, col: sCol, ownerId }) => {
+        if (!owners.includes(ownerId) && adjacentStructures.some(([iRow, iCol]) => iRow === sRow && iCol === sCol)) {
+          owners.push(ownerId);
+        }
+      });
+
+    return owners;
   }
 }
 

@@ -1,9 +1,10 @@
+import { ArraySchema } from '@colyseus/schema';
 import { Room, Client } from 'colyseus';
 import Player from '../schemas/Player';
 
 import GameState from '../game/GameState';
 import BoardManager from '../game/BoardManager';
-import Purchase from '../game/Purchase';
+import PurchaseManager from '../game/PurchaseManager';
 import BankManager from '../game/BankManager';
 import TurnManager from '../game/TurnManager';
 import GameCardManager from '../game/GameCardManager';
@@ -17,9 +18,12 @@ import {
   MESSAGE_READY,
   MESSAGE_ROLL_DICE,
   MESSAGE_COLLECT_ALL_LOOT,
+  MESSAGE_DISCARD_HALF_DECK,
   MESSAGE_FINISH_TURN,
   MESSAGE_PLACE_ROAD,
   MESSAGE_PLACE_STRUCTURE,
+  MESSAGE_MOVE_ROBBER,
+  MESSAGE_STEAL_CARD,
   MESSAGE_TRADE_REQUEST,
   MESSAGE_TRADE_INCOMING_RESPONSE,
   MESSAGE_TRADE_ADD_CARD,
@@ -39,12 +43,12 @@ const maxReconnectionTime = 1; // 60;
 class GameRoom extends Room<GameState> {
   onCreate(options: any) {
     console.info("GameRoom -> onCreate -> options", options);
-    const { roomTitle = 'Firstmen Game Room' } = options;
+    const { roomTitle = 'Firstmen Game Room', maxPlayers = 4 } = options;
 
     const initialBoard = BoardManager.initialBoard();
     const initialGameCards = GameCardManager.initialGameCards();
     
-    const gameState = new GameState(roomTitle , initialBoard, initialGameCards);
+    const gameState = new GameState(roomTitle, maxPlayers, initialBoard, initialGameCards);
     this.setState(gameState);
   };
 
@@ -138,8 +142,38 @@ class GameRoom extends Room<GameState> {
         });
         break;
 
+      case MESSAGE_DISCARD_HALF_DECK:
+        const { discardedCounts = {} } = data;
+        currentPlayer.discardResources(discardedCounts);
+        currentPlayer.mustDiscardHalfDeck = false;
+
+        BankManager.discardToBank(this.state, discardedCounts);
+
+        this.broadcastToAll(MESSAGE_DISCARD_HALF_DECK, {
+          playerName: currentPlayer.nickname,
+          discardedCounts
+        });
+        break;
+
+      case MESSAGE_MOVE_ROBBER:
+        const { tile = 0 } = data;
+        this.state.robberPosition = tile;
+        currentPlayer.mustMoveRobber = false;
+
+        const allowStealingFrom = BoardManager.robberAdjacentPlayers(this.state);
+        currentPlayer.allowStealingFrom = new ArraySchema<string>(
+          ...allowStealingFrom
+        );
+        
+        break;
+
+      case MESSAGE_STEAL_CARD:
+        const { stealFrom } = data;
+        TradeManager.onStealCard(this.state, currentPlayer, stealFrom, data.resource);
+        break;
+
       case MESSAGE_PLACE_ROAD:
-        Purchase.road(this.state, data, client.sessionId, currentPlayer.nickname);
+        PurchaseManager.road(this.state, data, client.sessionId, currentPlayer.nickname);
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} built a road`
@@ -147,10 +181,11 @@ class GameRoom extends Room<GameState> {
         break;
 
       case MESSAGE_PLACE_STRUCTURE:
-        Purchase.structure(this.state, data, client.sessionId, currentPlayer.nickname, PURCHASE_SETTLEMENT); //@TODO: ALlow city as well.
+        const { structureType = PURCHASE_SETTLEMENT } = data;
+        PurchaseManager.structure(this.state, data, client.sessionId, currentPlayer.nickname, structureType);
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
-          message: `${currentPlayer.nickname} built a settlement`
+          message: `${currentPlayer.nickname} built a ${structureType}`
         });
         break;
         
