@@ -4,11 +4,12 @@ import GameState from '../game/GameState';
 import Structure from '../schemas/Structure';
 import Road from '../schemas/Road';
 import Player from '../schemas/Player';
+import GameCard from '../schemas/GameCard';
 
-import { PURCHASE_ROAD, PURCHASE_SETTLEMENT } from '../manifest';
+import { PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_CARD } from '../manifest';
 
 class PurchaseManager {
-  structure(state: GameState, data: any, ownerId: string, nickname: string, structureType: string = PURCHASE_SETTLEMENT) {
+  structure(state: GameState, data: any, ownerId: string, structureType: string = PURCHASE_SETTLEMENT) {
     const { row, col } = data;
   
     const structure = new Structure(ownerId, structureType, row, col);
@@ -27,7 +28,7 @@ class PurchaseManager {
    owner.saveLastStructure(structure);
   } 
 
-  road(state: GameState, data: any, ownerId: string, nickname: string) {
+  road(state: GameState, data: any, ownerId: string) {
     const { row, col } = data;
 
     const road = new Road(ownerId, row, col);
@@ -43,6 +44,22 @@ class PurchaseManager {
 
     const owner: Player = state.players[ownerId];
     owner.onPurchase(PURCHASE_ROAD, state.isSetupPhase);
+  }
+
+  gameCard(state: GameState, ownerId: string) {
+    const randomCardIndex = Math.floor(Math.random() * state.gameCards.length);
+    const selectedCard: GameCard = state.gameCards[randomCardIndex];
+
+    const owner: Player = state.players[ownerId];
+    owner.onPurchaseCard(selectedCard);
+
+    const updatedGameCards = [
+      ...state.gameCards
+    ].splice(randomCardIndex, 1);
+
+    state.gameCards = new ArraySchema<GameCard>(
+      ...updatedGameCards
+    );
   }
 }
 

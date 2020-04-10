@@ -109,7 +109,9 @@ class Player extends Schema {
 
     this.playerSessionId = sessionId;
     this.isConnected = true;
+
     this.gameCards = new ArraySchema<GameCard>();
+    
     this.rolls = new ArraySchema<DiceRoll>();
 
     this.color = color;
@@ -149,11 +151,11 @@ class Player extends Schema {
 
   onPurchase(type: string, isSetupPhase: boolean = false, isEndSetupPhase: boolean = false) {
     if (type === PURCHASE_ROAD) {
-      this.roads = this.roads - 1;
+      this.roads--;
     } else if (type === PURCHASE_SETTLEMENT) {
-      this.settlements = this.settlements - 1;
-    } else {
-      this.cities = this.cities - 1;
+      this.settlements--;
+    } else if (type === PURCHASE_CITY) {
+      this.cities--;
     }
 
     if (isSetupPhase) {
@@ -190,18 +192,24 @@ class Player extends Schema {
     this.updateHasResources();
   }
 
+  onPurchaseCard(purchasedCard: GameCard) {
+    const updatedCards = [
+      ...this.gameCards,
+      purchasedCard
+    ];
+    
+    this.gameCards = new ArraySchema<GameCard>(
+      ...updatedCards
+    );
+
+    this.onPurchase(PURCHASE_CARD);
+  }
+
   updateHasResources() {
     const updatedHasResources = purchaseTypes.reduce((acc, purchaseType) => {
       acc[purchaseType] = Object
         .entries(this.resourceCounts)
-        .every(([resource, value]) => {
-          console.log("updateHasResources -> purchaseType", purchaseType)
-        console.log("updateHasResources -> value", value)
-        console.log("updateHasResources -> resource", resource)
-        console.log('112123', buildingCosts[purchaseType][resource]);
-        
-          return value >= buildingCosts[purchaseType][resource];
-        })
+        .every(([resource, value]) => value >= buildingCosts[purchaseType][resource]);
 
       return acc;
     }, {} as HasResources);

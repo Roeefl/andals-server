@@ -22,6 +22,7 @@ import {
   MESSAGE_FINISH_TURN,
   MESSAGE_PLACE_ROAD,
   MESSAGE_PLACE_STRUCTURE,
+  MESSAGE_PURCHASE_GAME_CARD,
   MESSAGE_MOVE_ROBBER,
   MESSAGE_STEAL_CARD,
   MESSAGE_TRADE_REQUEST,
@@ -134,25 +135,26 @@ class GameRoom extends Room<GameState> {
         break;
 
       case MESSAGE_COLLECT_ALL_LOOT:
-        BankManager.onPlayerCollectAllLoot(currentPlayer);
-
         this.broadcastToAll(MESSAGE_COLLECT_ALL_LOOT, {
           playerName: currentPlayer.nickname,
           loot: currentPlayer.availableLoot
         });
+
+        BankManager.onPlayerCollectAllLoot(currentPlayer);
         break;
 
       case MESSAGE_DISCARD_HALF_DECK:
         const { discardedCounts = {} } = data;
-        currentPlayer.discardResources(discardedCounts);
-        currentPlayer.mustDiscardHalfDeck = false;
-
-        BankManager.discardToBank(this.state, discardedCounts);
 
         this.broadcastToAll(MESSAGE_DISCARD_HALF_DECK, {
           playerName: currentPlayer.nickname,
           discardedCounts
         });
+        
+        currentPlayer.discardResources(discardedCounts);
+        currentPlayer.mustDiscardHalfDeck = false;
+        
+        BankManager.discardToBank(this.state, discardedCounts);
         break;
 
       case MESSAGE_MOVE_ROBBER:
@@ -173,7 +175,7 @@ class GameRoom extends Room<GameState> {
         break;
 
       case MESSAGE_PLACE_ROAD:
-        PurchaseManager.road(this.state, data, client.sessionId, currentPlayer.nickname);
+        PurchaseManager.road(this.state, data, client.sessionId);
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} built a road`
@@ -182,10 +184,18 @@ class GameRoom extends Room<GameState> {
 
       case MESSAGE_PLACE_STRUCTURE:
         const { structureType = PURCHASE_SETTLEMENT } = data;
-        PurchaseManager.structure(this.state, data, client.sessionId, currentPlayer.nickname, structureType);
+        PurchaseManager.structure(this.state, data, client.sessionId, structureType);
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} built a ${structureType}`
+        });
+        break;
+
+      case MESSAGE_PURCHASE_GAME_CARD:
+        PurchaseManager.gameCard(this.state, client.sessionId);
+
+        this.broadcastToAll(MESSAGE_GAME_LOG, {
+          message: `${currentPlayer.nickname} purchased a development card`
         });
         break;
         

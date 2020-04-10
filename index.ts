@@ -45,7 +45,7 @@ router.use('/api', API());
 // register colyseus monitor AFTER registering your room handlers
 app.use('/colyseus', monitor());
 
-gameServer.onShutdown(() => console.log('game server is going down.'));
+gameServer.onShutdown(() => console.info('game server is going down.'));
 
 gameServer.listen(port);
-console.log(`Listening on ws://localhost:${port}`)
+console.info(`Listening on ws://localhost:${port}`)
