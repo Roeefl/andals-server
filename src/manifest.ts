@@ -2,7 +2,7 @@ export const resourceTypes: string[] = ['lumber', 'brick', 'sheep', 'wheat', 'or
 export const [LUMBER, BRICK, SHEEP, WHEAT, ORE, DESERT, WATER, HARBOR_GENERIC] = resourceTypes;
 
 export const gameCardTypes: string[] = ['knight', 'victoryPoint', 'roadBuilding', 'yearOfPlenty', 'monopoly'];
-export const [CARD_KNIGHT, CARD_VICTORY_POINT, CARD_ROAD_BUILDING, CARD_YEAR_PLENTY, CARD_MONOPOLY] = gameCardTypes;
+export const [CARD_KNIGHT, CARD_VICTORY_POINT, CARD_ROAD_BUILDING, CARD_YEAR_OF_PLENTY, CARD_MONOPOLY] = gameCardTypes;
 
 export const resourceCardTypes = [LUMBER, BRICK, SHEEP, WHEAT, ORE];
 
@@ -48,7 +48,7 @@ export const availableInitialGameCards: string[] = [
   ...new Array(14).fill(CARD_KNIGHT),
   ...new Array(5).fill(CARD_VICTORY_POINT),
   ...new Array(2).fill(CARD_ROAD_BUILDING),
-  ...new Array(2).fill(CARD_YEAR_PLENTY),
+  ...new Array(2).fill(CARD_YEAR_OF_PLENTY),
   ...new Array(2).fill(CARD_MONOPOLY)
 ];
 

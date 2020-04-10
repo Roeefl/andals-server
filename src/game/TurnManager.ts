@@ -11,6 +11,12 @@ class TurnManager {
       .forEach(player => player.initializeSetupPhase());
   }
 
+  resetHasPlayedGameCard(state: GameState) {
+    Object
+      .values(state.players)
+      .forEach(player => player.hasPlayedGameCard = false);
+  }
+
   finishTurn(state: GameState, player: Player, broadcast: (type: string, message: string) => void) {
     const {
       isSetupPhase,
@@ -102,6 +108,8 @@ class TurnManager {
     // Not turn order phase - round consists of state.maxClients turns
     state.currentTurn = (currentTurn + 1) % state.maxClients;
     const isEndOfRound: Boolean = currentTurn === roundStarter;
+
+    this.resetHasPlayedGameCard(state);
 
     if (!state.isTurnOrderPhase)
       broadcast(MESSAGE_GAME_LOG, `${player.nickname} finished his turn`);

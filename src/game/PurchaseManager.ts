@@ -55,7 +55,7 @@ class PurchaseManager {
 
     const updatedGameCards = [
       ...state.gameCards
-    ].splice(randomCardIndex, 1);
+    ].filter((card, index) => index !== randomCardIndex);
 
     state.gameCards = new ArraySchema<GameCard>(
       ...updatedGameCards

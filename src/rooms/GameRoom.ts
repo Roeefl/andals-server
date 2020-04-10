@@ -23,8 +23,12 @@ import {
   MESSAGE_PLACE_ROAD,
   MESSAGE_PLACE_STRUCTURE,
   MESSAGE_PURCHASE_GAME_CARD,
+  MESSAGE_PLAY_GAME_CARD,
+  MESSAGE_SELECT_MONOPOLY_RESOURCE,
   MESSAGE_MOVE_ROBBER,
   MESSAGE_STEAL_CARD,
+
+  MESSAGE_TRADE_WITH_BANK,
   MESSAGE_TRADE_REQUEST,
   MESSAGE_TRADE_INCOMING_RESPONSE,
   MESSAGE_TRADE_ADD_CARD,
@@ -44,7 +48,7 @@ const maxReconnectionTime = 1; // 60;
 class GameRoom extends Room<GameState> {
   onCreate(options: any) {
     console.info("GameRoom -> onCreate -> options", options);
-    const { roomTitle = 'Firstmen Game Room', maxPlayers = 4 } = options;
+    const { roomTitle = 'Firstmen.io Game Room', maxPlayers = 4 } = options;
 
     const initialBoard = BoardManager.initialBoard();
     const initialGameCards = GameCardManager.initialGameCards();
@@ -154,7 +158,7 @@ class GameRoom extends Room<GameState> {
         currentPlayer.discardResources(discardedCounts);
         currentPlayer.mustDiscardHalfDeck = false;
         
-        BankManager.discardToBank(this.state, discardedCounts);
+        BankManager.returnToBank(this.state, discardedCounts);
         break;
 
       case MESSAGE_MOVE_ROBBER:
@@ -176,6 +180,10 @@ class GameRoom extends Room<GameState> {
 
       case MESSAGE_PLACE_ROAD:
         PurchaseManager.road(this.state, data, client.sessionId);
+        
+        if (currentPlayer.roadBuildingPhase > 0) {
+          currentPlayer.advanceRoadBuildingPhase();
+        }
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} built a road`
@@ -198,11 +206,30 @@ class GameRoom extends Room<GameState> {
           message: `${currentPlayer.nickname} purchased a development card`
         });
         break;
+
+      case MESSAGE_PLAY_GAME_CARD:
+        const { cardType, cardIndex } = data;
+        GameCardManager.playGameCard(currentPlayer, cardType, cardIndex);
+
+        break;
+
+      case MESSAGE_SELECT_MONOPOLY_RESOURCE:
+        currentPlayer.isDeclaringMonopoly = false;
+
+        const { selectedResource } = data;
+        TradeManager.onMonopoly(this.state, currentPlayer, selectedResource);
+        break;
         
       case MESSAGE_TRADE_ADD_CARD:
       case MESSAGE_TRADE_REMOVE_CARD:
         const { resource } = data;
         TradeManager.onUpdateTrade(this.state, currentPlayer, resource, type === MESSAGE_TRADE_REMOVE_CARD);
+        break;
+
+      case MESSAGE_TRADE_WITH_BANK:
+        const { requestedResource } = data;
+        BankManager.returnToBank(this.state, currentPlayer.tradeCounts);
+        TradeManager.onBankTrade(currentPlayer, requestedResource);
         break;
             
       case MESSAGE_TRADE_INCOMING_RESPONSE:
@@ -215,6 +242,20 @@ class GameRoom extends Room<GameState> {
 
       case MESSAGE_FINISH_TURN:
         TurnManager.finishTurn(this.state, currentPlayer, (broadcastType: string, broadcastMessage: string) => this.broadcastToAll(broadcastType, { message: broadcastMessage }));
+
+        // // In case any player did not pick up his loot - give it to him - @TODO: Disabled in CustomizeRoom soon
+        // Object
+        //   .keys(this.state.players)
+        //   .forEach(sessionId => {
+        //     const player: Player = this.state.players[sessionId];
+
+        //     this.broadcastToAll(MESSAGE_COLLECT_ALL_LOOT, {
+        //       playerName: player.nickname,
+        //       loot: player.availableLoot
+        //     });
+        //     player.onCollectLoot();
+        //   });
+
         break;
 
       case MESSAGE_READY:

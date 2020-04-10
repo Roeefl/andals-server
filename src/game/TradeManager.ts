@@ -1,12 +1,14 @@
-import { ArraySchema } from '@colyseus/schema';
+import { ArraySchema, MapSchema } from '@colyseus/schema';
+
 import GameState from '../game/GameState';
+import BankManager from '../game/BankManager';
+
 import Player from '../schemas/Player';
 
+import { initialResourceCounts, Loot } from '../manifest';
 import {
   MESSAGE_TRADE_REQUEST,
   MESSAGE_TRADE_INCOMING_RESPONSE,
-  MESSAGE_TRADE_ADD_CARD,
-  MESSAGE_TRADE_REMOVE_CARD,
   MESSAGE_TRADE_CONFIRM,
   MESSAGE_TRADE_REFUSE
 } from '../constants';
@@ -84,6 +86,34 @@ class TradeManager {
     otherPlayer.stolenResource(resource);
 
     currentPlayer.allowStealingFrom = new ArraySchema<string>();
+  }
+
+  onMonopoly(state: GameState, monopolyPlayer: Player, resource: string) {
+    // Every player must then give that player all of that type of resource cards in their hand
+    Object
+      .keys(state.players)
+      .filter(sessionId => sessionId !== monopolyPlayer.playerSessionId)
+      .forEach(sessionId => {
+        const otherPlayer: Player = state.players[sessionId];
+
+        const otherPlayerIsGiving: Loot = new MapSchema<Number>({
+          ...initialResourceCounts,
+          [resource]: otherPlayer.resourceCounts[resource]
+        });
+
+        monopolyPlayer.performTrade(otherPlayerIsGiving);
+        otherPlayer.gaveAllOfResourceType(resource);
+      });
+  }
+
+  onBankTrade(currentPlayer: Player, requestedResource: string) {
+    const playerIsReceiving: Loot = new MapSchema<Number>({
+      ...initialResourceCounts,
+      [requestedResource]: 1
+    });
+
+    currentPlayer.performTrade(playerIsReceiving);
+    currentPlayer.resetTradeCounts();
   }
 }
 

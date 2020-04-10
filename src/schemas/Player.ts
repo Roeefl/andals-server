@@ -54,14 +54,23 @@ class Player extends Schema {
   @type([GameCard])
   gameCards: GameCard[];
 
+  @type("boolean")
+  hasPlayedGameCard: boolean = false
+  
   @type({ map: "number" })
   resourceCounts: MapSchema<Number> // Loot
-
+  
   @type("boolean")
   mustDiscardHalfDeck: boolean = false
-
+  
   @type("boolean")
   mustMoveRobber: boolean = false
+  
+  @type("number")
+  roadBuildingPhase: number = 0
+
+  @type("boolean")
+  isDeclaringMonopoly: boolean = false
 
   @type(["string"])
   allowStealingFrom: string[]
@@ -238,6 +247,7 @@ class Player extends Schema {
       acc[name] = this.resourceCounts[name] + this.availableLoot[name];
       return acc;
     }, {} as BuildingCost);
+    
     this.resourceCounts = new MapSchema<Number>({
       ...updatedResourceCounts
     });
@@ -326,6 +336,23 @@ class Player extends Schema {
       ...this.resourceCounts,
       [resource]: this.resourceCounts[resource] - 1
     });
+  }
+
+  advanceRoadBuildingPhase() {
+    this.roadBuildingPhase++;
+
+    if (this.roadBuildingPhase === 3) {
+      this.roadBuildingPhase = 0;
+    }
+  }
+
+  gaveAllOfResourceType(resource: string) {
+    this.resourceCounts = new MapSchema<Number>({
+      ...this.resourceCounts,
+      [resource]: 0
+    });
+
+    this.updateHasResources();
   }
 };
 

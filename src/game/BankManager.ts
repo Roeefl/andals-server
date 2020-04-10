@@ -69,7 +69,7 @@ class BankManager {
     player.onCollectLoot();
   }
 
-  discardToBank(state: GameState, discardedCounts: Loot) {
+  returnToBank(state: GameState, discardedCounts: Loot) {
     const updatedResourceCounts: Loot = resourceCardTypes.reduce((acc, name) => {
       acc[name] = state.resourceCounts[name] + discardedCounts[name];
       return acc;
