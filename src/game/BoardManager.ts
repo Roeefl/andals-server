@@ -10,7 +10,19 @@ import {
   availableInitialHarborTypes, harborIndices,
 } from '../manifest';
 
+const MAX_REROLL_ATTEMPTS = 3;
+
 class BoardManager {
+  hasSameResourceInAdjacentHexes(adjacentHexes: number[][], board: HexTile[], row: number, col: number, resourceType: string) {
+    return adjacentHexes
+      .filter(([hexRow, hexCol]) => hexTileMap[hexRow][hexCol] === TILE_RESOURCE && (hexRow < row || (hexRow === row && hexCol < col)))
+      .map(([hexRow, hexCol]) => {
+        const otherTile: HexTile = board[hexRow * 7 + hexCol];
+        return otherTile.resource === resourceType;
+      })
+      .some(isSameResource => isSameResource);
+  }
+
   initialBoard() {
     // Total of 49 tiles
     const board: HexTile[] = [];
@@ -29,45 +41,53 @@ class BoardManager {
 
     for (let r = 0; r < hexTileMap.length; r++) {
       for (let t = 0; t < hexTileMap[r].length; t++) {
-        const currentTile = hexTileMap[r][t];
+        const currentTileType = hexTileMap[r][t];
 
-        if (currentTile === TILE_SPACER) {
-          const tile = new HexTile(TILE_SPACER, r, t);
-          board.push(tile);
-        } else if (currentTile === TILE_WATER) {
+        let currentTile = null;
+
+        if (currentTileType === TILE_SPACER) {
+          currentTile = new HexTile(TILE_SPACER, r, t);
+        } else if (currentTileType === TILE_WATER) {
           const tileIndex: number = r * 7 + t;
 
           if (harborIndices.includes(tileIndex)) {
-            const randomTypeIndex =  Math.floor(Math.random() * availableHarborTypes.length);
-            const randomType = availableHarborTypes[randomTypeIndex];
+            const randomHarborIndex =  Math.floor(Math.random() * availableHarborTypes.length);
+            const randomHarbor = availableHarborTypes[randomHarborIndex];
 
-            const tile = new HexTile(TILE_WATER, r, t, randomType);
-            board.push(tile);       
-
-            availableHarborTypes.splice(randomTypeIndex, 1);
+            availableHarborTypes.splice(randomHarborIndex, 1);
+            currentTile = new HexTile(TILE_WATER, r, t, randomHarbor);
           } else { // Just water, no harbor
-            const waterTile = new HexTile(TILE_WATER, r, t);
-            board.push(waterTile);  
+            currentTile = new HexTile(TILE_WATER, r, t);
           }
-        } else {
-          // === TILE_RESOURCE
-          const randomTypeIndex = Math.floor(Math.random() * availableTileTypes.length);
-          const randomType = availableTileTypes[randomTypeIndex];
+        } else { // is a resource tile
+          let randomResourceIndex: number = Math.floor(Math.random() * availableTileTypes.length);
+          let randomResource: string = availableTileTypes[randomResourceIndex];
 
-          let tile = null;
-          if (randomType === DESERT) {
-            tile = new HexTile(TILE_RESOURCE, r, t, randomType, 0);
+          if (randomResource === DESERT) {
+            currentTile = new HexTile(TILE_RESOURCE, r, t, DESERT, 0);
           } else {
+            const adjacentHexes = TileManager.hexTileAdjacentHexes(r, t);
+            let isAdjacentToSameResourceHex = this.hasSameResourceInAdjacentHexes(adjacentHexes, board, r, t, randomResource);
+            let currentIteration = 0;
+
+            while (isAdjacentToSameResourceHex && currentIteration <= MAX_REROLL_ATTEMPTS) {
+              randomResourceIndex = Math.floor(Math.random() * availableTileTypes.length);
+              randomResource = availableTileTypes[randomResourceIndex];
+              isAdjacentToSameResourceHex = this.hasSameResourceInAdjacentHexes(adjacentHexes, board, r, t, randomResource);
+              ++currentIteration;
+            }
+            
             const randomValueIndex = Math.floor(Math.random() * availableTileValues.length);
             const randomValue = availableTileValues[randomValueIndex];
 
-            tile = new HexTile(TILE_RESOURCE, r, t, randomType, randomValue);
+            currentTile = new HexTile(TILE_RESOURCE, r, t, randomResource, randomValue);
             availableTileValues.splice(randomValueIndex, 1);
           };
 
-          availableTileTypes.splice(randomTypeIndex, 1);
-          board.push(tile);
+          availableTileTypes.splice(randomResourceIndex, 1);
         }
+
+        board.push(currentTile);
       }
     }
 

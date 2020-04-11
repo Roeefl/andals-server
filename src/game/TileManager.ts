@@ -1,6 +1,16 @@
 import structureTileMap from '../tilemaps/structures';
- 
+import hexTileMap from '../tilemaps/hexes'; 
+
 class TileManager {
+  hexTileAdjacentHexes(row: number, col: number) {
+    // top-left, top-right, left, right, bottom-left, bottom-right
+    return [
+      [row - 1, col - 1], [row - 1, col],
+      [row, col - 1], [row, col + 1],
+      [row + 1, col - 1], [row + 1, col]
+    ].filter(([hexRow, hexCol]) => hexRow >= 0 && hexRow < hexTileMap.length && hexCol >= 0 && hexCol <= hexTileMap[0].length);
+  }
+
   hexTileAdjacentStructures(row: number, col: number) {
     // offset by +2 for EVEN rows only
     const colOffset = row % 2 === 0 ? 2 : 0;
