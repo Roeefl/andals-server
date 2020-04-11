@@ -1,5 +1,4 @@
 import { type, Schema } from '@colyseus/schema';
-// import { TILE_SPACER, LUMBER, BRICK, SHEEP, WHEAT, ORE, DESERT } from '../manifest';
 
 class HexTile extends Schema {
   @type("string")

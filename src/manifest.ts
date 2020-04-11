@@ -5,9 +5,10 @@ export const gameCardTypes: string[] = ['knight', 'victoryPoint', 'roadBuilding'
 export const [CARD_KNIGHT, CARD_VICTORY_POINT, CARD_ROAD_BUILDING, CARD_YEAR_OF_PLENTY, CARD_MONOPOLY] = gameCardTypes;
 
 export const resourceCardTypes = [LUMBER, BRICK, SHEEP, WHEAT, ORE];
+export const harborTypes = [LUMBER, BRICK, SHEEP, WHEAT, ORE, HARBOR_GENERIC];
 
 export const purchaseTypes: string[] = ['road', 'settlement', 'city', 'gameCard'];
-export const [PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_CITY, PURCHASE_CARD] = purchaseTypes;
+export const [PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_CITY, PURCHASE_GAME_CARD] = purchaseTypes;
 
 const tileTypes  = ['resource', 'water', 'spacer'];
 export const [
@@ -71,7 +72,7 @@ export const harborIndices = [
   43, 45
 ];
 
-export const playerColors = ['#5E35B1', '#039BE5', '#FB8C00', '#388E3C', '#FF1744'];
+export const playerColors = ['#5E35B1', '#FF1744', '#FB8C00', '#388E3C', '#039BE5'];
 
 export interface Loot {
   [key: string]: number

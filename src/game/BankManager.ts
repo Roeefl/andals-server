@@ -8,11 +8,12 @@ import {
   resourceCardTypes,
   TILE_RESOURCE,
   DESERT,
-  PURCHASE_CITY,
+  PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_CITY, PURCHASE_GAME_CARD,
   initialResourceCounts,
   Loot,
   AvailableLoot
 } from '../manifest';
+import buildingCosts, { BuildingCost } from '../buildingCosts';
 
 class BankManager {
   setResourcesLoot(state: GameState, diceTotal?: number) {
@@ -48,7 +49,7 @@ class BankManager {
             }
           });
       });
-  
+
     Object
       .keys(state.players)
       .forEach(sessionId => {
@@ -78,6 +79,13 @@ class BankManager {
     state.resourceCounts = new MapSchema<Number>({
       ...updatedResourceCounts
     });
+  }
+
+  onBankPayment(state: GameState, purchaseType: string) {
+    if (!state.isGameStarted) return;
+    
+    const totalPayments: Loot = buildingCosts[purchaseType];
+    this.returnToBank(state, totalPayments);
   }
 }
 

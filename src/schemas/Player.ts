@@ -3,7 +3,7 @@ import GameCard from '../schemas/GameCard';
 import DiceRoll from './DiceRoll';
 import Structure from './Structure';
 import buildingCosts, { BuildingCost } from '../buildingCosts';
-import { purchaseTypes, resourceCardTypes, PURCHASE_SETTLEMENT, PURCHASE_CARD, PURCHASE_CITY, initialResourceCounts, Loot, PURCHASE_ROAD } from '../manifest';
+import { purchaseTypes, resourceCardTypes, harborTypes, PURCHASE_SETTLEMENT, PURCHASE_GAME_CARD, PURCHASE_CITY, initialResourceCounts, Loot, PURCHASE_ROAD } from '../manifest';
 
 interface PlayerOptions {
   nickname: string
@@ -19,6 +19,19 @@ const initialHasResources: HasResources = {
   settlement: false,
   city: false,
   gameCard: false
+};
+
+interface OwnedHarbors {
+  [key: string]: boolean
+};
+
+const initialOwnedHarbors: OwnedHarbors = {
+  harborGeneric: false,
+  lumber: false,
+  sheep: false,
+  brick: false,
+  wheat: false,
+  ore: false
 };
 
 // Four sets of wooden player pieces in four different colors
@@ -75,6 +88,9 @@ class Player extends Schema {
   @type(["string"])
   allowStealingFrom: string[]
 
+  @type({ map: "boolean" })
+  ownedHarbors: OwnedHarbors
+
   @type({ map: "number" })
   availableLoot: MapSchema<Number> // Loot
 
@@ -120,28 +136,37 @@ class Player extends Schema {
     this.isConnected = true;
 
     this.gameCards = new ArraySchema<GameCard>();
+
     
     this.rolls = new ArraySchema<DiceRoll>();
-
+    
     this.color = color;
-
+    
     this.resourceCounts = new MapSchema<Number>({
       ...initialResourceCounts
     });
-
+    
     this.availableLoot = new MapSchema<Number>({
       ...initialResourceCounts
     });
-
+    
     this.tradeCounts = new MapSchema<Number>({
       ...initialResourceCounts
     });
+    
+    this.hasResources = new MapSchema<Boolean>({
+      ...initialHasResources
+    });
+    
+    this.allowStealingFrom = new ArraySchema<string>();
 
     this.hasResources = new MapSchema<Boolean>({
       ...initialHasResources
     });
 
-    this.allowStealingFrom = new ArraySchema<string>();
+    this.ownedHarbors = new MapSchema<Boolean>({
+      ...initialOwnedHarbors
+    });
   }
 
   totalResourceCounts() {
@@ -211,7 +236,7 @@ class Player extends Schema {
       ...updatedCards
     );
 
-    this.onPurchase(PURCHASE_CARD);
+    this.onPurchase(PURCHASE_GAME_CARD);
   }
 
   updateHasResources() {
@@ -353,6 +378,18 @@ class Player extends Schema {
     });
 
     this.updateHasResources();
+  }
+
+  receiveHarborPrivileges(harborType: string) {
+    const updatedHarbors: OwnedHarbors = {
+      ...this.ownedHarbors,
+      [harborType]: true
+    } ;
+
+
+    this.ownedHarbors = new MapSchema<Boolean>({
+      ...updatedHarbors
+    });
   }
 };
 

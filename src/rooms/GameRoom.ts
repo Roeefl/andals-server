@@ -38,7 +38,9 @@ import {
 } from '../constants';
 
 import {
+  PURCHASE_ROAD,
   PURCHASE_SETTLEMENT,
+  PURCHASE_GAME_CARD,
   playerColors
 } from '../manifest';
 // import initialStructureTileMap from '../tilemaps/structures';
@@ -179,7 +181,8 @@ class GameRoom extends Room<GameState> {
         break;
 
       case MESSAGE_PLACE_ROAD:
-        PurchaseManager.road(this.state, data, client.sessionId);
+        PurchaseManager.onPurchaseRoad(this.state, data, client.sessionId);
+        BankManager.onBankPayment(this.state, PURCHASE_ROAD);
         
         if (currentPlayer.roadBuildingPhase > 0) {
           currentPlayer.advanceRoadBuildingPhase();
@@ -192,7 +195,8 @@ class GameRoom extends Room<GameState> {
 
       case MESSAGE_PLACE_STRUCTURE:
         const { structureType = PURCHASE_SETTLEMENT } = data;
-        PurchaseManager.structure(this.state, data, client.sessionId, structureType);
+        PurchaseManager.onPurchaseStructure(this.state, data, client.sessionId, structureType);
+        BankManager.onBankPayment(this.state, structureType);
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} built a ${structureType}`
@@ -200,7 +204,8 @@ class GameRoom extends Room<GameState> {
         break;
 
       case MESSAGE_PURCHASE_GAME_CARD:
-        PurchaseManager.gameCard(this.state, client.sessionId);
+        PurchaseManager.onPurchaseGameCard(this.state, client.sessionId);
+        BankManager.onBankPayment(this.state, PURCHASE_GAME_CARD);
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} purchased a development card`
