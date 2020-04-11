@@ -16,12 +16,18 @@ class TileManager {
     ];
   }
 
-  harborAdjacentStructures(row: number, col: number) {
-    const allAdjacentStructures = this.hexTileAdjacentStructures(row, col);
+  harborAdjacentStructures(ports: number[] = [0, 1], row: number, col: number) {
+    const adjacentStructures = this.hexTileAdjacentStructures(row, col)
+      .filter(([sRow, sCol]) => !!structureTileMap[sRow][sCol]);
+      
+      const [firstPortIndex, secondPortIndex] = ports;
 
-    return allAdjacentStructures
-      .filter(([sRow, sCol]) => !!structureTileMap[sRow][sCol])
-      .slice(0, 2);
+      return adjacentStructures.length > 2
+        ? [
+            adjacentStructures[firstPortIndex],
+            adjacentStructures[secondPortIndex]
+          ]
+        : adjacentStructures;
   }
 }
 
