@@ -1,11 +1,11 @@
-import path from 'path';
-import { createServer } from 'http';
-const serveIndex = require('serve-index');
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
+import { createServer } from 'http';
 import { Server } from 'colyseus';
 import { monitor } from '@colyseus/monitor';
 // import socialRoutes from '@colyseus/social/express';
+const serveIndex = require('serve-index');
 
 import { API } from './src/api';
 import GameRoom from './src/rooms/GameRoom';
@@ -27,11 +27,12 @@ gameServer.define("gameRoom", GameRoom, {
   customOptions: "you can use me on Room#onCreate"
 });
 
-app.use('/', serveIndex(path.join(__dirname, 'static'), { 'icons': true }))
-app.use('/', express.static(path.join(__dirname, 'static')));
-
-const router = express.Router();
 // router.use('/', express.static(frontendDirectory));
+app.use('/', serveIndex(path.join(__dirname, 'static'), { 'icons': true }))
+
+const monitorPath = path.join(__dirname, 'static');
+const router = express.Router();
+router.use('/', express.static(monitorPath));
 router.use('/api', API());
 
 /**
