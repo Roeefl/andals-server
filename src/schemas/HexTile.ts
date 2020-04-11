@@ -1,4 +1,5 @@
 import { type, Schema } from '@colyseus/schema';
+import TileManager from '../game/TileManager';
 
 class HexTile extends Schema {
   @type("string")

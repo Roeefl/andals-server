@@ -34,7 +34,7 @@ class PurchaseManager {
      state.board
       .filter(({ type, resource }) => type === TILE_WATER && !!resource)
       .forEach(({ resource, row: tileRow, col: tileCol }) => {
-        const adjacentStructures = TileManager.hexTileAdjacentStructures(tileRow, tileCol);
+        const adjacentStructures = TileManager.harborAdjacentStructures(tileRow, tileCol);
 
         if (adjacentStructures.some(([sRow, sCol]) => sRow === row && sCol === col)) {
           owner.receiveHarborPrivileges(resource);

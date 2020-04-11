@@ -43,7 +43,6 @@ import {
   PURCHASE_GAME_CARD,
   playerColors
 } from '../manifest';
-// import initialStructureTileMap from '../tilemaps/structures';
 
 const maxReconnectionTime = 1; // 60;
 
