@@ -27,6 +27,7 @@ import {
   MESSAGE_SELECT_MONOPOLY_RESOURCE,
   MESSAGE_MOVE_ROBBER,
   MESSAGE_STEAL_CARD,
+  MESSAGE_GAME_VICTORY,
 
   MESSAGE_TRADE_WITH_BANK,
   MESSAGE_TRADE_REQUEST,
@@ -196,6 +197,7 @@ class GameRoom extends Room<GameState> {
         const { structureType = PURCHASE_SETTLEMENT } = data;
         PurchaseManager.onPurchaseStructure(this.state, data, client.sessionId, structureType);
         BankManager.onBankPayment(this.state, structureType);
+        this.evaluateVictoryStatus();
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} built a ${structureType}`
@@ -205,6 +207,7 @@ class GameRoom extends Room<GameState> {
       case MESSAGE_PURCHASE_GAME_CARD:
         PurchaseManager.onPurchaseGameCard(this.state, client.sessionId);
         BankManager.onBankPayment(this.state, PURCHASE_GAME_CARD);
+        this.evaluateVictoryStatus();
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} purchased a development card`
@@ -214,6 +217,7 @@ class GameRoom extends Room<GameState> {
       case MESSAGE_PLAY_GAME_CARD:
         const { cardType, cardIndex } = data;
         GameCardManager.playGameCard(currentPlayer, cardType, cardIndex);
+        this.evaluateVictoryStatus();
 
         break;
 
@@ -314,6 +318,20 @@ class GameRoom extends Room<GameState> {
   onDispose() {
     console.info("GameRoom -> onDispose -> onDispose");
   };
+
+  evaluateVictoryStatus() {
+    Object
+      .keys(this.state.players)
+      .forEach(sessionId => {
+        const player: Player = this.state.players[sessionId];
+
+        if (player.victoryPoints >= 10) {
+          this.broadcastToAll(MESSAGE_GAME_VICTORY, {
+            playerName: player.nickname
+          });
+        }
+      });
+  }
 };
 
 export default GameRoom;

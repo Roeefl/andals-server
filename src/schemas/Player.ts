@@ -2,8 +2,16 @@ import { type, Schema, ArraySchema, MapSchema } from '@colyseus/schema';
 import GameCard from '../schemas/GameCard';
 import DiceRoll from './DiceRoll';
 import Structure from './Structure';
+
 import buildingCosts, { BuildingCost } from '../buildingCosts';
-import { purchaseTypes, resourceCardTypes, CARD_KNIGHT, PURCHASE_SETTLEMENT, PURCHASE_GAME_CARD, PURCHASE_CITY, initialResourceCounts, Loot, PURCHASE_ROAD } from '../manifest';
+import {
+  purchaseTypes,
+  resourceCardTypes,
+  CARD_KNIGHT, CARD_VICTORY_POINT,
+  PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_GAME_CARD, PURCHASE_CITY,
+  initialResourceCounts,
+  Loot
+} from '../manifest';
 
 interface PlayerOptions {
   nickname: string
@@ -171,6 +179,14 @@ class Player extends Schema {
 
   get knights() {
     return this.gameCards.filter(({ type }) => type === CARD_KNIGHT).length;
+  }
+
+  get victoryPoints() {
+    return (
+      this.settlements +
+      (this.cities * 2) +
+      this.gameCards.filter(({ type }) => type === CARD_VICTORY_POINT).length
+    );
   }
 
   totalResourceCounts() {
