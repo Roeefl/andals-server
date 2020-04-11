@@ -8,7 +8,11 @@ import Road from '../schemas/Road';
 import Player from '../schemas/Player';
 import GameCard from '../schemas/GameCard';
 
-import { PURCHASE_ROAD, PURCHASE_SETTLEMENT, TILE_WATER } from '../manifest';
+import {
+  PURCHASE_ROAD, PURCHASE_SETTLEMENT,
+  TILE_WATER,
+  CARD_KNIGHT, CARD_VICTORY_POINT, CARD_ROAD_BUILDING, CARD_YEAR_OF_PLENTY, CARD_MONOPOLY 
+} from '../manifest';
 
 class PurchaseManager {
   onPurchaseStructure(state: GameState, data: any, ownerId: string, structureType: string = PURCHASE_SETTLEMENT) {
@@ -75,6 +79,35 @@ class PurchaseManager {
     state.gameCards = new ArraySchema<GameCard>(
       ...updatedGameCards
     );
+
+    if (selectedCard.type === CARD_KNIGHT) this.onPurchaseKnight(state, owner);
+  }
+
+  // hasLargestArmy-related logic
+  onPurchaseKnight(state: GameState, owner: Player) {
+    if (owner.knights < 3) return;
+
+    const otherPlayerKnights = Object
+      .values(state.players)
+      .map(player => player.knights);
+    
+    // If this player is first to reach 3 - give him hasLargestArmy, others already have false
+    if (otherPlayerKnights.every(count => count < 3)) {
+      owner.hasLargestArmy = true;
+      return;
+    }
+
+    // If hasLargestArmy was already given - but this player surpassed everybody else - take away from everybody, then give to him
+    if (otherPlayerKnights.every(count => count < owner.knights)) {
+      Object
+        .keys(state.players)
+        .forEach(sessionId => {
+          const player: Player = state.players[sessionId];
+          player.hasLargestArmy = false;
+        });
+
+      owner.hasLargestArmy = true;
+    }
   }
 }
 

@@ -1,5 +1,4 @@
 import { type, Schema } from '@colyseus/schema';
-import { CARD_KNIGHT, CARD_VICTORY_POINT, CARD_ROAD_BUILDING, CARD_YEAR_OF_PLENTY, CARD_MONOPOLY } from '../manifest';
 
 interface cardManifest {
   title: string

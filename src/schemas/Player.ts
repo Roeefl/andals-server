@@ -3,7 +3,7 @@ import GameCard from '../schemas/GameCard';
 import DiceRoll from './DiceRoll';
 import Structure from './Structure';
 import buildingCosts, { BuildingCost } from '../buildingCosts';
-import { purchaseTypes, resourceCardTypes, harborTypes, PURCHASE_SETTLEMENT, PURCHASE_GAME_CARD, PURCHASE_CITY, initialResourceCounts, Loot, PURCHASE_ROAD } from '../manifest';
+import { purchaseTypes, resourceCardTypes, CARD_KNIGHT, PURCHASE_SETTLEMENT, PURCHASE_GAME_CARD, PURCHASE_CITY, initialResourceCounts, Loot, PURCHASE_ROAD } from '../manifest';
 
 interface PlayerOptions {
   nickname: string
@@ -167,6 +167,10 @@ class Player extends Schema {
     this.ownedHarbors = new MapSchema<Boolean>({
       ...initialOwnedHarbors
     });
+  }
+
+  get knights() {
+    return this.gameCards.filter(({ type }) => type === CARD_KNIGHT).length;
   }
 
   totalResourceCounts() {
