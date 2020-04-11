@@ -217,6 +217,7 @@ class GameRoom extends Room<GameState> {
       case MESSAGE_PLAY_GAME_CARD:
         const { cardType, cardIndex } = data;
         GameCardManager.playGameCard(currentPlayer, cardType, cardIndex);
+        this.onPlayKnightCard(currentPlayer);
         this.evaluateVictoryStatus();
 
         break;
@@ -331,6 +332,35 @@ class GameRoom extends Room<GameState> {
           });
         }
       });
+  }
+
+  onPlayKnightCard(currentPlayer: Player) {
+    if (currentPlayer.knights < 3) return;
+
+    const otherPlayerKnights = Object
+      .keys(this.state.players)
+      .map(sessionId => {
+        const player: Player = this.state.players[sessionId];
+        return player.knights;
+      });
+
+    // If this player is first to reach 3 - give him hasLargestArmy, others already have false
+    if (otherPlayerKnights.every(knights => knights < 3)) {
+      currentPlayer.hasLargestArmy = true;
+      return;
+    }
+
+    // If hasLargestArmy was already given - but this player surpassed everybody else - take away from everybody, then give to him
+    if (otherPlayerKnights.every(knights => knights < currentPlayer.knights)) {
+      Object
+        .keys(this.state.players)
+        .forEach(sessionId => {
+          const player: Player = this.state.players[sessionId];
+          player.hasLargestArmy = false;
+        });
+
+      currentPlayer.hasLargestArmy = true;
+    }
   }
 };
 
