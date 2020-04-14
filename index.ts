@@ -10,7 +10,7 @@ const serveIndex = require('serve-index');
 import { API } from './src/api';
 import GameRoom from './src/rooms/GameRoom';
 
-const port = Number(process.env.PORT || 2567);
+const port = Number(process.env.PORT || 2568);
 const app = express();
 
 app.use(cors());
