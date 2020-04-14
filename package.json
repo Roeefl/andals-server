@@ -14,12 +14,14 @@
   "dependencies": {
     "@colyseus/monitor": "^0.11.0",
     "@colyseus/social": "^0.10.2",
+    "@types/lodash": "^4.14.149",
     "@types/serve-index": "^1.7.30",
     "colyseus": "^0.12.0",
     "concurrently": "^5.1.0",
     "cors": "^2.8.5",
     "express": "^4.16.4",
     "express-jwt": "^5.3.1",
+    "lodash": "^4.17.15",
     "serve-index": "^1.9.1"
   },
   "devDependencies": {

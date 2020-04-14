@@ -18,7 +18,7 @@ export const [
 ] = tileTypes;
 
 // 19 terrain hexes (4 lumber, 4 sheep, 4 wheat, 3 brick, 3 ore, and 1 desert)
-export const availableInitialTileTypes: string[] = [
+export const boardHextiles: string[] = [
   ...new Array(4).fill(LUMBER),
   ...new Array(4).fill(SHEEP),
   ...new Array(4).fill(WHEAT),
@@ -28,7 +28,7 @@ export const availableInitialTileTypes: string[] = [
 ];
 
 // 18 circular number tokens
-export const availableInitialTileValues: number[] = [
+export const boardHextileValues: number[] = [
   2,
   3, 3,
   4, 4,
@@ -45,7 +45,7 @@ export const availableInitialTileValues: number[] = [
 // 14 Knight/Soldier Cards
 // 5 Victory Point Cards
 // 6 Progress Cards (2 each)
-export const availableInitialGameCards: string[] = [
+export const boardGameCards: string[] = [
   ...new Array(14).fill(CARD_KNIGHT),
   ...new Array(5).fill(CARD_VICTORY_POINT),
   ...new Array(2).fill(CARD_ROAD_BUILDING),
@@ -53,7 +53,7 @@ export const availableInitialGameCards: string[] = [
   ...new Array(2).fill(CARD_MONOPOLY)
 ];
 
-export const availableInitialHarborTypes: string[] = [
+export const boardHarbors: string[] = [
   ...new Array(4).fill(HARBOR_GENERIC),
   SHEEP,
   LUMBER,

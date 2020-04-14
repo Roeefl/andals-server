@@ -1,31 +1,19 @@
+import { shuffle } from 'lodash';
+
 import GameCard from '../schemas/GameCard';
 import Player from '../schemas/Player';
 
 import {
-  availableInitialGameCards, gameCardTypes,
+  boardGameCards, gameCardTypes,
   CARD_KNIGHT, CARD_ROAD_BUILDING, CARD_YEAR_OF_PLENTY, CARD_MONOPOLY
 } from '../manifest';
 
 class GameCardManager {
   initialGameCards() {
-    const cards = [];
-  
-    let availableGameCards: string[] = [
-      ...availableInitialGameCards
-    ];
-  
-    for (let c = 0; c < availableInitialGameCards.length; c++) {
-      const randomCardIndex = Math.floor(Math.random() * availableGameCards.length);
-      const randomCardType = availableGameCards[randomCardIndex];
-  
-      const card = new GameCard(randomCardType);
-  
-      cards.push(card);
-  
-      availableGameCards.splice(randomCardIndex, 1);
-    }
-  
-    return cards;
+    const shuffledCards: string[] = shuffle(boardGameCards);
+    
+    return shuffledCards
+      .map(card => new GameCard(card))
   }
 
   playGameCard(player: Player, cardType: String, cardIndex: number) {

@@ -1,3 +1,5 @@
+import { shuffle } from 'lodash';
+
 import GameState from '../game/GameState';
 import HexTile from '../schemas/HexTile';
 import hexTileMap from '../tilemaps/hexes';
@@ -6,11 +8,9 @@ import TileManager from './TileManager';
 import {
   TILE_RESOURCE, TILE_WATER, TILE_SPACER,
   DESERT,
-  availableInitialTileTypes, availableInitialTileValues,
-  availableInitialHarborTypes, harborIndices,
+  boardHextiles, boardHextileValues,
+  boardHarbors, harborIndices,
 } from '../manifest';
-
-const MAX_REROLL_ATTEMPTS = 3;
 
 class BoardManager {
   hasSameResourceInAdjacentHexes(adjacentHexes: number[][], board: HexTile[], row: number, col: number, resourceType: string) {
@@ -23,21 +23,21 @@ class BoardManager {
       .some(isSameResource => isSameResource);
   }
 
+  /**
+   * Generates a board array with a total of 49 hex tiles
+   * @memberof BoardManager
+  **/
   initialBoard() {
-    // Total of 49 tiles
     const board: HexTile[] = [];
 
-    let availableTileTypes: string[] = [
-      ...availableInitialTileTypes
-    ];
+    const hextiles: string[] = shuffle(boardHextiles);
+    let hexTileIndex: number = 0;
 
-    let availableTileValues: number[] = [
-      ...availableInitialTileValues
-    ];
+    const hextileValues: number[] = shuffle(boardHextileValues);
+    let hextileValueIndex: number = 0;
 
-    let availableHarborTypes: string[] = [
-      ...availableInitialHarborTypes
-    ];
+    const harbors: string[] = shuffle(boardHarbors);
+    let harborIndex: number = 0;
 
     for (let r = 0; r < hexTileMap.length; r++) {
       for (let t = 0; t < hexTileMap[r].length; t++) {
@@ -51,45 +51,38 @@ class BoardManager {
           const tileIndex: number = r * 7 + t;
 
           if (harborIndices.includes(tileIndex)) {
-            const randomHarborIndex =  Math.floor(Math.random() * availableHarborTypes.length);
-            const randomHarbor = availableHarborTypes[randomHarborIndex];
+            const nextHarbor = harbors[harborIndex];
+            harborIndex++;
 
-            availableHarborTypes.splice(randomHarborIndex, 1);
-            currentTile = new HexTile(TILE_WATER, r, t, randomHarbor);
-          } else { // Just water, no harbor
+            currentTile = new HexTile(TILE_WATER, r, t, nextHarbor);
+          } else {
+            // Just water, no harbor
             currentTile = new HexTile(TILE_WATER, r, t);
           }
-        } else { // is a resource tile
-          let randomResourceIndex: number = Math.floor(Math.random() * availableTileTypes.length);
-          let randomResource: string = availableTileTypes[randomResourceIndex];
+        } else {
+          // is a resource tile
+          const nextResource: string = hextiles[hexTileIndex];
+          hexTileIndex++;
 
-          if (randomResource === DESERT) {
-            currentTile = new HexTile(TILE_RESOURCE, r, t, DESERT, 0);
+          if (nextResource === DESERT) {
+            currentTile = new HexTile(TILE_RESOURCE, r, t, DESERT);
           } else {
-            const adjacentHexes = TileManager.hexTileAdjacentHexes(r, t);
-            let isAdjacentToSameResourceHex = this.hasSameResourceInAdjacentHexes(adjacentHexes, board, r, t, randomResource);
-            let currentIteration = 0;
-
-            while (isAdjacentToSameResourceHex && currentIteration <= MAX_REROLL_ATTEMPTS) {
-              randomResourceIndex = Math.floor(Math.random() * availableTileTypes.length);
-              randomResource = availableTileTypes[randomResourceIndex];
-              isAdjacentToSameResourceHex = this.hasSameResourceInAdjacentHexes(adjacentHexes, board, r, t, randomResource);
-              ++currentIteration;
-            }
+            // const adjacentHexes = TileManager.hexTileAdjacentHexes(r, t);
+            // let isAdjacentToSameResourceHex = this.hasSameResourceInAdjacentHexes(adjacentHexes, board, r, t, nextResource);
+            // while (isAdjacentToSameResourceHex) {
+            //   nextResource = hextiles[hexTileIndex];
+            //   isAdjacentToSameResourceHex = this.hasSameResourceInAdjacentHexes(adjacentHexes, board, r, t, nextResource);
+            // }
             
-            const randomValueIndex = Math.floor(Math.random() * availableTileValues.length);
-            const randomValue = availableTileValues[randomValueIndex];
-
-            currentTile = new HexTile(TILE_RESOURCE, r, t, randomResource, randomValue);
-            availableTileValues.splice(randomValueIndex, 1);
+            const nextValue = hextileValues[hextileValueIndex];
+            hextileValueIndex++;
+            currentTile = new HexTile(TILE_RESOURCE, r, t, nextResource, nextValue);
           };
-
-          availableTileTypes.splice(randomResourceIndex, 1);
         }
 
         board.push(currentTile);
       }
-    }
+    };
 
     return board;
   }
