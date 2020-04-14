@@ -1,6 +1,7 @@
 import { ArraySchema } from '@colyseus/schema';
 import { Room, Client } from 'colyseus';
 import Player from '../schemas/Player';
+import GameBot from '../schemas/GameBot';
 
 import GameState from '../game/GameState';
 import BoardManager from '../game/BoardManager';
@@ -48,22 +49,61 @@ import {
 const maxReconnectionTime = 1; // 60;
 
 class GameRoom extends Room<GameState> {
-  onCreate(options: any) {
-    console.info("GameRoom -> onCreate -> options", options);
-    const { roomTitle = 'Firstmen.io Game Room', maxPlayers = 4 } = options;
-
-    const initialBoard = BoardManager.initialBoard();
-    const initialGameCards = GameCardManager.initialGameCards();
-    
-    const gameState = new GameState(roomTitle, maxPlayers, initialBoard, initialGameCards);
-    this.setState(gameState);
-  };
-
   get activeClients() {
     return Object
       .keys(this.state.players)
       .length;
   }
+
+  get allPlayers() {
+    const players: Player[] = Object.values(this.state.players);
+    return players; 
+  }
+
+  get allBots() {
+    return Object
+      .values(this.state.players)
+      .filter(player => player.isBot);
+  }
+
+  get currentPlayer() {
+    const { currentTurn } = this.state;
+    return this.allPlayers[currentTurn];
+  }
+
+  get isCurrentPlayerBot() {
+    const { withBots } = this.state;
+    if (!withBots) return false;
+    
+    return this.currentPlayer.isBot;
+  }
+
+  onCreate(options: any) {
+    console.info("GameRoom | onCreate | options: ", options);
+
+    const {
+      roomTitle = 'Firstmen.io Game Room',
+      maxPlayers = 4,
+      playVsBots = false
+    } = options;
+
+    const initialBoard = BoardManager.initialBoard();
+    const initialGameCards = GameCardManager.initialGameCards();
+    
+    const gameState = new GameState(roomTitle, maxPlayers, initialBoard, initialGameCards, playVsBots);
+    this.setState(gameState);
+
+    if (playVsBots) {
+      for (let b = 1; b < maxPlayers; b++) {
+        const color = playerColors[this.activeClients];
+        const addedBot = new GameBot(color, this.activeClients);
+        
+        this.state.players[addedBot.playerSessionId] = addedBot;
+        this.onPlayerReady(addedBot);
+      }
+      this.lock();
+    }
+  };
 
   broadcastToAll(type: string, data: Object = {}) {
     this.broadcast({
@@ -75,7 +115,7 @@ class GameRoom extends Room<GameState> {
 
   onJoin(client: Client, options: any) {
     const color = playerColors[this.activeClients];
-    const addedPlayer = new Player(client.sessionId, options, color);
+    const addedPlayer = new Player(client.sessionId, options, color, this.activeClients);
     
     this.state.players[client.sessionId] = addedPlayer;
     
@@ -116,18 +156,17 @@ class GameRoom extends Room<GameState> {
   };
 
   onMessage(client: Client, data: any) {
-    const { sessionId = '' } = client;
-
-    const {
-      type = MESSAGE_GAME_ACTION,
-      message = ''
-    } = data;
-
+    const { type = MESSAGE_GAME_ACTION } = data;
     const currentPlayer: Player = this.state.players[client.sessionId];
 
+    this.onGameAction(currentPlayer, type, data);
+  };
+
+  async onGameAction(currentPlayer: Player, type: string, data: any = {}) {
     switch (type) {
       case MESSAGE_CHAT:
-        this.onChatMessage(currentPlayer.nickname ,sessionId, message);
+        const { message = ' ' } = data;
+        this.onChatMessage(currentPlayer, message);
         break;
 
       case MESSAGE_ROLL_DICE:
@@ -138,6 +177,10 @@ class GameRoom extends Room<GameState> {
           playerName: currentPlayer.nickname,
           dice
         });
+        
+        if (this.state.isGameStarted)
+          this.allBotsCollectLoot();
+          
         break;
 
       case MESSAGE_COLLECT_ALL_LOOT:
@@ -181,7 +224,7 @@ class GameRoom extends Room<GameState> {
         break;
 
       case MESSAGE_PLACE_ROAD:
-        PurchaseManager.onPurchaseRoad(this.state, data, client.sessionId);
+        PurchaseManager.onPurchaseRoad(this.state, data, currentPlayer.playerSessionId);
         BankManager.onBankPayment(this.state, PURCHASE_ROAD);
         
         if (currentPlayer.roadBuildingPhase > 0) {
@@ -195,7 +238,7 @@ class GameRoom extends Room<GameState> {
 
       case MESSAGE_PLACE_STRUCTURE:
         const { structureType = PURCHASE_SETTLEMENT } = data;
-        PurchaseManager.onPurchaseStructure(this.state, data, client.sessionId, structureType);
+        PurchaseManager.onPurchaseStructure(this.state, data, currentPlayer.playerSessionId, structureType);
         BankManager.onBankPayment(this.state, structureType);
         this.evaluateVictoryStatus();
 
@@ -205,7 +248,7 @@ class GameRoom extends Room<GameState> {
         break;
 
       case MESSAGE_PURCHASE_GAME_CARD:
-        PurchaseManager.onPurchaseGameCard(this.state, client.sessionId);
+        PurchaseManager.onPurchaseGameCard(this.state, currentPlayer.playerSessionId);
         BankManager.onBankPayment(this.state, PURCHASE_GAME_CARD);
         this.evaluateVictoryStatus();
 
@@ -252,6 +295,10 @@ class GameRoom extends Room<GameState> {
       case MESSAGE_FINISH_TURN:
         TurnManager.finishTurn(this.state, currentPlayer, (broadcastType: string, broadcastMessage: string) => this.broadcastToAll(broadcastType, { message: broadcastMessage }));
 
+        if (this.isCurrentPlayerBot) {
+          await this.advanceBot(this.currentPlayer);
+        }
+
         // // In case any player did not pick up his loot - give it to him - @TODO: Disabled in CustomizeRoom soon
         // Object
         //   .keys(this.state.players)
@@ -268,52 +315,96 @@ class GameRoom extends Room<GameState> {
         break;
 
       case MESSAGE_READY:
-        this.onPlayerReady(client, currentPlayer);
+        this.onPlayerReady(currentPlayer);
         break;
 
       default:
         break;
     }
-  };
+  }
 
-  onChatMessage(sender: string, senderSessionId: string, message: string) {
+  async advanceBot(currentBot: Player) {
+    if (this.state.isSetupPhase) {
+      const structure = await GameBot.placeSettlement(this.state, currentBot.playerSessionId);
+      this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, structure);
+
+      const road = await GameBot.placeRoad(this.state, currentBot);
+      this.onGameAction(currentBot, MESSAGE_PLACE_ROAD, road);
+
+      this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
+
+      // end of setup phase - all bots need to collect game-starting loot
+      if (this.state.setupPhaseTurns === this.state.maxClients * 2 - 1) {
+        this.allBotsCollectLoot();
+      }
+      return;
+    }
+
+    const botDice: number[] = await GameBot.rollDice();
+    this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
+
+    if (this.state.isTurnOrderPhase) {
+      this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
+      return;
+    }
+  }
+
+  allBotsCollectLoot() {
+    const allBots: GameBot[] = this.allBots;
+    allBots.forEach(bot => this.onGameAction(bot, MESSAGE_COLLECT_ALL_LOOT));
+  }
+
+  onChatMessage(sender: Player, message: string) {
     this.broadcastToAll(MESSAGE_CHAT, {
-      sender,
-      senderSessionId,
+      sender: sender.nickname,
+      senderSessionId: sender.playerSessionId,
       message
     });
   }
 
-  onPlayerReady(client: Client, player: Player) {
+  async onPlayerReady(player: Player) {
     player.isReady = !player.isReady;
 
     this.broadcast({
       type: MESSAGE_GAME_LOG,
       sender: this.state.roomTitle,
       message: `${player.nickname} is ${player.isReady ? '' : 'not'} ready`
-    }, {
-      except: client
+    });
+    // }, {
+      // except: client
+    // });
+
+    if (this.activeClients < this.state.maxClients) return;
+
+    const isAllReady = Object
+      .values(this.state.players)
+      .every(playerData => playerData.isReady);
+      
+    if (!isAllReady) return;
+
+    // All players are ready - initialize turn Order phase
+    this.broadcastToAll(MESSAGE_GAME_LOG, {
+      message: 'All Players Ready'
     });
 
-    if (this.activeClients >= this.state.maxClients) {
-      const isAllReady = Object
-        .values(this.state.players)
-        .every(playerData => playerData.isReady);
-        
-      if (isAllReady) {
-        this.state.isGameReady = true;
-        this.state.isTurnOrderPhase = true;
-        this.state.currentTurn = 0;
+    this.broadcastToAll(MESSAGE_GAME_LOG, {
+      message: 'Starting turn order determination phase'
+    });
 
-        this.broadcastToAll(MESSAGE_GAME_LOG, {
-          message: 'All Players Ready'
-        });
+    this.state.isGameReady = true;
+    this.state.isTurnOrderPhase = true;
+    this.state.currentTurn = 0;
 
-        this.broadcastToAll(MESSAGE_GAME_LOG, {
-          message: 'Starting turn order determination phase'
-        });
-      }
-    }
+    if (!this.state.withBots) return;
+
+    // Game has bots
+    const bots: GameBot[] = this.allBots;
+    if (!bots.length) return;
+
+    const [firstBot] = bots;
+    if (firstBot.playerIndex !== 0) return;
+
+    await this.advanceBot(firstBot);
   }
 
   onDispose() {
