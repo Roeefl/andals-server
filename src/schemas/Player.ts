@@ -13,9 +13,9 @@ import {
   Loot
 } from '../manifest';
 
-interface PlayerOptions {
+export interface PlayerOptions {
   nickname: string
-  color: string
+  color?: string
 };
 
 interface HasResources {
@@ -48,6 +48,12 @@ class Player extends Schema {
   @type("string")
   playerSessionId: string
 
+  @type("boolean")
+  isBot: boolean
+
+  @type("number")
+  playerIndex: number
+
   @type("string")
   nickname: string
 
@@ -62,6 +68,9 @@ class Player extends Schema {
 
   @type("boolean")
   isReady: boolean = false;
+
+  @type("number")
+  victoryPoints: number = 0;
 
   @type("number")
   settlements: number = 5;
@@ -129,22 +138,22 @@ class Player extends Schema {
   @type(Structure)
   lastStructureBuilt: Structure | null = null;
 
-  constructor(sessionId: string, options: PlayerOptions, color: string) {
+  constructor(sessionId: string, options: PlayerOptions, color: string, playerIndex: number) {
     super();
     
     const { nickname = 'John Doe' } = options;
-      // Disabled until enabling color distinction between players
-      // color = '#214013'
+    // Disabled until enabling color distinction between players
+    // color = '#214013'
     // } = options;
     
-    const randomInt = Math.floor(Math.random() * 9999);
-    this.nickname = `${nickname} ${randomInt}`;
+    // const randomInt = Math.floor(Math.random() * 9999);
+    this.nickname = nickname;
 
     this.playerSessionId = sessionId;
+    this.playerIndex = playerIndex;
     this.isConnected = true;
 
     this.gameCards = new ArraySchema<GameCard>();
-
     
     this.rolls = new ArraySchema<DiceRoll>();
     
@@ -175,18 +184,12 @@ class Player extends Schema {
     this.ownedHarbors = new MapSchema<Boolean>({
       ...initialOwnedHarbors
     });
+
+    this.isBot = false;
   }
 
   get knights() {
     return this.gameCards.filter(({ type }) => type === CARD_KNIGHT).length;
-  }
-
-  get victoryPoints() {
-    return (
-      this.settlements +
-      (this.cities * 2) +
-      this.gameCards.filter(({ type }) => type === CARD_VICTORY_POINT).length
-    );
   }
 
   totalResourceCounts() {
@@ -208,8 +211,10 @@ class Player extends Schema {
       this.roads--;
     } else if (type === PURCHASE_SETTLEMENT) {
       this.settlements--;
+      this.victoryPoints++;
     } else if (type === PURCHASE_CITY) {
       this.cities--;
+      this.victoryPoints++;
     }
 
     if (isSetupPhase) {
@@ -257,6 +262,9 @@ class Player extends Schema {
     );
 
     this.onPurchase(PURCHASE_GAME_CARD);
+
+    if (purchasedCard.type = CARD_VICTORY_POINT)
+      this.victoryPoints++;
   }
 
   updateHasResources() {
