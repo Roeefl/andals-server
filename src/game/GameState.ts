@@ -13,6 +13,9 @@ class GameState extends Schema {
   @type("number")
   maxClients: number
 
+  @type("boolean")
+  withBots: boolean
+
   @type("string")
   roomTitle: string
 
@@ -70,7 +73,7 @@ class GameState extends Schema {
   @type(["number"])
   ports: ArraySchema<number>
 
-  constructor(roomTitle: string, maxPlayers: number, board: HexTile[], gameCards: GameCard[]) {
+  constructor(roomTitle: string, maxPlayers: number, board: HexTile[], gameCards: GameCard[], withBots: boolean = false) {
     super();
 
     this.roomTitle = roomTitle;
@@ -93,6 +96,7 @@ class GameState extends Schema {
     this.structures = new ArraySchema<Structure>();
 
     this.maxClients = maxPlayers;
+    this.withBots = withBots;
 
     const randomPortIndices: number[] = [1, Math.floor(Math.random() * 2) * 2]
     this.ports = new ArraySchema<number>(

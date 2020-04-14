@@ -75,7 +75,6 @@ class TurnManager {
         // END OF SETUP PHASE
         state.currentTurn = state.roundStarter;
         state.isSetupPhase = false;
-
         state.isGameStarted = true;
 
         // initializeFirstRoundStart
