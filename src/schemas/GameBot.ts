@@ -3,13 +3,17 @@ const delay = require('delay');
 
 import GameState from '../game/GameState';
 import Player, { PlayerOptions } from './Player';
-import TileManager, { ValidStructurePosition } from '../game/TileManager';
+import Structure from './Structure';
+import TileManager, { ValidStructurePosition, ValidHextile } from '../game/TileManager';
 import { generateSessionId } from '../utils/sessionId';
 
 import {
   PURCHASE_ROAD,
   PURCHASE_SETTLEMENT,
-  PURCHASE_GAME_CARD
+  PURCHASE_GAME_CARD,
+  PURCHASE_CITY,
+  resourceCardTypes, Loot,
+  LUMBER
 } from '../manifest';
 
 class GameBot extends Player {
@@ -38,7 +42,7 @@ class GameBot extends Player {
     ];
   }
 
-  static async placeSettlement(state: GameState, botSessionId: string) {
+  static async validSettlement(state: GameState, botSessionId: string) {
     await delay(1500);
 
     const validSettlements: ValidStructurePosition[] = TileManager.validSettlements(state, botSessionId);
@@ -52,7 +56,7 @@ class GameBot extends Player {
     };
   }
 
-  static async placeRoad(state: GameState, currentBot: Player) {
+  static async validRoad(state: GameState, currentBot: Player) {
     await delay(1500);
 
     const validRoads: ValidStructurePosition[] = TileManager.validRoads(state, currentBot);
@@ -66,32 +70,90 @@ class GameBot extends Player {
     };
   }
 
-  discardHalfDeck() {
+  static async validCity(state: GameState, botSessionId: string) {
+    await delay(1500);
 
+    const validCities: Structure[] = state.structures
+      .filter(structure => !!structure && structure.ownerId === botSessionId);
+
+    if (!validCities.length) return null;
+
+    const randomIndex = Math.floor(Math.random() * validCities.length);
+    const city: Structure = validCities[randomIndex];
+
+    return {
+      structureType: PURCHASE_CITY,
+      row: city.row,
+      col: city.col
+    };
   }
 
-  moveRobber() {
+  static async desiredRobberTile(state: GameState, botSessionId: string) {
+    await delay(1500);
 
+    const { row, col } = TileManager.bestRobberHextile(state, botSessionId);
+    return row * 7 + col;
   }
 
-  stealCard() {
+  stealCard(state: GameState) {
+    const randomIndex = Math.floor(Math.random() * this.allowStealingFrom.length);
+    const stealFrom: string = this.allowStealingFrom[randomIndex];
 
+    const owner: Player = state.players[stealFrom];
+    
+    const validResources = Object
+      .entries(owner.resourceCounts)
+      .filter(([resource, value]) => value > 0);
+
+    const randomResourceIndex = Math.floor(Math.random() * validResources.length);
+    const [resource, value] = validResources[randomResourceIndex];
+    
+    return {
+      stealFrom,
+      resource
+    };
   }
 
-  purchaseCard() {
-
+  discardedCounts() {
+    return resourceCardTypes.reduce((acc, name, index) => {
+      const methodName = index % 2 === 0 ? 'floor' : 'ceil';
+      acc[name] = Math[methodName](this.resourceCounts[name] / 2);
+      return acc;
+    }, {} as Loot);
   }
-
+  
+  // @TODO: sometime
   playCard() {
 
   }
 
-  acceptTrade() {
+  bestResource(resourceCounts: Loot) {
+    const highestResource = {
+      resource: LUMBER,
+      value: 0
+    };
 
+    Object
+      .entries(resourceCounts)
+      .forEach(([resource, value]) => {
+        if (value > highestResource.value) {
+          highestResource.resource = resource;
+          highestResource.value = value;
+        }
+      });
+
+    if (!highestResource.value) return null;
+    return highestResource;
   }
 
-  adjustTrade() {
-    
+  async bestAddedTradeResource() {
+    await delay(500);
+    return this.bestResource(this.resourceCounts);
+  }
+
+  async bestRemovedTradeResource() {
+    await delay(500);
+    return this.bestResource(this.tradeCounts);
   }
 };
 

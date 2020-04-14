@@ -43,7 +43,8 @@ import {
   PURCHASE_ROAD,
   PURCHASE_SETTLEMENT,
   PURCHASE_GAME_CARD,
-  playerColors
+  playerColors,
+  Loot
 } from '../manifest';
 
 const maxReconnectionTime = 1; // 60;
@@ -220,8 +221,7 @@ class GameRoom extends Room<GameState> {
         break;
 
       case MESSAGE_STEAL_CARD:
-        const { stealFrom } = data;
-        TradeManager.onStealCard(this.state, currentPlayer, stealFrom, data.resource);
+        TradeManager.onStealCard(this.state, currentPlayer, data.stealFrom, data.resource);
         break;
 
       case MESSAGE_PLACE_ROAD:
@@ -277,6 +277,10 @@ class GameRoom extends Room<GameState> {
       case MESSAGE_TRADE_REMOVE_CARD:
         const { resource } = data;
         TradeManager.onUpdateTrade(this.state, currentPlayer, resource, type === MESSAGE_TRADE_REMOVE_CARD);
+        
+        if (currentPlayer.tradingWith)
+          this.botsAdjustTrade(currentPlayer.tradingWith, type);
+
         break;
 
       case MESSAGE_TRADE_WITH_BANK:
@@ -291,29 +295,21 @@ class GameRoom extends Room<GameState> {
       case MESSAGE_TRADE_CONFIRM:
         const { isAgreed, withWho } = data;
         TradeManager.onStartEndTrade(this.state, type, currentPlayer, withWho, isAgreed);
+
+        this.botsAcceptPendingTrade();
         break;
 
       case MESSAGE_FINISH_TURN:
         TurnManager.finishTurn(this.state, currentPlayer, (broadcastType: string, broadcastMessage: string) => this.broadcastToAll(broadcastType, { message: broadcastMessage }));
 
         if (this.isCurrentPlayerBot) {
-          await this.advanceBot(this.currentPlayer);
+          await this.advanceBot(this.currentPlayer as GameBot);
         }
 
         // In case any player did not pick up his loot - give it to him 
-        if (this.state.autoPickupEnabled) {
-          this.allPlayers
-            .filter(player => player.totalAvailableLoot > 0)
-            .forEach(player => {
-              this.broadcastToAll(MESSAGE_COLLECT_ALL_LOOT, {
-                playerName: player.nickname,
-                loot: player.availableLoot
-              });
-  
-              player.onCollectLoot();
-            });
-        }
-        
+        if (this.state.autoPickupEnabled)
+          this.autoPickupLoot();
+
         break;
 
       case MESSAGE_READY:
@@ -325,35 +321,116 @@ class GameRoom extends Room<GameState> {
     }
   }
 
-  async advanceBot(currentBot: Player) {
-    if (this.state.isSetupPhase) {
-      const structure = await GameBot.placeSettlement(this.state, currentBot.playerSessionId);
-      this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, structure);
+  autoPickupLoot() {
+    this.allPlayers
+      .filter(player => player.totalAvailableLoot > 0)
+      .forEach(player => {
+        this.broadcastToAll(MESSAGE_COLLECT_ALL_LOOT, {
+          playerName: player.nickname,
+          loot: player.availableLoot
+        });
 
-      const road = await GameBot.placeRoad(this.state, currentBot);
+        player.onCollectLoot();
+      });
+  }
+
+  async advanceBot(currentBot: GameBot) {
+    if (this.state.isTurnOrderPhase) {
+      const botDice: number[] = await GameBot.rollDice();
+      this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
+
+      this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
+      return;
+    }
+    
+    if (this.state.isSetupPhase) {
+      const settlement = await GameBot.validSettlement(this.state, currentBot.playerSessionId);
+      this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, settlement);
+
+      const road = await GameBot.validRoad(this.state, currentBot);
       this.onGameAction(currentBot, MESSAGE_PLACE_ROAD, road);
 
       this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
 
       // end of setup phase - all bots need to collect game-starting loot
-      if (this.state.setupPhaseTurns === this.state.maxClients * 2 - 1) {
-        this.allBotsCollectLoot();
-      }
+      // if (this.state.setupPhaseTurns === this.state.maxClients * 2 - 1) {
+      //   this.allBotsCollectLoot();
+      // }
       return;
     }
 
     const botDice: number[] = await GameBot.rollDice();
     this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
 
-    if (this.state.isTurnOrderPhase) {
-      this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
-      return;
+    if (currentBot.mustMoveRobber) {
+      const tile = await GameBot.desiredRobberTile(this.state, currentBot.playerSessionId);
+      this.onGameAction(currentBot, MESSAGE_MOVE_ROBBER, { tile });
     }
+
+    if (currentBot.mustDiscardHalfDeck) {
+      const discardedCounts: Loot = currentBot.discardedCounts();
+      this.onGameAction(currentBot, MESSAGE_DISCARD_HALF_DECK, { discardedCounts });
+    }
+  
+    if (currentBot.allowStealingFrom.length) {
+      const stealData = currentBot.stealCard(this.state);
+      this.onGameAction(currentBot, MESSAGE_STEAL_CARD, stealData);
+    }
+    
+    if (currentBot.hasResources.city) {
+      const city = await GameBot.validCity(this.state, currentBot.playerSessionId);
+
+      if (city)
+        this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, city);
+    }
+
+    if (currentBot.hasResources.gameCard) {
+      this.onGameAction(currentBot, MESSAGE_PURCHASE_GAME_CARD);
+    }
+
+    if (currentBot.hasResources.settlement) {
+      const settlement = await GameBot.validSettlement(this.state, currentBot.playerSessionId);
+
+      if (settlement)
+        this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, settlement);
+    }
+
+    if (currentBot.hasResources.road) {
+      const road = await GameBot.validRoad(this.state, currentBot);
+
+      if (road)
+        this.onGameAction(currentBot, MESSAGE_PLACE_ROAD, road);
+    }
+
+    this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
   }
 
   allBotsCollectLoot() {
     const allBots: GameBot[] = this.allBots;
-    allBots.forEach(bot => this.onGameAction(bot, MESSAGE_COLLECT_ALL_LOOT));
+
+    allBots
+      .filter(bot => bot.totalAvailableLoot > 0)
+      .forEach(bot => this.onGameAction(bot, MESSAGE_COLLECT_ALL_LOOT));
+  }
+
+  botsAcceptPendingTrade() {
+    const allBots: GameBot[] = this.allBots;
+
+    allBots
+      .filter(bot => !!bot.pendingTrade)
+      .forEach(bot => this.onGameAction(bot, MESSAGE_TRADE_CONFIRM));
+  }
+
+  botsAdjustTrade(tradingWith: string, type: string) {
+    const tradingBot: GameBot = this.state.players[tradingWith];
+    if (!tradingBot.isBot) return;
+
+    const selectedResource = type === MESSAGE_TRADE_ADD_CARD
+      ? tradingBot.bestAddedTradeResource()
+      : tradingBot.bestRemovedTradeResource();
+    if (!selectedResource) return;
+    
+    this.onGameAction(tradingBot, type, selectedResource);
   }
 
   onChatMessage(sender: Player, message: string) {

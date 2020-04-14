@@ -4,12 +4,18 @@ import hexTileMap from '../tilemaps/hexes';
 import roadTileMap from '../tilemaps/roads';
 import HexTile from '../schemas/HexTile';
 import Player from '../schemas/Player';
-import { TILE_WATER } from '../manifest';
+import { TILE_WATER, TILE_RESOURCE, DESERT } from '../manifest';
 
 export interface ValidStructurePosition {
   row: number
   col: number
 };
+
+export interface ValidHextile {
+  population: number
+  row: number
+  col: number
+}
 
 class TileManager {
   hexTileAdjacentHexes(row: number, col: number) {
@@ -228,6 +234,34 @@ class TileManager {
       });
 
     return allValidRoads;
+  }
+
+  bestRobberHextile(state: GameState, botSessionId: string) {
+    let bestHextile: ValidHextile = {
+      row: 0,
+      col: 0,
+      population: 0
+    };
+
+    state.board
+      .filter(({ type, resource }, index) => type === TILE_RESOURCE && !!resource && resource !== DESERT && index !== state.robberPosition)
+      .forEach(({ row: tileRow, col: tileCol }) => {
+        const adjacentStructures = this.hexTileAdjacentStructures(tileRow, tileCol);
+
+        const population: number = state.structures
+          .filter(({ ownerId, row, col }) => ownerId !== botSessionId && adjacentStructures.some(([sRow, sCol]) => sRow === row && sCol === col))
+          .length;
+
+        if (population > bestHextile.population) {
+          bestHextile = {
+            row: tileRow,
+            col: tileCol,
+            population
+          };
+        }
+      });
+
+    return bestHextile;
   }
 }
 
