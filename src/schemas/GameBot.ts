@@ -17,17 +17,45 @@ import {
 } from '../manifest';
 
 class GameBot extends Player {
-  constructor(color: string, playerIndex: number) {
-    const sessionId = generateSessionId();
+  constructor(color: string, playerIndex: number, replacing?: Player) {
+    const sessionId = replacing
+      ? replacing.playerSessionId
+      : generateSessionId();
     
-    const generatedBot = FCG.NPCs.generate(); 
+    const nickname = replacing
+      ? `${replacing.nickname} (BOT)`
+      : GameBot.generateName();
 
     const options: PlayerOptions = {
-      nickname: generatedBot.nameObject.name
+      nickname
     };
 
-    super(sessionId, options, color, playerIndex);
+    const botColor = replacing
+      ? replacing.color
+      : color;
+
+    const botIndex = replacing
+      ? replacing.playerIndex
+      : playerIndex;
+
+    super(sessionId, options, botColor, botIndex);
     this.isBot = true;
+
+    if (replacing) {
+      this.gameCards = replacing.gameCards;
+      this.rolls = replacing.rolls;
+      this.resourceCounts = replacing.resourceCounts;
+      this.availableLoot = replacing.availableLoot;
+      this.tradeCounts = replacing.tradeCounts;
+      this.hasResources = replacing.hasResources;
+      this.allowStealingFrom = replacing.allowStealingFrom;
+      this.ownedHarbors = replacing.ownedHarbors;
+    }
+  }
+
+  static generateName() {
+    const generate = FCG.NPCs.generate(); 
+    return generate.nameObject.name;
   }
 
   static async rollDice() {
@@ -46,6 +74,8 @@ class GameBot extends Player {
     await delay(1500);
 
     const validSettlements: ValidStructurePosition[] = TileManager.validSettlements(state, botSessionId);
+    if (!validSettlements.length) return null;
+
     const randomIndex = Math.floor(Math.random() * validSettlements.length);
     const settlement: ValidStructurePosition = validSettlements[randomIndex];
 
@@ -60,6 +90,8 @@ class GameBot extends Player {
     await delay(1500);
 
     const validRoads: ValidStructurePosition[] = TileManager.validRoads(state, currentBot);
+    if (!validRoads.length) return null;
+
     const randomIndex = Math.floor(Math.random() * validRoads.length);
     const road: ValidStructurePosition = validRoads[randomIndex];
 

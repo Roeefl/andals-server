@@ -2,6 +2,7 @@ import { type, Schema, ArraySchema, MapSchema } from '@colyseus/schema';
 import GameCard from '../schemas/GameCard';
 import DiceRoll from './DiceRoll';
 import Structure from './Structure';
+import GameBot from './GameBot';
 
 import buildingCosts, { BuildingCost } from '../buildingCosts';
 import {
@@ -177,15 +178,22 @@ class Player extends Schema {
     
     this.allowStealingFrom = new ArraySchema<string>();
 
-    this.hasResources = new MapSchema<Boolean>({
-      ...initialHasResources
-    });
-
     this.ownedHarbors = new MapSchema<Boolean>({
       ...initialOwnedHarbors
     });
 
     this.isBot = false;
+  }
+
+  restore(fromBot: GameBot) {
+    this.gameCards = fromBot.gameCards;
+    this.rolls = fromBot.rolls;
+    this.resourceCounts = fromBot.resourceCounts;
+    this.availableLoot = fromBot.availableLoot;
+    this.tradeCounts = fromBot.tradeCounts;
+    this.hasResources = fromBot.hasResources;
+    this.allowStealingFrom = fromBot.allowStealingFrom;
+    this.ownedHarbors = fromBot.ownedHarbors;
   }
 
   get knights() {

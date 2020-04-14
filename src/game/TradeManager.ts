@@ -8,14 +8,14 @@ import Player from '../schemas/Player';
 import { initialResourceCounts, Loot } from '../manifest';
 import {
   MESSAGE_TRADE_REQUEST,
-  MESSAGE_TRADE_INCOMING_RESPONSE,
+  MESSAGE_TRADE_START_AGREED,
   MESSAGE_TRADE_CONFIRM,
   MESSAGE_TRADE_REFUSE
 } from '../constants';
 
 class TradeManager {
   onStartEndTrade(state: GameState, type: string, currentPlayer: Player, withWho?: string, isAgreed?: boolean) {
-    if (type === MESSAGE_TRADE_INCOMING_RESPONSE) {
+    if (type === MESSAGE_TRADE_START_AGREED) {
       const { pendingTrade } = currentPlayer;
       const otherPlayer: Player = state.players[pendingTrade];
   

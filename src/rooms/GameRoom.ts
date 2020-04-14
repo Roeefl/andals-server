@@ -32,7 +32,7 @@ import {
 
   MESSAGE_TRADE_WITH_BANK,
   MESSAGE_TRADE_REQUEST,
-  MESSAGE_TRADE_INCOMING_RESPONSE,
+  MESSAGE_TRADE_START_AGREED,
   MESSAGE_TRADE_ADD_CARD,
   MESSAGE_TRADE_REMOVE_CARD,
   MESSAGE_TRADE_CONFIRM,
@@ -47,7 +47,7 @@ import {
   Loot
 } from '../manifest';
 
-const maxReconnectionTime = 1; // 60;
+const maxReconnectionTime = 120;
 
 class GameRoom extends Room<GameState> {
   get activeClients() {
@@ -70,13 +70,6 @@ class GameRoom extends Room<GameState> {
   get currentPlayer() {
     const { currentTurn } = this.state;
     return this.allPlayers[currentTurn];
-  }
-
-  get isCurrentPlayerBot() {
-    const { withBots } = this.state;
-    if (!withBots) return false;
-    
-    return this.currentPlayer.isBot;
   }
 
   onCreate(options: any) {
@@ -136,25 +129,41 @@ class GameRoom extends Room<GameState> {
 
   async onLeave(client: Client, isConsented: boolean) {
     // flag client as inactive for other users
-    this.state.players[client.sessionId].isConnected = false;
+    const currentPlayer: Player = this.state.players[client.sessionId];
+    currentPlayer.isConnected = false;
 
     this.broadcast({
       type: MESSAGE_GAME_LOG,
       sender: this.state.roomTitle,
-      message: `${this.state.players[client.sessionId].nickname || client.sessionId} has left the room.`
+      message: `${currentPlayer.nickname || client.sessionId} has left the room and is replaced by a bot.`
     }, {
       except: client
     });
 
+    const originalNickname = currentPlayer.nickname;
+
+    const replacementBot = new GameBot('', 0, currentPlayer);
+    this.state.players[client.sessionId] = replacementBot;
+
+    if (replacementBot.playerIndex === this.state.currentTurn)
+      this.advanceBot(replacementBot)
+
     try {
-      // allow disconnected client to reconnect into this room until 20 seconds
+      // allow disconnected client to reconnect into this room 
       await this.allowReconnection(client, maxReconnectionTime);
       
       // client returned! let's re-activate it.
-      this.state.players[client.sessionId].isConnected = true;
+      const options = {
+        nickname: originalNickname
+      };
+      this.state.players[client.sessionId] = new Player(replacementBot.playerSessionId, options, replacementBot.color, replacementBot.playerIndex);
+      this.state.players[client.sessionId].restore(replacementBot);
     } catch (e) {
       // 20 seconds expired. let's remove the client.
-      delete this.state.players[client.sessionId];
+      // delete this.state.players[client.sessionId];
+
+      // Or instead just rename it to bot name...
+      replacementBot.nickname = GameBot.generateName();
     }
   };
 
@@ -290,22 +299,24 @@ class GameRoom extends Room<GameState> {
         TradeManager.onBankTrade(currentPlayer, requestedResource);
         break;
             
-      case MESSAGE_TRADE_INCOMING_RESPONSE:
       case MESSAGE_TRADE_REQUEST:
+      case MESSAGE_TRADE_START_AGREED:
       case MESSAGE_TRADE_REFUSE:
       case MESSAGE_TRADE_CONFIRM:
         const { isAgreed, withWho } = data;
         TradeManager.onStartEndTrade(this.state, type, currentPlayer, withWho, isAgreed);
 
-        this.botsAcceptPendingTrade();
+        if (type === MESSAGE_TRADE_REQUEST && withWho) {
+          const maybeBot: Player = this.state.players[withWho];
+
+          if (maybeBot.isBot)
+           this.onGameAction(maybeBot, MESSAGE_TRADE_START_AGREED, { isAgreed: true });
+        }
         break;
 
       case MESSAGE_FINISH_TURN:
         TurnManager.finishTurn(this.state, currentPlayer, (broadcastType: string, broadcastMessage: string) => this.broadcastToAll(broadcastType, { message: broadcastMessage }));
-
-        if (this.isCurrentPlayerBot) {
-          await this.advanceBot(this.currentPlayer as GameBot);
-        }
+        await this.advanceBot(this.currentPlayer as GameBot);
 
         // In case any player did not pick up his loot - give it to him 
         if (this.state.autoPickupEnabled)
@@ -336,6 +347,8 @@ class GameRoom extends Room<GameState> {
   }
 
   async advanceBot(currentBot: GameBot) {
+    if (!currentBot.isBot) return;
+
     if (this.state.isTurnOrderPhase) {
       const botDice: number[] = await GameBot.rollDice();
       this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
@@ -391,14 +404,12 @@ class GameRoom extends Room<GameState> {
 
     if (currentBot.hasResources.settlement) {
       const settlement = await GameBot.validSettlement(this.state, currentBot.playerSessionId);
-
       if (settlement)
         this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, settlement);
     }
 
     if (currentBot.hasResources.road) {
       const road = await GameBot.validRoad(this.state, currentBot);
-
       if (road)
         this.onGameAction(currentBot, MESSAGE_PLACE_ROAD, road);
     }
@@ -414,14 +425,6 @@ class GameRoom extends Room<GameState> {
       .forEach(bot => this.onGameAction(bot, MESSAGE_COLLECT_ALL_LOOT));
   }
 
-  botsAcceptPendingTrade() {
-    const allBots: GameBot[] = this.allBots;
-
-    allBots
-      .filter(bot => !!bot.pendingTrade)
-      .forEach(bot => this.onGameAction(bot, MESSAGE_TRADE_CONFIRM));
-  }
-
   async botsAdjustTrade(tradingWith: string, type: string) {
     const tradingBot: GameBot = this.state.players[tradingWith];
     if (!tradingBot.isBot) return;
@@ -432,6 +435,7 @@ class GameRoom extends Room<GameState> {
     if (!selectedResource) return;
     
     this.onGameAction(tradingBot, type, selectedResource);
+    this.onGameAction(tradingBot, MESSAGE_TRADE_CONFIRM);
   }
 
   onChatMessage(sender: Player, message: string) {
