@@ -86,13 +86,14 @@ class GameRoom extends Room<GameState> {
       roomTitle = 'Firstmen.io Game Room',
       maxPlayers = 4,
       playVsBots = false,
-      autoPickup = true
+      autoPickup = true,
+      friendlyGameLog = false
     } = options;
 
     const initialBoard = BoardManager.initialBoard();
     const initialGameCards = GameCardManager.initialGameCards();
     
-    const gameState = new GameState(roomTitle, maxPlayers, initialBoard, initialGameCards, playVsBots, autoPickup);
+    const gameState = new GameState(roomTitle, maxPlayers, initialBoard, initialGameCards, playVsBots, autoPickup, friendlyGameLog);
     this.setState(gameState);
 
     if (playVsBots) {
@@ -421,13 +422,13 @@ class GameRoom extends Room<GameState> {
       .forEach(bot => this.onGameAction(bot, MESSAGE_TRADE_CONFIRM));
   }
 
-  botsAdjustTrade(tradingWith: string, type: string) {
+  async botsAdjustTrade(tradingWith: string, type: string) {
     const tradingBot: GameBot = this.state.players[tradingWith];
     if (!tradingBot.isBot) return;
 
     const selectedResource = type === MESSAGE_TRADE_ADD_CARD
-      ? tradingBot.bestAddedTradeResource()
-      : tradingBot.bestRemovedTradeResource();
+      ? await tradingBot.bestAddedTradeResource()
+      : await tradingBot.bestRemovedTradeResource();
     if (!selectedResource) return;
     
     this.onGameAction(tradingBot, type, selectedResource);
