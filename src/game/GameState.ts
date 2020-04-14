@@ -16,6 +16,9 @@ class GameState extends Schema {
   @type("boolean")
   withBots: boolean
 
+  @type("boolean")
+  autoPickupEnabled: boolean
+
   @type("string")
   roomTitle: string
 
@@ -73,7 +76,7 @@ class GameState extends Schema {
   @type(["number"])
   ports: ArraySchema<number>
 
-  constructor(roomTitle: string, maxPlayers: number, board: HexTile[], gameCards: GameCard[], withBots: boolean = false) {
+  constructor(roomTitle: string, maxPlayers: number, board: HexTile[], gameCards: GameCard[], withBots: boolean = false, autoPickupEnabled = true) {
     super();
 
     this.roomTitle = roomTitle;
@@ -97,6 +100,7 @@ class GameState extends Schema {
 
     this.maxClients = maxPlayers;
     this.withBots = withBots;
+    this.autoPickupEnabled = autoPickupEnabled;
 
     const randomPortIndices: number[] = [1, Math.floor(Math.random() * 2) * 2]
     this.ports = new ArraySchema<number>(

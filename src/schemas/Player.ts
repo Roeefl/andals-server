@@ -192,7 +192,12 @@ class Player extends Schema {
     return this.gameCards.filter(({ type }) => type === CARD_KNIGHT).length;
   }
 
-  totalResourceCounts() {
+  get totalAvailableLoot() {
+    const counts: number[] = Object.values(this.availableLoot);
+    return counts.reduce((d1, d2) => d1 + d2, 0);
+  }
+
+  get totalResourceCounts() {
     const counts: number[] = Object.values(this.resourceCounts);
     return counts.reduce((d1, d2) => d1 + d2, 0);
   }

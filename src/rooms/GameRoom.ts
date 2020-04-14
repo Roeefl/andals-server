@@ -84,13 +84,14 @@ class GameRoom extends Room<GameState> {
     const {
       roomTitle = 'Firstmen.io Game Room',
       maxPlayers = 4,
-      playVsBots = false
+      playVsBots = false,
+      autoPickup = true
     } = options;
 
     const initialBoard = BoardManager.initialBoard();
     const initialGameCards = GameCardManager.initialGameCards();
     
-    const gameState = new GameState(roomTitle, maxPlayers, initialBoard, initialGameCards, playVsBots);
+    const gameState = new GameState(roomTitle, maxPlayers, initialBoard, initialGameCards, playVsBots, autoPickup);
     this.setState(gameState);
 
     if (playVsBots) {
@@ -180,7 +181,7 @@ class GameRoom extends Room<GameState> {
         
         if (this.state.isGameStarted)
           this.allBotsCollectLoot();
-          
+
         break;
 
       case MESSAGE_COLLECT_ALL_LOOT:
@@ -299,19 +300,20 @@ class GameRoom extends Room<GameState> {
           await this.advanceBot(this.currentPlayer);
         }
 
-        // // In case any player did not pick up his loot - give it to him - @TODO: Disabled in CustomizeRoom soon
-        // Object
-        //   .keys(this.state.players)
-        //   .forEach(sessionId => {
-        //     const player: Player = this.state.players[sessionId];
-
-        //     this.broadcastToAll(MESSAGE_COLLECT_ALL_LOOT, {
-        //       playerName: player.nickname,
-        //       loot: player.availableLoot
-        //     });
-        //     player.onCollectLoot();
-        //   });
-
+        // In case any player did not pick up his loot - give it to him 
+        if (this.state.autoPickupEnabled) {
+          this.allPlayers
+            .filter(player => player.totalAvailableLoot > 0)
+            .forEach(player => {
+              this.broadcastToAll(MESSAGE_COLLECT_ALL_LOOT, {
+                playerName: player.nickname,
+                loot: player.availableLoot
+              });
+  
+              player.onCollectLoot();
+            });
+        }
+        
         break;
 
       case MESSAGE_READY:

@@ -30,7 +30,7 @@ class DiceManager {
         .keys(state.players)
         .forEach(sessionId => {
           const player: Player = state.players[sessionId];
-          const totalResources: number = player.totalResourceCounts();
+          const totalResources: number = player.totalResourceCounts;
 
           if (totalResources > 7) {
             player.mustDiscardHalfDeck = true;
