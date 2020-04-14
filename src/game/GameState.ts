@@ -6,6 +6,7 @@ import Structure from '../schemas/Structure';
 import Road from '../schemas/Road';
 import GameCard from '../schemas/GameCard';
 import { DESERT } from '../manifest';
+import { RoomOptions } from '../rooms/GameRoom';
 
 const totalResourceCards = 19;
 
@@ -21,6 +22,9 @@ class GameState extends Schema {
 
   @type("boolean")
   friendlyGameLog: boolean
+
+  @type("boolean")
+  enableBotReplacement: boolean
 
   @type("string")
   roomTitle: string
@@ -79,10 +83,24 @@ class GameState extends Schema {
   @type(["number"])
   ports: ArraySchema<number>
 
-  constructor(roomTitle: string, maxPlayers: number, board: HexTile[], gameCards: GameCard[], withBots: boolean = false, autoPickupEnabled = true, friendlyGameLog = false) {
+  constructor(board: HexTile[], gameCards: GameCard[], roomOptions: RoomOptions) {
     super();
 
+    const {
+      roomTitle = 'Firstmen.io Game Room',
+      maxPlayers = 4,
+      playVsBots = false,
+      autoPickup = true,
+      friendlyGameLog = false,
+      enableBotReplacement = true
+    } = roomOptions;
+
     this.roomTitle = roomTitle;
+    this.maxClients = maxPlayers;
+    this.withBots = playVsBots;
+    this.autoPickupEnabled = autoPickup;
+    this.friendlyGameLog = friendlyGameLog;
+    this.enableBotReplacement = enableBotReplacement;
     
     this.board = new ArraySchema<HexTile>(...board);
 
@@ -100,11 +118,6 @@ class GameState extends Schema {
 
     this.roads = new ArraySchema<Road>();
     this.structures = new ArraySchema<Structure>();
-
-    this.maxClients = maxPlayers;
-    this.withBots = withBots;
-    this.autoPickupEnabled = autoPickupEnabled;
-    this.friendlyGameLog = friendlyGameLog;
 
     const randomPortIndices: number[] = [1, Math.floor(Math.random() * 2) * 2]
     this.ports = new ArraySchema<number>(

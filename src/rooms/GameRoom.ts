@@ -49,6 +49,15 @@ import {
 
 const maxReconnectionTime = 120;
 
+export interface RoomOptions {
+  roomTitle?: string
+  maxPlayers: number
+  playVsBots: boolean
+  autoPickup: boolean
+  friendlyGameLog: boolean
+  enableBotReplacement: boolean
+};
+
 class GameRoom extends Room<GameState> {
   get activeClients() {
     return Object
@@ -72,25 +81,17 @@ class GameRoom extends Room<GameState> {
     return this.allPlayers[currentTurn];
   }
 
-  onCreate(options: any) {
-    console.info("GameRoom | onCreate | options: ", options);
-
-    const {
-      roomTitle = 'Firstmen.io Game Room',
-      maxPlayers = 4,
-      playVsBots = false,
-      autoPickup = true,
-      friendlyGameLog = false
-    } = options;
+  onCreate(roomOptions: RoomOptions) {
+    console.info("GameRoom | onCreate | roomOptions: ", roomOptions);
 
     const initialBoard = BoardManager.initialBoard();
     const initialGameCards = GameCardManager.initialGameCards();
     
-    const gameState = new GameState(roomTitle, maxPlayers, initialBoard, initialGameCards, playVsBots, autoPickup, friendlyGameLog);
+    const gameState = new GameState(initialBoard, initialGameCards, roomOptions);
     this.setState(gameState);
 
-    if (playVsBots) {
-      for (let b = 1; b < maxPlayers; b++) {
+    if (roomOptions.playVsBots) {
+      for (let b = 1; b < roomOptions.maxPlayers; b++) {
         const color = playerColors[this.activeClients];
         const addedBot = new GameBot(color, this.activeClients);
         
@@ -128,6 +129,8 @@ class GameRoom extends Room<GameState> {
   };
 
   async onLeave(client: Client, isConsented: boolean) {
+    const { enableBotReplacement } = this.state;
+
     // flag client as inactive for other users
     const currentPlayer: Player = this.state.players[client.sessionId];
     currentPlayer.isConnected = false;
@@ -143,27 +146,35 @@ class GameRoom extends Room<GameState> {
     const originalNickname = currentPlayer.nickname;
 
     const replacementBot = new GameBot('', 0, currentPlayer);
-    this.state.players[client.sessionId] = replacementBot;
-
-    if (replacementBot.playerIndex === this.state.currentTurn)
-      this.advanceBot(replacementBot)
+    if (enableBotReplacement) {
+      this.state.players[client.sessionId] = replacementBot;
+  
+      if (replacementBot.playerIndex === this.state.currentTurn)
+        this.advanceBot(replacementBot)
+    }
 
     try {
       // allow disconnected client to reconnect into this room 
       await this.allowReconnection(client, maxReconnectionTime);
       
       // client returned! let's re-activate it.
-      const options = {
-        nickname: originalNickname
-      };
-      this.state.players[client.sessionId] = new Player(replacementBot.playerSessionId, options, replacementBot.color, replacementBot.playerIndex);
-      this.state.players[client.sessionId].restore(replacementBot);
+      if (enableBotReplacement) {
+        const options = {
+          nickname: originalNickname
+        };
+        this.state.players[client.sessionId] = new Player(replacementBot.playerSessionId, options, replacementBot.color, replacementBot.playerIndex);
+        this.state.players[client.sessionId].restore(replacementBot);
+      } else {
+        this.state.players[client.sessionId].isConnected = true
+      }
     } catch (e) {
-      // 20 seconds expired. let's remove the client.
-      // delete this.state.players[client.sessionId];
-
-      // Or instead just rename it to bot name...
-      replacementBot.nickname = GameBot.generateName();
+      if (enableBotReplacement) {
+        // Final rename to a full bot name...
+        replacementBot.nickname = GameBot.generateName();
+      } else {
+        // 20 seconds expired. let's remove the client.
+        delete this.state.players[client.sessionId];
+      }
     }
   };
 
