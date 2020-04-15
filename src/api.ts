@@ -55,12 +55,13 @@ export function API () {
 
   api.get('/room', async (req: express.Request, res: express.Response) => {
     const { roomId } = req.query;
+    const stringifiedRoomId = String(roomId);
 
     try {
-      const inspectData = await matchMaker.remoteRoomCall(roomId, 'getInspectData');
+      const inspectData = await matchMaker.remoteRoomCall(stringifiedRoomId, 'getInspectData');
       res.json(inspectData);
     } catch (e) {
-      const message = `${ERROR_ROOM_UNAVAILABLE}: ${roomId}`;
+      const message = `${ERROR_ROOM_UNAVAILABLE}: ${stringifiedRoomId}`;
       console.error(message);
       
       res.status(500);
@@ -71,22 +72,5 @@ export function API () {
   // api.post('/room')
   // api.put('/room')
   // api.delete('/room')
-
-  api.get('/room/call', async (req: express.Request, res: express.Response) => {
-    const { roomId, method } = req.query;
-    const args = JSON.parse(req.query.args);
-
-    try {
-        const data = await matchMaker.remoteRoomCall(roomId, method, args);
-        res.json(data);
-    } catch (e) {
-      const message = `${ERROR_ROOM_UNAVAILABLE}: ${roomId}`;
-      console.error(message);
-
-      res.status(500);
-      res.json({ message });
-    }
-  });
-
   return api;
 }
