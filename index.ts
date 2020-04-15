@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
@@ -10,7 +12,8 @@ const serveIndex = require('serve-index');
 import { API } from './src/api';
 import GameRoom from './src/rooms/GameRoom';
 
-const port = Number(process.env.PORT || 2568);
+const port = Number(process.env.SERVER_PORT || 2568);
+
 const app = express();
 
 app.use(cors());
