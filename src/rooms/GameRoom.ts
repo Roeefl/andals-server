@@ -83,8 +83,13 @@ class GameRoom extends Room<GameState> {
     const gameState = new GameState(initialBoard, initialGameCards, roomOptions);
     this.setState(gameState);
 
-    if (roomOptions.playVsBots) {
-      for (let b = 1; b < roomOptions.maxPlayers; b++) {
+    const {
+      playVsBots = false,
+      maxPlayers = 4
+    } = roomOptions;
+
+    if (playVsBots) {
+      for (let b = 1; b < maxPlayers; b++) {
         const color = playerColors[this.activeClients];
         const addedBot = new GameBot(color, this.activeClients);
         
