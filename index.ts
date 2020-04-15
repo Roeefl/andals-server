@@ -55,4 +55,6 @@ app.use('/colyseus', monitor());
 gameServer.onShutdown(() => console.info('game server is going down.'));
 
 gameServer.listen(port);
-console.info(`Listening on ws://localhost:${port}`)
+
+const serverUrl = process.env.SERVER_URL || 'ws://localhost';
+console.info(`Started Server on: ${serverUrl}:${port}`);
