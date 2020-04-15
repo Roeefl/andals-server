@@ -18,6 +18,7 @@
   "dependencies": {
     "@colyseus/monitor": "^0.11.0",
     "@colyseus/social": "^0.10.2",
+    "@types/delay": "^3.1.0",
     "@types/lodash": "^4.14.149",
     "@types/serve-index": "^1.7.30",
     "colyseus": "^0.12.0",
