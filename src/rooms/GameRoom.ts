@@ -47,7 +47,7 @@ import {
   Loot
 } from '../manifest';
 
-const maxReconnectionTime = 120;
+const maxReconnectionTime = 5 * 60;
 
 export interface RoomOptions {
   roomTitle?: string
@@ -143,8 +143,6 @@ class GameRoom extends Room<GameState> {
       except: client
     });
 
-    const originalNickname = currentPlayer.nickname;
-
     const replacementBot = new GameBot('', 0, currentPlayer);
     if (enableBotReplacement) {
       this.state.players[client.sessionId] = replacementBot;
@@ -160,21 +158,31 @@ class GameRoom extends Room<GameState> {
       // client returned! let's re-activate it.
       if (enableBotReplacement) {
         const options = {
-          nickname: originalNickname
+          nickname: currentPlayer.nickname
         };
         this.state.players[client.sessionId] = new Player(replacementBot.playerSessionId, options, replacementBot.color, replacementBot.playerIndex);
         this.state.players[client.sessionId].restore(replacementBot);
       } else {
-        this.state.players[client.sessionId].isConnected = true
+        this.state.players[client.sessionId].isConnected = true;
+
+        this.broadcast({
+          type: MESSAGE_GAME_LOG,
+          sender: this.state.roomTitle,
+          message: `${currentPlayer.nickname || client.sessionId} has reconnected!`
+        });
       }
     } catch (e) {
-      if (enableBotReplacement) {
+      if (enableBotReplacement)
         // Final rename to a full bot name...
         replacementBot.nickname = GameBot.generateName();
-      } else {
+      else
         // 20 seconds expired. let's remove the client.
         delete this.state.players[client.sessionId];
-      }
+    } finally {
+      if (enableBotReplacement)
+        replacementBot.nickname = GameBot.generateName();
+      else
+        delete this.state.players[client.sessionId];
     }
   };
 
