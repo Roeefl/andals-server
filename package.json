@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "ts-node-dev index.ts",
     "start": "ts-node index.ts",
-    "loadtest": "colyseus-loadtest loadtest/example.ts --room game_room --numClients 2",
     "test": "echo \"Error: no test specified\" && exit 1",
     "heroku-postbuild": "tsc"
   },
