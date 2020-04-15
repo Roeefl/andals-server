@@ -10,9 +10,10 @@ import { monitor } from '@colyseus/monitor';
 const serveIndex = require('serve-index');
 
 import { API } from './src/api';
-import GameRoom from './src/rooms/GameRoom';
+import BaseGame from './src/rooms/BaseGame';
+import FirstMenGame from './src/rooms/FirstMenGame';
 
-import { RoomOptions } from './src/interfaces';
+// import { RoomOptions } from './src/interfaces';
 
 const port = Number(process.env.SERVER_PORT || 2568);
 
@@ -28,10 +29,11 @@ const gameServer = new Server({
 
 // Register ChatRoom with initial options, as "chat_with_options"
 // onInit(options) will receive client join options + options registered here.
-const roomOptions: RoomOptions = {
-  roomTitle: "Test Game Room"
-};
-gameServer.define("gameRoom", GameRoom, roomOptions);
+// const roomOptions: RoomOptions = {
+//   roomTitle: "Test Game Room"
+// };
+gameServer.define('baseGame', BaseGame); // , roomOptions
+gameServer.define('firstMen', FirstMenGame);
 
 // router.use('/', express.static(frontendDirectory));
 app.use('/', serveIndex(path.join(__dirname, 'static'), { 'icons': true }))

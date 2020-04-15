@@ -51,7 +51,7 @@ import { RoomOptions } from '../interfaces';
 
 const maxReconnectionTime = 5 * 60;
 
-class GameRoom extends Room<GameState> {
+class BaseGame extends Room<GameState> {
   get activeClients() {
     return Object
       .keys(this.state.players)
@@ -75,7 +75,7 @@ class GameRoom extends Room<GameState> {
   }
 
   onCreate(roomOptions: RoomOptions) {
-    console.info("GameRoom | onCreate | roomOptions: ", roomOptions);
+    console.info("BaseGame | onCreate | roomOptions: ", roomOptions);
 
     const initialBoard = BoardManager.initialBoard();
     const initialGameCards = GameCardManager.initialGameCards();
@@ -509,7 +509,7 @@ class GameRoom extends Room<GameState> {
   }
 
   onDispose() {
-    console.info("GameRoom -> onDispose -> onDispose");
+    console.info("BaseGame -> onDispose -> onDispose");
   };
 
   evaluateVictoryStatus() {
@@ -556,4 +556,4 @@ class GameRoom extends Room<GameState> {
   }
 };
 
-export default GameRoom;
+export default BaseGame;

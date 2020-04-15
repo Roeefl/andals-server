@@ -87,7 +87,7 @@ class GameState extends Schema {
     super();
 
     const {
-      roomTitle = 'Firstmen.io Game Room',
+      roomTitle = 'andals.io Game Room',
       maxPlayers = 4,
       playVsBots = false,
       autoPickup = true,
