@@ -4,13 +4,14 @@
   "description": "Andals.io Server Project",
   "main": "index.ts",
   "scripts": {
-    "start": "ts-node index.ts",
+    "dev": "ts-node index.ts",
+    "start": "node index.ts",
     "loadtest": "colyseus-loadtest loadtest/example.ts --room game_room --numClients 2",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Roeefl, Webiya",
+  "author": "Roeefl",
   "license": "UNLICENSED",
-  "homepage": "localhost:3000",
+  "homepage": "localhost:1337",
   "dependencies": {
     "@colyseus/monitor": "^0.11.0",
     "@colyseus/social": "^0.10.2",
