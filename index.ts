@@ -1,8 +1,8 @@
 require('dotenv').config();
+const cors = require('cors');
 
 import express from 'express';
 import path from 'path';
-import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'colyseus';
 import { monitor } from '@colyseus/monitor';
