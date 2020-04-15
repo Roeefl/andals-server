@@ -12,6 +12,8 @@ const serveIndex = require('serve-index');
 import { API } from './src/api';
 import GameRoom from './src/rooms/GameRoom';
 
+import { RoomOptions } from './src/interfaces';
+
 const port = Number(process.env.SERVER_PORT || 2568);
 
 const app = express();
@@ -26,9 +28,10 @@ const gameServer = new Server({
 
 // Register ChatRoom with initial options, as "chat_with_options"
 // onInit(options) will receive client join options + options registered here.
-gameServer.define("gameRoom", GameRoom, {
-  customOptions: "you can use me on Room#onCreate"
-});
+const roomOptions: RoomOptions = {
+  roomTitle: "Test Game Room"
+};
+gameServer.define("gameRoom", GameRoom, roomOptions);
 
 // router.use('/', express.static(frontendDirectory));
 app.use('/', serveIndex(path.join(__dirname, 'static'), { 'icons': true }))

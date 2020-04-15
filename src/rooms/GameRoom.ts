@@ -47,16 +47,9 @@ import {
   Loot
 } from '../manifest';
 
-const maxReconnectionTime = 5 * 60;
+import { RoomOptions } from '../interfaces';
 
-export interface RoomOptions {
-  roomTitle?: string
-  maxPlayers: number
-  playVsBots: boolean
-  autoPickup: boolean
-  friendlyGameLog: boolean
-  enableBotReplacement: boolean
-};
+const maxReconnectionTime = 5 * 60;
 
 class GameRoom extends Room<GameState> {
   get activeClients() {
