@@ -6,7 +6,7 @@ import Structure from '../schemas/Structure';
 import Road from '../schemas/Road';
 import GameCard from '../schemas/GameCard';
 import { DESERT } from '../manifest';
-import { RoomOptions } from '../rooms/GameRoom';
+import { RoomOptions } from '../interfaces';
 
 const totalResourceCards = 19;
 
