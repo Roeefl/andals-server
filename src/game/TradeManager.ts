@@ -5,7 +5,8 @@ import BankManager from '../game/BankManager';
 
 import Player from '../schemas/Player';
 
-import { initialResourceCounts, Loot } from '../manifest';
+import { initialResourceCounts } from '../manifest';
+import { Loot } from '../interfaces';
 import {
   MESSAGE_TRADE_REQUEST,
   MESSAGE_TRADE_START_AGREED,

@@ -102,7 +102,9 @@ class GameState extends Schema {
     this.friendlyGameLog = friendlyGameLog;
     this.enableBotReplacement = enableBotReplacement;
     
-    this.board = new ArraySchema<HexTile>(...board);
+    this.board = new ArraySchema<HexTile>(
+      ...board
+    );
 
     // 19 Resource cards of each terrain tile
     this.resourceCounts = new MapSchema<Number>({

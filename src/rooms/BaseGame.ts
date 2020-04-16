@@ -43,11 +43,10 @@ import {
   PURCHASE_ROAD,
   PURCHASE_SETTLEMENT,
   PURCHASE_GAME_CARD,
-  playerColors,
-  Loot
+  playerColors
 } from '../manifest';
 
-import { RoomOptions } from '../interfaces';
+import { RoomOptions, Loot } from '../interfaces';
 
 const maxReconnectionTime = 5 * 60;
 
@@ -77,28 +76,33 @@ class BaseGame extends Room<GameState> {
   onCreate(roomOptions: RoomOptions) {
     console.info("BaseGame | onCreate | roomOptions: ", roomOptions);
 
-    const initialBoard = BoardManager.initialBoard();
-    const initialGameCards = GameCardManager.initialGameCards();
+    const board = BoardManager.baseGameBoard();
+    const gameCards = GameCardManager.shuffled();
     
-    const gameState = new GameState(initialBoard, initialGameCards, roomOptions);
+    const gameState = new GameState(board, gameCards, roomOptions);
     this.setState(gameState);
 
+    this.populateWithBotsIfNeeded(roomOptions);
+  };
+
+  populateWithBotsIfNeeded(roomOptions: RoomOptions) {
     const {
       playVsBots = false,
       maxPlayers = 4
     } = roomOptions;
 
-    if (playVsBots) {
-      for (let b = 1; b < maxPlayers; b++) {
-        const color = playerColors[this.activeClients];
-        const addedBot = new GameBot(color, this.activeClients);
-        
-        this.state.players[addedBot.playerSessionId] = addedBot;
-        this.onPlayerReady(addedBot);
-      }
-      this.lock();
+    if (!playVsBots) return;
+
+    for (let b = 1; b < maxPlayers; b++) {
+      const color = playerColors[this.activeClients];
+      const addedBot = new GameBot(color, this.activeClients);
+      
+      this.state.players[addedBot.playerSessionId] = addedBot;
+      this.onPlayerReady(addedBot);
     }
-  };
+
+    this.lock();
+  }
 
   broadcastToAll(type: string, data: Object = {}) {
     this.broadcast({

@@ -9,10 +9,9 @@ import {
   TILE_RESOURCE,
   DESERT,
   PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_CITY, PURCHASE_GAME_CARD,
-  initialResourceCounts,
-  Loot,
-  AvailableLoot
+  initialResourceCounts
 } from '../manifest';
+import { Loot, AvailableLoot } from '../interfaces';
 import buildingCosts, { BuildingCost } from '../buildingCosts';
 
 class BankManager {

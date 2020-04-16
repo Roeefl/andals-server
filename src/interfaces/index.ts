@@ -6,3 +6,11 @@ export interface RoomOptions {
   friendlyGameLog?: boolean
   enableBotReplacement?: boolean
 };
+
+export interface Loot {
+  [key: string]: number
+};
+
+export interface AvailableLoot {
+  [key: string]: Loot
+};

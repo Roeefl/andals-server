@@ -6,15 +6,17 @@ import Player, { PlayerOptions } from './Player';
 import Structure from './Structure';
 import TileManager, { ValidStructurePosition, ValidHextile } from '../game/TileManager';
 import { generateSessionId } from '../utils/sessionId';
+import { absoluteIndex } from '../utils/board';
 
 import {
   PURCHASE_ROAD,
   PURCHASE_SETTLEMENT,
   PURCHASE_GAME_CARD,
   PURCHASE_CITY,
-  resourceCardTypes, Loot,
+  resourceCardTypes,
   LUMBER
 } from '../manifest';
+import { Loot } from '../interfaces';
 
 class GameBot extends Player {
   constructor(color: string, playerIndex: number, replacing?: Player) {
@@ -122,9 +124,9 @@ class GameBot extends Player {
 
   static async desiredRobberTile(state: GameState, botSessionId: string) {
     await delay(1500);
-
+    
     const { row, col } = TileManager.bestRobberHextile(state, botSessionId);
-    return row * 7 + col;
+    return absoluteIndex(row, col);
   }
 
   stealCard(state: GameState) {

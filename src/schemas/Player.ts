@@ -6,13 +6,14 @@ import GameBot from './GameBot';
 
 import buildingCosts, { BuildingCost } from '../buildingCosts';
 import {
-  purchaseTypes,
+  baseGameManifest,
   resourceCardTypes,
   CARD_KNIGHT, CARD_VICTORY_POINT,
   PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_GAME_CARD, PURCHASE_CITY,
-  initialResourceCounts,
-  Loot
+  initialResourceCounts
 } from '../manifest';
+
+import { Loot } from '../interfaces';
 
 export interface PlayerOptions {
   nickname: string
@@ -281,7 +282,7 @@ class Player extends Schema {
   }
 
   updateHasResources() {
-    const updatedHasResources = purchaseTypes.reduce((acc, purchaseType) => {
+    const updatedHasResources = baseGameManifest.purchaseTypes.reduce((acc, purchaseType) => {
       acc[purchaseType] = Object
         .entries(this.resourceCounts)
         .every(([resource, value]) => value >= buildingCosts[purchaseType][resource]);
