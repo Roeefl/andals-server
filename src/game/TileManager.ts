@@ -1,7 +1,7 @@
 import GameState from '../game/GameState';
-import structureTileMap from '../tilemaps/structures';
-import hexTileMap from '../tilemaps/hexes'; 
-import roadTileMap from '../tilemaps/roads';
+import structureTileMap from '../tilemaps/baseGame/hexes';
+import hexTileMap from '../tilemaps/baseGame/hexes';
+import roadTileMap from '../tilemaps/baseGame/hexes';
 import HexTile from '../schemas/HexTile';
 import Player from '../schemas/Player';
 import { TILE_WATER, TILE_RESOURCE, DESERT } from '../manifest';

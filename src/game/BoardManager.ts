@@ -2,7 +2,7 @@ import { shuffle } from 'lodash';
 
 import GameState from '../game/GameState';
 import HexTile from '../schemas/HexTile';
-import hexTileMap from '../tilemaps/hexes';
+import hexTileMap from '../tilemaps/baseGame/hexes';
 import TileManager from './TileManager';
 import { absoluteIndex } from '../utils/board';
 

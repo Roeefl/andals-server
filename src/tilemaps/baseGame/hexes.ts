@@ -1,4 +1,4 @@
-import { TILE_RESOURCE, TILE_WATER, TILE_SPACER } from '../manifest';
+import { TILE_RESOURCE, TILE_WATER, TILE_SPACER } from '../../manifest';
 
 // 7 x 7 === Total of 49 tiles
 export default [
