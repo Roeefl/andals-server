@@ -7,7 +7,6 @@ import { createServer } from 'http';
 import { Server } from 'colyseus';
 import { monitor } from '@colyseus/monitor';
 // import socialRoutes from '@colyseus/social/express';
-const serveIndex = require('serve-index');
 
 import { API } from './src/api';
 import BaseGame from './src/rooms/BaseGame';
@@ -35,14 +34,17 @@ const gameServer = new Server({
 gameServer.define('baseGame', BaseGame); // , roomOptions
 gameServer.define('firstMen', FirstMenGame);
 
-// router.use('/', express.static(frontendDirectory));
-app.use('/', serveIndex(path.join(__dirname, 'static'), { 'icons': true }))
-
-// const monitorPath = path.join(__dirname, 'static');
-// router.use('/', express.static(monitorPath));
+// router.use('/', express.static(path));
 
 // const router = express.Router();
+// const monitorPath = path.join(__dirname, '/');
+// router.use('/', express.static(monitorPath));
+
 // router.use('/api', API());
+
+app.get('/', function(req, res) {
+  res.sendFile(path.join(__dirname + '/index.html'));
+});
 
 /**
  * Register @colyseus/social routes
