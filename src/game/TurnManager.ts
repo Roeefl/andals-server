@@ -1,6 +1,6 @@
 import GameState from '../game/GameState';
 import Player from '../schemas/Player';
-import Bank from '../game/BankManager';
+import BankManager from '../game/BankManager';
 
 import { MESSAGE_GAME_LOG } from '../constants';
 
@@ -79,7 +79,7 @@ class TurnManager {
 
         // initializeFirstRoundStart
         // same method with no diceTotal should loop over ALL hexes instead of ones matching the diceValue.
-        Bank.setResourcesLoot(state);
+        BankManager.setResourcesLoot(state);
 
         broadcast(MESSAGE_GAME_LOG, 'Setup phase is complete. Game started!');
         return;

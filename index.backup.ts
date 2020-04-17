@@ -10,7 +10,6 @@ import { monitor } from '@colyseus/monitor';
 
 import { API } from './src/api';
 import BaseGame from './src/rooms/BaseGame';
-import FirstMenGame from './src/rooms/FirstMenGame';
 
 // import { RoomOptions } from './src/interfaces';
 
@@ -31,8 +30,6 @@ const gameServer = new Server({
 // const roomOptions: RoomOptions = {
 //   roomTitle: "Test Game Room"
 // };
-gameServer.define('baseGame', BaseGame); // , roomOptions
-gameServer.define('firstMen', FirstMenGame);
 
 // router.use('/', express.static(path));
 

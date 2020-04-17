@@ -1,4 +1,6 @@
 import { Loot, GameManifest } from '../interfaces';
+import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from '../roomTypes';
+
 export const resourceTypes: string[] = ['lumber', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'water', 'harborGeneric'];
 export const [LUMBER, BRICK, SHEEP, WHEAT, ORE, DESERT, WATER, HARBOR_GENERIC] = resourceTypes;
 
@@ -127,6 +129,7 @@ const firstmenHarborIndices = [
 // ======================= /GoT Manifest =================================
 
 export const baseGameManifest: GameManifest = {
+  roomType: ROOM_TYPE_BASE_GAME,
   purchaseTypes: purchaseTypes.filter(type => type !== PURCHASE_GUARD),
   boardLayout: baseGameBoardLayout,
   boardValues: baseGameBoardValues,
@@ -135,6 +138,7 @@ export const baseGameManifest: GameManifest = {
 };
 
 export const firstmenManifest: GameManifest = {
+  roomType: ROOM_TYPE_FIRST_MEN,
   purchaseTypes,
   boardLayout: firstmenBoardLayout,
   boardValues: firstmenBoardValues,

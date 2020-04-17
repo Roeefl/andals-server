@@ -205,7 +205,7 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_ROLL_DICE:
-        const { dice = [3, 3] } = data;
+        const { dice = [3, 3, 3] } = data;
         DiceManager.onDiceRoll(this.state, dice, currentPlayer);
 
         this.broadcastToAll(MESSAGE_ROLL_DICE, {

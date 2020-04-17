@@ -10,8 +10,13 @@ class DiceRoll extends Schema {
   constructor(dice: number[]) {
     super();
     
-    this.dice = new ArraySchema<Number>(...dice);
-    this.value = dice.reduce((d1, d2) => d1 + d2, 0);
+    this.dice = new ArraySchema<Number>(
+      ...dice
+    );
+
+    this.value = dice
+      .slice(0, 2)
+      .reduce((d1, d2) => d1 + d2, 0);
   }
 };
 

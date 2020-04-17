@@ -13,6 +13,9 @@ const totalResourceCards = 19;
 class GameState extends Schema {
   manifest: GameManifest
 
+  @type("string")
+  roomType: string
+
   @type("number")
   maxClients: number
 
@@ -89,6 +92,7 @@ class GameState extends Schema {
     super();
 
     this.manifest = manifest;
+    this.roomType = manifest.roomType;
 
     const {
       roomTitle = 'andals.io Game Room',

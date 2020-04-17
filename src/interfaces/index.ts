@@ -16,6 +16,7 @@ export interface AvailableLoot {
 };
 
 export interface GameManifest {
+  roomType: string
   purchaseTypes: string[]
   boardLayout: string[]
   boardValues: number[]
