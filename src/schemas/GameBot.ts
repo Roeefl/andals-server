@@ -122,6 +122,11 @@ class GameBot extends Player {
     };
   }
 
+  static async validGuard(state: GameState, botSessionId: string) {
+    await delay(1000);
+    return null;
+  }
+
   static async desiredRobberTile(state: GameState, botSessionId: string) {
     await delay(1500);
     
