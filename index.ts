@@ -38,10 +38,11 @@ gameServer.define('firstMen', FirstMenGame);
 // router.use('/', express.static(frontendDirectory));
 app.use('/', serveIndex(path.join(__dirname, 'static'), { 'icons': true }))
 
-const monitorPath = path.join(__dirname, 'static');
-const router = express.Router();
-router.use('/', express.static(monitorPath));
-router.use('/api', API());
+// const monitorPath = path.join(__dirname, 'static');
+// router.use('/', express.static(monitorPath));
+
+// const router = express.Router();
+// router.use('/api', API());
 
 /**
  * Register @colyseus/social routes
@@ -59,4 +60,4 @@ gameServer.onShutdown(() => console.info('game server is going down.'));
 gameServer.listen(port);
 
 const serverUrl = process.env.SERVER_URL || 'ws://localhost';
-console.info(`Started Server on: ${serverUrl}:${port}`);
+console.info(`Server Started | ${serverUrl}:${port}`);
