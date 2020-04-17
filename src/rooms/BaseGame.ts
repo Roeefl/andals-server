@@ -23,6 +23,7 @@ import {
   MESSAGE_FINISH_TURN,
   MESSAGE_PLACE_ROAD,
   MESSAGE_PLACE_STRUCTURE,
+  MESSAGE_PLACE_GUARD,
   MESSAGE_PURCHASE_GAME_CARD,
   MESSAGE_PLAY_GAME_CARD,
   MESSAGE_SELECT_MONOPOLY_RESOURCE,
@@ -280,6 +281,12 @@ class BaseGame extends Room<GameState> {
         });
         break;
 
+      case MESSAGE_PLACE_GUARD:
+        this.broadcastToAll(MESSAGE_GAME_LOG, {
+          message: `${currentPlayer.nickname} placed a Guard`
+        });
+        break;
+
       case MESSAGE_PURCHASE_GAME_CARD:
         PurchaseManager.onPurchaseGameCard(this.state, currentPlayer.playerSessionId);
         BankManager.onBankPayment(this.state, PURCHASE_GAME_CARD);
@@ -411,6 +418,13 @@ class BaseGame extends Room<GameState> {
     if (currentBot.allowStealingFrom.length) {
       const stealData = currentBot.stealCard(this.state);
       this.onGameAction(currentBot, MESSAGE_STEAL_CARD, stealData);
+    }
+
+    if (currentBot.hasResources.guard) {
+      const guard = await GameBot.validGuard(this.state, currentBot.playerSessionId);
+
+      if (guard)
+        this.onGameAction(currentBot, MESSAGE_PLACE_GUARD, guard);
     }
     
     if (currentBot.hasResources.city) {
