@@ -1,7 +1,4 @@
-import { Loot } from '../interfaces';
-import { baseGameBoardLayout, baseGameBoardValues, baseGameHarbors, baseGameHarborIndices } from './baseGame';
-import { firstmenBoardLayout, firstmenBoardValues, firstmenHarbors, firstmenHarborIndices } from './firstMen';
-
+import { Loot, GameManifest } from '../interfaces';
 export const resourceTypes: string[] = ['lumber', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'water', 'harborGeneric'];
 export const [LUMBER, BRICK, SHEEP, WHEAT, ORE, DESERT, WATER, HARBOR_GENERIC] = resourceTypes;
 
@@ -43,13 +40,91 @@ export const initialResourceCounts: Loot = {
   ore: 0
 };
 
-interface GameManifest {
-  purchaseTypes: string[]
-  boardLayout: string[]
-  boardValues: number[]
-  boardHarbors: string[]
-  harborIndices: number[]
-};
+// ======================= BaseGame Manifest =================================
+// 19 terrain hexes (4 lumber, 4 sheep, 4 wheat, 3 brick, 3 ore, and 1 desert)
+const baseGameBoardLayout: string[] = [
+  ...new Array(4).fill(LUMBER),
+  ...new Array(4).fill(SHEEP),
+  ...new Array(4).fill(WHEAT),
+  ...new Array(3).fill(BRICK),
+  ...new Array(3).fill(ORE),
+  DESERT
+];
+
+// 18 circular number tokens
+const baseGameBoardValues: number[] = [
+  2,
+  3, 3,
+  4, 4,
+  5, 5,
+  6, 6,
+  8, 8,
+  9, 9,
+  10, 10,
+  11, 11,
+  12
+];
+
+const baseGameHarbors: string[] = [
+  ...new Array(4).fill(HARBOR_GENERIC),
+  SHEEP,
+  LUMBER,
+  BRICK,
+  WHEAT,
+  ORE
+];
+
+const baseGameHarborIndices = [
+  1, 3,
+  12,
+  14,
+  27,
+  28,
+  40,
+  43, 45
+];
+// ======================= /BaseGame Manifest =================================
+
+// ======================= GoT Manifest =================================
+const firstmenBoardLayout: string[] = [
+  ...new Array(4).fill(LUMBER),
+  ...new Array(4).fill(SHEEP),
+  ...new Array(4).fill(WHEAT),
+  ...new Array(4).fill(BRICK),
+  ...new Array(5).fill(ORE)
+];
+
+const firstmenBoardValues: number[] = [
+  2,
+  3, 3,
+  4, 4,
+  5, 5, 5,
+  6, 6, 6,
+  8, 8, 8,
+  9, 9,
+  10, 10,
+  11, 11,
+  12
+];
+
+const firstmenHarbors: string[] = [
+  SHEEP,
+  LUMBER,
+  BRICK,
+  WHEAT,
+  ORE
+];
+
+const firstmenHarborIndices = [
+  1, 3,
+  12,
+  14,
+  27,
+  28,
+  40,
+  43, 45
+];
+// ======================= /GoT Manifest =================================
 
 export const baseGameManifest: GameManifest = {
   purchaseTypes: purchaseTypes.filter(type => type !== PURCHASE_GUARD),

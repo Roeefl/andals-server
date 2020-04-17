@@ -14,3 +14,11 @@ export interface Loot {
 export interface AvailableLoot {
   [key: string]: Loot
 };
+
+export interface GameManifest {
+  purchaseTypes: string[]
+  boardLayout: string[]
+  boardValues: number[]
+  boardHarbors: string[]
+  harborIndices: number[]
+};

@@ -34,6 +34,13 @@ const buildingCosts: BuildingCosts = {
     ore: 1,
     lumber: 0,
     brick: 0
+  },
+  guard: {
+    lumber: 1,
+    brick: 1,
+    sheep: 1,
+    wheat: 0,
+    ore: 0
   }
 };
 

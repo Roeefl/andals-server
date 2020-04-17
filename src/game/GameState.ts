@@ -6,11 +6,13 @@ import Structure from '../schemas/Structure';
 import Road from '../schemas/Road';
 import GameCard from '../schemas/GameCard';
 import { DESERT } from '../manifest';
-import { RoomOptions } from '../interfaces';
+import { GameManifest, RoomOptions } from '../interfaces';
 
 const totalResourceCards = 19;
 
 class GameState extends Schema {
+  manifest: GameManifest
+
   @type("number")
   maxClients: number
 
@@ -83,8 +85,10 @@ class GameState extends Schema {
   @type(["number"])
   ports: ArraySchema<number>
 
-  constructor(board: HexTile[], gameCards: GameCard[], roomOptions: RoomOptions) {
+  constructor(manifest: GameManifest, board: HexTile[], gameCards: GameCard[], roomOptions: RoomOptions) {
     super();
+
+    this.manifest = manifest;
 
     const {
       roomTitle = 'andals.io Game Room',

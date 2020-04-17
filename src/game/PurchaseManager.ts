@@ -85,6 +85,10 @@ class PurchaseManager {
       ...updatedGameCards
     );
   }
+
+  onPurchaseGuard(state: GameState, ownerId: string) {
+    
+  }
 }
 
 export default new PurchaseManager();

@@ -40,6 +40,7 @@ import {
 } from '../constants';
 
 import {
+  baseGameManifest,
   PURCHASE_ROAD,
   PURCHASE_SETTLEMENT,
   PURCHASE_GAME_CARD,
@@ -79,7 +80,7 @@ class BaseGame extends Room<GameState> {
     const board = BoardManager.baseGameBoard();
     const gameCards = GameCardManager.shuffled();
     
-    const gameState = new GameState(board, gameCards, roomOptions);
+    const gameState = new GameState(baseGameManifest, board, gameCards, roomOptions);
     this.setState(gameState);
 
     this.populateWithBotsIfNeeded(roomOptions);

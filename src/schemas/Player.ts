@@ -6,11 +6,12 @@ import GameBot from './GameBot';
 
 import buildingCosts, { BuildingCost } from '../buildingCosts';
 import {
-  baseGameManifest,
+  firstmenManifest,
   resourceCardTypes,
   CARD_KNIGHT, CARD_VICTORY_POINT,
   PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_GAME_CARD, PURCHASE_CITY,
-  initialResourceCounts
+  initialResourceCounts,
+  PURCHASE_GUARD
 } from '../manifest';
 
 import { Loot } from '../interfaces';
@@ -28,7 +29,8 @@ const initialHasResources: HasResources = {
   road: false,
   settlement: false,
   city: false,
-  gameCard: false
+  gameCard: false,
+  guard: false
 };
 
 interface OwnedHarbors {
@@ -82,6 +84,9 @@ class Player extends Schema {
 
   @type("number")
   roads: number = 15;
+
+  @type("number")
+  guards: number = 8;
 
   @type([GameCard])
   gameCards: GameCard[];
@@ -216,7 +221,8 @@ class Player extends Schema {
       road: false,
       settlement: true,
       city: false,
-      gameCard: false
+      gameCard: false,
+      guard: false
     });
   }
 
@@ -229,6 +235,8 @@ class Player extends Schema {
     } else if (type === PURCHASE_CITY) {
       this.cities--;
       this.victoryPoints++;
+    } else if (type === PURCHASE_GUARD) {
+      this.guards--;
     }
 
     if (isSetupPhase) {
@@ -237,7 +245,8 @@ class Player extends Schema {
           road: true,
           settlement: false,
           city: false,
-          gameCard: false
+          gameCard: false,
+          guard: false
         });
 
         return;
@@ -282,7 +291,7 @@ class Player extends Schema {
   }
 
   updateHasResources() {
-    const updatedHasResources = baseGameManifest.purchaseTypes.reduce((acc, purchaseType) => {
+    const updatedHasResources = firstmenManifest.purchaseTypes.reduce((acc, purchaseType) => {
       acc[purchaseType] = Object
         .entries(this.resourceCounts)
         .every(([resource, value]) => value >= buildingCosts[purchaseType][resource]);
