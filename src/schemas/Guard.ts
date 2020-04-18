@@ -2,7 +2,7 @@ import { type, Schema } from '@colyseus/schema';
 
 class Guard extends Schema {
   @type("string")
-  ownerId: string
+  ownerId: string | null
 
   @type("number")
   wallSection: number

@@ -91,13 +91,13 @@ class PurchaseManager {
   onPurchaseGuard(state: FirstMenGameState, ownerId: string, section: number, position: number) {
     const guard = new Guard(ownerId, section, position);
     
-    const updatedGuards = [
-      ...state.guards,
-      guard
+    const updatedWall = [
+      ...state.wall
     ];
+    updatedWall[section * 5 + position] = guard;
     
-    state.guards = new ArraySchema<Guard>(
-      ...updatedGuards
+    state.wall = new ArraySchema<Guard>(
+      ...updatedWall
     );
   
    const owner: Player = state.players[ownerId];
