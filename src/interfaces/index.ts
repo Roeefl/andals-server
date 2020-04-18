@@ -7,6 +7,14 @@ export interface RoomOptions {
   enableBotReplacement?: boolean
 };
 
+export interface BuildingCost {
+  [key: string]: number
+};
+
+export interface BuildingCosts {
+  [key: string]: BuildingCost
+};
+
 export interface Loot {
   [key: string]: number
 };
@@ -22,4 +30,17 @@ export interface GameManifest {
   boardValues: number[]
   boardHarbors: string[]
   harborIndices: number[]
+};
+
+export interface ClanManifest {
+  name: string
+  trails: number[][]
+};
+
+export interface ClansManifest {
+  [key: string]: ClanManifest
+};
+
+export interface WildlingCounts {
+  [key: string]: number
 };

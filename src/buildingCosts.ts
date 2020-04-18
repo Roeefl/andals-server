@@ -1,10 +1,4 @@
-export interface BuildingCost {
-  [key: string]: number
-};
-
-interface BuildingCosts {
-  [key: string]: BuildingCost
-};
+import { BuildingCosts } from './interfaces';
 
 const buildingCosts: BuildingCosts = {
   road: {

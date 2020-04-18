@@ -164,6 +164,7 @@ class BaseGame extends Room<GameState> {
         const options = {
           nickname: currentPlayer.nickname
         };
+        
         this.state.players[client.sessionId] = new Player(replacementBot.playerSessionId, options, replacementBot.color, replacementBot.playerIndex);
         this.state.players[client.sessionId].restore(replacementBot);
       } else {

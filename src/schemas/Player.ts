@@ -4,7 +4,7 @@ import DiceRoll from './DiceRoll';
 import Structure from './Structure';
 import GameBot from './GameBot';
 
-import buildingCosts, { BuildingCost } from '../buildingCosts';
+import buildingCosts from '../buildingCosts';
 import {
   firstmenManifest,
   resourceCardTypes,
@@ -14,7 +14,7 @@ import {
   PURCHASE_GUARD
 } from '../manifest';
 
-import { Loot } from '../interfaces';
+import { Loot, BuildingCost } from '../interfaces';
 
 export interface PlayerOptions {
   nickname: string

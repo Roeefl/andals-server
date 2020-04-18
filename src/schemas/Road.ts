@@ -10,7 +10,6 @@ class Road extends Schema {
   @type("number")
   col: number
 
-
   constructor(ownerId: string, row: number, col: number) {
     super();
     

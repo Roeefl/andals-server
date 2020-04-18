@@ -12,7 +12,7 @@ import {
   initialResourceCounts
 } from '../manifest';
 import { Loot, AvailableLoot } from '../interfaces';
-import buildingCosts, { BuildingCost } from '../buildingCosts';
+import buildingCosts from '../buildingCosts';
 
 class BankManager {
   setResourcesLoot(state: GameState, diceTotal?: number) {
