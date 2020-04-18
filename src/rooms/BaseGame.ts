@@ -205,7 +205,7 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_ROLL_DICE:
-        const { dice = [3, 3, 3] } = data;
+        const { dice = [3, 3] } = data;
         DiceManager.onDiceRoll(this.state, dice, currentPlayer);
 
         this.broadcastToAll(MESSAGE_ROLL_DICE, {
@@ -379,7 +379,7 @@ class BaseGame extends Room<GameState> {
     if (!currentBot.isBot) return;
 
     if (this.state.isTurnOrderPhase) {
-      const botDice: number[] = await GameBot.rollDice();
+      const botDice: number[] = await GameBot.rollDice(this.state.roomType);
       this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
 
       this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
@@ -402,7 +402,7 @@ class BaseGame extends Room<GameState> {
       return;
     }
 
-    const botDice: number[] = await GameBot.rollDice();
+    const botDice: number[] = await GameBot.rollDice(this.state.roomType);
     this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
 
     if (currentBot.mustMoveRobber) {

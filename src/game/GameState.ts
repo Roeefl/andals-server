@@ -8,6 +8,8 @@ import GameCard from '../schemas/GameCard';
 import { DESERT } from '../manifest';
 import { GameManifest, RoomOptions } from '../interfaces';
 
+import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from '../roomTypes';
+
 const totalResourceCards = 19;
 
 class GameState extends Schema {
@@ -68,7 +70,7 @@ class GameState extends Schema {
   players = new MapSchema<Player>();
 
   @type(["number"])
-  dice = new ArraySchema<Number>(6, 6);
+  dice: Number[]
 
   @type([HexTile])
   board: HexTile[]
@@ -93,6 +95,11 @@ class GameState extends Schema {
 
     this.manifest = manifest;
     this.roomType = manifest.roomType;
+    
+    const initialDice = manifest.roomType === ROOM_TYPE_FIRST_MEN ? [3, 4, 10] : [3, 4];
+    this.dice = new ArraySchema<Number>(
+      ...initialDice
+    );
 
     const {
       roomTitle = 'andals.io Game Room',

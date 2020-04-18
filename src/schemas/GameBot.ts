@@ -8,6 +8,8 @@ import TileManager, { ValidStructurePosition, ValidHextile } from '../game/TileM
 import { generateSessionId } from '../utils/sessionId';
 import { absoluteIndex } from '../utils/board';
 
+import { ROOM_TYPE_FIRST_MEN } from '../roomTypes';
+
 import {
   PURCHASE_ROAD,
   PURCHASE_SETTLEMENT,
@@ -16,6 +18,7 @@ import {
   resourceCardTypes,
   LUMBER
 } from '../manifest';
+
 import { Loot } from '../interfaces';
 
 class GameBot extends Player {
@@ -60,16 +63,20 @@ class GameBot extends Player {
     return generate.nameObject.name;
   }
 
-  static async rollDice() {
+  static async rollDice(roomType: string) {
     await delay(500);
 
     const randomDice1 = Math.floor(Math.random() * 6) + 1;
     const randomDice2 = Math.floor(Math.random() * 6) + 1;
 
-    return [
-      randomDice1,
-      randomDice2
-    ];
+    const dice = [randomDice1, randomDice2];
+
+    if (roomType === ROOM_TYPE_FIRST_MEN) {
+      const wildlingDice = Math.floor(Math.random() * 12) + 1;
+      dice.push(wildlingDice);
+    };
+
+    return dice;
   }
 
   static async validSettlement(state: GameState, botSessionId: string) {
