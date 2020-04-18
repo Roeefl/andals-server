@@ -78,7 +78,7 @@ class BaseGame extends Room<GameState> {
     console.info("BaseGame | onCreate | roomOptions: ", roomOptions);
 
     const board = BoardManager.baseGameBoard();
-    const gameCards = GameCardManager.shuffled();
+    const gameCards = GameCardManager.shuffle();
     
     const gameState = new GameState(baseGameManifest, board, gameCards, roomOptions);
     this.setState(gameState);

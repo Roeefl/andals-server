@@ -130,7 +130,10 @@ class GameState extends Schema {
       ore: totalResourceCards
     });
 
-    this.gameCards = new ArraySchema<GameCard>(...gameCards);
+    this.gameCards = new ArraySchema<GameCard>(
+      ...gameCards
+    );
+    
     this.robberPosition = board.findIndex(tile => tile.resource === DESERT);
 
     this.roads = new ArraySchema<Road>();

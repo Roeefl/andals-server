@@ -6,7 +6,7 @@ import WildlingToken from '../schemas/WildlingToken';
 import { totalTokens, clanNames, wildlingTypes } from '../specs/wildlings';
 
 class WildlingManager {
-  initialTokens() {
+  shuffleTokens() {
     const tokens: WildlingToken[] = [];
 
     for (let t = 0; t < totalTokens; t++) {

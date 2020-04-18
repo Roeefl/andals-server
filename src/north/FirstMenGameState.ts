@@ -6,6 +6,8 @@ import GameCard from '../schemas/GameCard';
 import ClanCamps from '../schemas/ClanCamps';
 import ClanClearing from '../schemas/ClanClearing';
 import Guard from '../schemas/Guard';
+import HeroCard from '../schemas/HeroCard';
+import WildlingToken from '../schemas/WildlingToken';
 
 import { GameManifest, RoomOptions, WildlingCounts } from '../interfaces';
 import { initialSpawnWildlingCounts, clanNames } from '../specs/wildlings';
@@ -26,7 +28,13 @@ class FirstMenGameState extends GameState {
   @type([Guard])
   wall: Guard[]
 
-  constructor(manifest: GameManifest, board: HexTile[], gameCards: GameCard[], roomOptions: RoomOptions) {
+  @type([HeroCard])
+  heroCards: HeroCard[]
+
+  @type([WildlingToken])
+  wildlingTokens: WildlingToken[]
+
+  constructor(manifest: GameManifest, board: HexTile[], gameCards: GameCard[], roomOptions: RoomOptions, wildlingTokens: WildlingToken[], heroCards: HeroCard[]) {
     super(manifest, board, gameCards, roomOptions);
 
     this.wallBreaches = 0;
@@ -58,6 +66,14 @@ class FirstMenGameState extends GameState {
     const initialWall = new Array(20).fill(new Guard(null, -1, -1));
     this.wall = new ArraySchema<Guard>(
       ...initialWall
+    );
+
+    this.wildlingTokens = new ArraySchema<WildlingToken>(
+      ...wildlingTokens
+    );
+
+    this.heroCards = new ArraySchema<HeroCard>(
+      ...heroCards
     );
   }
 };

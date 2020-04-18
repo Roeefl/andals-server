@@ -9,7 +9,7 @@ import {
 } from '../manifest';
 
 class GameCardManager {
-  shuffled() {
+  shuffle() {
     const shuffledCards: string[] = shuffle(boardGameCards);
     
     return shuffledCards

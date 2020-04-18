@@ -7,10 +7,8 @@ import Player from '../schemas/Player';
 import BoardManager from '../game/BoardManager';
 import PurchaseManager from '../game/PurchaseManager';
 import BankManager from '../game/BankManager';
-import TurnManager from '../game/TurnManager';
 import GameCardManager from '../game/GameCardManager';
-import TradeManager from '../game/TradeManager';
-import DiceManager from '../game/DiceManager';
+import HeroCardManager from '../game/HeroCardManager';
 
 import { MESSAGE_GAME_LOG, MESSAGE_PLACE_GUARD } from '../constants';
 
@@ -29,15 +27,35 @@ class FirstMenGame extends BaseGame {
     console.info("FirstMenGame | onCreate | roomOptions: ", roomOptions);
 
     const board = BoardManager.firstMenBoard();
-    const gameCards = GameCardManager.shuffled();
+    const gameCards = GameCardManager.shuffle();
 
-    const tokens = WildlingManager.initialTokens();
+    const tokens = WildlingManager.shuffleTokens();
+    const heroCards = HeroCardManager.shuffle();
     
-    const gameState = new FirstMenGameState(firstmenManifest, board, gameCards, roomOptions);
+    const gameState = new FirstMenGameState(firstmenManifest, board, gameCards, roomOptions, tokens, heroCards);
     this.setState(gameState);
     
     this.populateWithBotsIfNeeded(roomOptions);
+
+    this.assignInitialHeroCards();
   };
+
+  assignInitialHeroCards() {
+    const state = this.state as FirstMenGameState;
+    let cardIndex = 0;
+
+    Object
+      .keys(this.state.players)
+      .forEach(sessionId => {
+        const player: Player = this.state.players[sessionId];
+        const heroCard = state.heroCards[cardIndex];
+
+        heroCard.ownerId = player.playerSessionId;
+        player.currentHeroCard = heroCard;
+
+        cardIndex++;
+      });
+  }
 
   onMessage(client: Client, data: any) {
     const { type } = data;
@@ -45,7 +63,6 @@ class FirstMenGame extends BaseGame {
 
     if (!firstMenMessageTypes.includes(type)) {
       this.onGameAction(currentPlayer, type, data);
-      return;
     }
 
     if (type === MESSAGE_PLACE_GUARD) {

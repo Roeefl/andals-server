@@ -3,6 +3,7 @@ import GameCard from '../schemas/GameCard';
 import DiceRoll from './DiceRoll';
 import Structure from './Structure';
 import GameBot from './GameBot';
+import HeroCard from './HeroCard';
 
 import buildingCosts from '../buildingCosts';
 import {
@@ -144,6 +145,18 @@ class Player extends Schema {
 
   @type(Structure)
   lastStructureBuilt: Structure | null = null;
+
+  @type(HeroCard)
+  currentHeroCard: HeroCard
+
+  @type("boolean")
+  hasPlayedHeroCard: boolean = false;
+
+  @type("string")
+  heroPrivilege: string | null = null;
+
+  @type("boolean")
+  allowDirectTrade: boolean = false;
 
   constructor(sessionId: string, options: PlayerOptions, color: string, playerIndex: number) {
     super();
