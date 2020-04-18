@@ -26,6 +26,9 @@ class FirstMenGameState extends GameState {
   @type([Guard])
   guards: Guard[]
 
+  @type(["number"])
+  wall: number[]
+
   constructor(manifest: GameManifest, board: HexTile[], gameCards: GameCard[], roomOptions: RoomOptions) {
     super(manifest, board, gameCards, roomOptions);
 
@@ -54,6 +57,11 @@ class FirstMenGameState extends GameState {
     this.clanClearings = new MapSchema<ClanClearing>({
       ...initialClanClearings
     });
+
+    const initialWall = new Array(20).fill(0);
+    this.wall = new ArraySchema<number>(
+      ...initialWall
+    );
 
     this.guards = new ArraySchema<Guard>();
   }

@@ -8,7 +8,6 @@ import {
   resourceCardTypes,
   TILE_RESOURCE,
   DESERT,
-  PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_CITY, PURCHASE_GAME_CARD, PURCHASE_GUARD,
   initialResourceCounts
 } from '../manifest';
 import { Loot, AvailableLoot } from '../interfaces';

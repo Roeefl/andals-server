@@ -86,7 +86,7 @@ class Player extends Schema {
   roads: number = 15;
 
   @type("number")
-  guards: number = 8;
+  guards: number = 7;
 
   @type([GameCard])
   gameCards: GameCard[];

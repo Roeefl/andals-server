@@ -2,14 +2,16 @@ import { ArraySchema } from '@colyseus/schema';
 
 import TileManager from './TileManager';
 import GameState from '../game/GameState';
+import FirstMenGameState from '../north/FirstMenGameState';
 
 import Structure from '../schemas/Structure';
 import Road from '../schemas/Road';
 import Player from '../schemas/Player';
 import GameCard from '../schemas/GameCard';
+import Guard from '../schemas/Guard';
 
 import {
-  PURCHASE_ROAD, PURCHASE_SETTLEMENT,
+  PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_GUARD,
   TILE_WATER
 } from '../manifest';
 
@@ -86,8 +88,20 @@ class PurchaseManager {
     );
   }
 
-  onPurchaseGuard(state: GameState, ownerId: string) {
+  onPurchaseGuard(state: FirstMenGameState, ownerId: string, section: number, position: number) {
+    const guard = new Guard(ownerId, section, position);
     
+    const updatedGuards = [
+      ...state.guards,
+      guard
+    ];
+    
+    state.guards = new ArraySchema<Guard>(
+      ...updatedGuards
+    );
+  
+   const owner: Player = state.players[ownerId];
+   owner.onPurchase(PURCHASE_GUARD, state.isSetupPhase);
   }
 }
 
