@@ -239,6 +239,16 @@ class Player extends Schema {
     });
   }
 
+  initialGuardSetupPhase() {
+    this.hasResources = new MapSchema<Boolean>({
+      road: false,
+      settlement: false,
+      city: false,
+      gameCard: false,
+      guard: true
+    });
+  }
+
   onPurchase(type: string, isSetupPhase: boolean = false, isEndSetupPhase: boolean = false) {
     if (type === PURCHASE_ROAD) {
       this.roads--;

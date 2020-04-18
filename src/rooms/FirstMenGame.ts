@@ -70,16 +70,6 @@ class FirstMenGame extends BaseGame {
       this.onPlaceGuard(currentPlayer, section, position);
     }
   };
-
-  onPlaceGuard(currentPlayer: Player, section: number, position: number) {
-    PurchaseManager.onPurchaseGuard(this.state as FirstMenGameState, currentPlayer.playerSessionId, section, position);
-    BankManager.onBankPayment(this.state, PURCHASE_GUARD);
-    this.evaluateVictoryStatus();
-  
-    this.broadcastToAll(MESSAGE_GAME_LOG, {
-      message: `${currentPlayer.nickname} has placed a Guard in [Section ${section}, Position ${position}]`
-    });
-  }
 };
 
 export default FirstMenGame;

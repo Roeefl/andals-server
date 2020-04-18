@@ -3,12 +3,19 @@ import Player from '../schemas/Player';
 import BankManager from '../game/BankManager';
 
 import { MESSAGE_GAME_LOG } from '../constants';
+import { ROOM_TYPE_BASE_GAME } from '../roomTypes';
 
 class TurnManager {
   initializeSetupPhase(state: GameState) {
     Object
       .values(state.players)
       .forEach(player => player.initializeSetupPhase());
+  }
+
+  initializeGuardPhase(state: GameState) {
+    Object
+      .values(state.players)
+      .forEach(player => player.initialGuardSetupPhase());
   }
 
   resetHasPlayedGameCard(state: GameState) {
@@ -61,7 +68,10 @@ class TurnManager {
     }
 
     if (isSetupPhase) {
-      player.initializeSetupPhase();
+      player.initializeSetupPhase(); // @FIXME: WHAT? why twice?
+
+      const lastPlacementRound = state.maxClients * 2 - 1;
+      const endOfGuardRound = state.maxClients * 3 - 1;
 
       if (setupPhaseTurns === LAST_PLAYER) {
         // Give last player in the round another turn
@@ -71,21 +81,7 @@ class TurnManager {
         return;
       }
 
-      if (setupPhaseTurns === (state.maxClients * 2 - 1)) {
-        // END OF SETUP PHASE
-        state.currentTurn = state.roundStarter;
-        state.isSetupPhase = false;
-        state.isGameStarted = true;
-
-        // initializeFirstRoundStart
-        // same method with no diceTotal should loop over ALL hexes instead of ones matching the diceValue.
-        BankManager.setResourcesLoot(state);
-
-        broadcast(MESSAGE_GAME_LOG, 'Setup phase is complete. Game started!');
-        return;
-      }
-
-      if (setupPhaseTurns > LAST_PLAYER) {
+      if (setupPhaseTurns > LAST_PLAYER && setupPhaseTurns < (lastPlacementRound)) {
         // Reverse turn order until the end of setup phase
         state.currentTurn = (currentTurn - 1) % state.maxClients;
         if (state.currentTurn < 0)
@@ -94,6 +90,30 @@ class TurnManager {
         state.setupPhaseTurns++;
 
         broadcast(MESSAGE_GAME_LOG, `${player.nickname} finished his turn`);
+        return;
+      }
+
+      if (setupPhaseTurns === lastPlacementRound) {
+        state.currentTurn = state.roundStarter;
+
+        if (state.roomType === ROOM_TYPE_BASE_GAME) {
+          this.startGame(state, broadcast);
+        }
+        else {
+          this.initializeGuardPhase(state);
+          state.setupPhaseTurns++;
+        }
+
+        return;
+      }
+
+      if (setupPhaseTurns > lastPlacementRound) {
+        // guard placing round
+        // Don't do fucking anything just let them place guards.
+      }
+
+      if (setupPhaseTurns === endOfGuardRound) {
+        this.startGame(state, broadcast);
         return;
       }
 
@@ -117,6 +137,16 @@ class TurnManager {
       broadcast(MESSAGE_GAME_LOG, `Round ${currentRound} complete. Starting Round ${currentRound + 1}`);
       state.currentRound++;
     }
+  }
+
+  startGame(state: GameState, broadcast: (type: string, message: string) => void) {
+    // END OF SETUP PHASE
+    state.isSetupPhase = false;
+    state.isGameStarted = true;
+
+    BankManager.setResourcesLoot(state);
+
+    broadcast(MESSAGE_GAME_LOG, 'Setup phase is complete. Game started!');
   }
 }
 

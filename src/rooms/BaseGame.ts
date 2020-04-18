@@ -36,7 +36,8 @@ import {
   MESSAGE_TRADE_ADD_CARD,
   MESSAGE_TRADE_REMOVE_CARD,
   MESSAGE_TRADE_CONFIRM,
-  MESSAGE_TRADE_REFUSE
+  MESSAGE_TRADE_REFUSE,
+  MESSAGE_PLACE_GUARD
 } from '../constants';
 
 import {
@@ -44,10 +45,12 @@ import {
   PURCHASE_ROAD,
   PURCHASE_SETTLEMENT,
   PURCHASE_GAME_CARD,
-  playerColors
+  playerColors,
+  PURCHASE_GUARD
 } from '../manifest';
 
 import { RoomOptions, Loot } from '../interfaces';
+import FirstMenGameState from '../north/FirstMenGameState';
 
 const maxReconnectionTime = 5 * 60;
 
@@ -347,6 +350,11 @@ class BaseGame extends Room<GameState> {
 
         break;
 
+      case MESSAGE_PLACE_GUARD:
+        const { section = 0, position = 0 } = data;
+        this.onPlaceGuard(currentPlayer, section, position);
+        break;
+
       case MESSAGE_READY:
         this.onPlayerReady(currentPlayer);
         break;
@@ -369,6 +377,16 @@ class BaseGame extends Room<GameState> {
       });
   }
 
+  onPlaceGuard(currentPlayer: Player, section: number, position: number) {
+    PurchaseManager.onPurchaseGuard(this.state as FirstMenGameState, currentPlayer.playerSessionId, section, position);
+    BankManager.onBankPayment(this.state, PURCHASE_GUARD);
+    this.evaluateVictoryStatus();
+  
+    this.broadcastToAll(MESSAGE_GAME_LOG, {
+      message: `${currentPlayer.nickname} has placed a Guard in [Section ${section}, Position ${position}]`
+    });
+  }
+
   async advanceBot(currentBot: GameBot) {
     if (!currentBot.isBot) return;
 
@@ -381,6 +399,16 @@ class BaseGame extends Room<GameState> {
     }
     
     if (this.state.isSetupPhase) {
+      if (this.state.setupPhaseTurns > this.state.maxClients * 2 - 1) {
+        // in Guard placement round
+        const guard = await GameBot.validGuard(this.state as FirstMenGameState, currentBot.playerSessionId);
+        
+        this.onGameAction(currentBot, MESSAGE_PLACE_GUARD, guard);
+        this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
+
+        return;
+      }
+
       const settlement = await GameBot.validSettlement(this.state, currentBot.playerSessionId);
       this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, settlement);
 
@@ -414,12 +442,12 @@ class BaseGame extends Room<GameState> {
       this.onGameAction(currentBot, MESSAGE_STEAL_CARD, stealData);
     }
 
-    // if (currentBot.hasResources.guard) {
-    //   const guard = await GameBot.validGuard(this.state, currentBot.playerSessionId);
+    if (currentBot.hasResources.guard) {
+      const guard = await GameBot.validGuard(this.state as FirstMenGameState, currentBot.playerSessionId);
 
-    //   if (guard)
-    //     this.onGameAction(currentBot, MESSAGE_PLACE_GUARD, guard);
-    // }
+      if (guard)
+        this.onGameAction(currentBot, MESSAGE_PLACE_GUARD, guard);
+    }
     
     if (currentBot.hasResources.city) {
       const city = await GameBot.validCity(this.state, currentBot.playerSessionId);

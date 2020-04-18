@@ -20,6 +20,9 @@ import {
 } from '../manifest';
 
 import { Loot } from '../interfaces';
+import FirstMenGameState from '../north/FirstMenGameState';
+
+const wallSectionStartIndices = [0, 5, 10, 15];
 
 class GameBot extends Player {
   constructor(color: string, playerIndex: number, replacing?: Player) {
@@ -129,9 +132,27 @@ class GameBot extends Player {
     };
   }
 
-  static async validGuard(state: GameState, botSessionId: string) {
+  static async validGuard(state: FirstMenGameState, botSessionId: string) {
     await delay(1000);
-    return null;
+    const { wall } = state;
+
+    const bestPosition = {
+      section: 3,
+      position: 4
+    };
+
+    const wallSections = wallSectionStartIndices.map(startPos => wall.slice(startPos, startPos + 5));
+
+    wallSections.forEach((section, s) => {
+      for (let p = 0; p < 5; p++) {
+        if (p < bestPosition.position && !section[p].ownerId) {
+          bestPosition.section = s;
+          bestPosition.position = p;
+        }
+      }
+    });
+
+    return bestPosition;
   }
 
   static async desiredRobberTile(state: GameState, botSessionId: string) {

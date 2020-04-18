@@ -8,7 +8,8 @@ import {
   resourceCardTypes,
   TILE_RESOURCE,
   DESERT,
-  initialResourceCounts
+  initialResourceCounts,
+  PURCHASE_CITY
 } from '../manifest';
 import { Loot, AvailableLoot } from '../interfaces';
 import buildingCosts from '../buildingCosts';
