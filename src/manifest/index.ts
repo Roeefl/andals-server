@@ -125,15 +125,7 @@ const firstmenHarbors: string[] = [
   ORE
 ];
 
-const firstmenHarborIndices = [
-  1, 3,
-  12,
-  14,
-  27,
-  28,
-  40,
-  43, 45
-];
+const firstmenHarborIndices = [28, 29, 30, 31, 32];
 // ======================= /GoT Manifest =================================
 
 export const baseGameManifest: GameManifest = {
