@@ -26,6 +26,9 @@ export interface AvailableLoot {
 export interface GameManifest {
   roomType: string
   purchaseTypes: string[]
+  tilemap: number[][]
+  structureTilemap: number[][]
+  roadTilemap: number[][]
   boardLayout: string[]
   boardValues: number[]
   boardHarbors: string[]

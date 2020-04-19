@@ -1,11 +1,3 @@
-export const types = {
-  0: 'hide',
-  1: 'top-left',
-  2: 'top-right',
-  3: 'left'
-};
-
-// 14 rows x 14 columns
 export default [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

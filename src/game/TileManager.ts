@@ -1,7 +1,4 @@
 import GameState from '../game/GameState';
-import hexTileMap from '../tilemaps/baseGame/hexes';
-import structureTileMap from '../tilemaps/baseGame/structures';
-import roadTileMap from '../tilemaps/baseGame/roads';
 import HexTile from '../schemas/HexTile';
 import Player from '../schemas/Player';
 import { TILE_WATER, TILE_RESOURCE, DESERT } from '../manifest';
@@ -18,14 +15,14 @@ export interface ValidHextile {
 }
 
 class TileManager {
-  hexTileAdjacentHexes(row: number, col: number) {
-    // top-left, top-right, left, right, bottom-left, bottom-right
-    return [
-      [row - 1, col - 1], [row - 1, col],
-      [row, col - 1], [row, col + 1],
-      [row + 1, col - 1], [row + 1, col]
-    ].filter(([hexRow, hexCol]) => hexRow >= 0 && hexRow < hexTileMap.length && hexCol >= 0 && hexCol <= hexTileMap[0].length);
-  }
+  // hexTileAdjacentHexes(row: number, col: number) {
+  //   // top-left, top-right, left, right, bottom-left, bottom-right
+  //   return [
+  //     [row - 1, col - 1], [row - 1, col],
+  //     [row, col - 1], [row, col + 1],
+  //     [row + 1, col - 1], [row + 1, col]
+  //   ].filter(([hexRow, hexCol]) => hexRow >= 0 && hexRow < hexTileMap.length && hexCol >= 0 && hexCol <= hexTileMap[0].length);
+  // }
 
   hexTileAdjacentStructures(row: number, col: number) {
     // offset by +2 for EVEN rows only
@@ -42,9 +39,9 @@ class TileManager {
     ];
   }
 
-  harborAdjacentStructures(ports: number[] = [0, 1], row: number, col: number) {
+  harborAdjacentStructures(structureTilemap: number[][], ports: number[] = [0, 1], row: number, col: number) {
     const adjacentStructures = this.hexTileAdjacentStructures(row, col)
-      .filter(([sRow, sCol]) => sRow >= 0 && sRow < structureTileMap.length && !!structureTileMap[sRow][sCol]);
+      .filter(([sRow, sCol]) => sRow >= 0 && sRow < structureTilemap.length && !!structureTilemap[sRow][sCol]);
       
       const [firstPortIndex, secondPortIndex] = ports;
 
@@ -56,11 +53,11 @@ class TileManager {
         : adjacentStructures;
   }
 
-  harborAdjacentToStructure(board: HexTile[], row: number, col: number, ports: number[] = [0, 1]) {
+  harborAdjacentToStructure(board: HexTile[], structureTilemap: number[][], row: number, col: number, ports: number[] = [0, 1]) {
     return board
       .filter(({ type, resource }) => type === TILE_WATER && !!resource)
       .find(({ row: tileRow, col: tileCol }) => {
-        const adjacentStructures = this.harborAdjacentStructures(ports, tileRow, tileCol);
+        const adjacentStructures = this.harborAdjacentStructures(structureTilemap, ports, tileRow, tileCol);
         return adjacentStructures.some(([structureRow, structureCol]) => structureRow === row && structureCol === col);
       });
   }
@@ -83,14 +80,16 @@ class TileManager {
   };
 
   isValidSettlement(state: GameState, ownerId: string, row: number, col: number) {
-    if (!structureTileMap[row][col])
+    const { structureTilemap, roadTilemap } = state.manifest;
+
+    if (!structureTilemap[row][col])
       return false;
 
     if (!state.isSetupPhase) {
       const isAdjacentToOwnedRoad = state.roads
         .filter(road => !!road && road.ownerId && road.ownerId === ownerId)
         .map(({ row: roadRow, col: roadCol }) => {
-          const roadTile = roadTileMap[roadRow][roadCol];
+          const roadTile = roadTilemap[roadRow][roadCol];
           if (!roadTile) return false;
     
           let allowedStructures: number[][] = [];
@@ -113,12 +112,12 @@ class TileManager {
     }
   
     // Not allowed to place structure on ports on setup round
-    if (state.isSetupPhase && this.harborAdjacentToStructure(state.board, row, col, state.ports)) return false;
+    if (state.isSetupPhase && this.harborAdjacentToStructure(state.board, state.manifest.structureTilemap, row, col, state.ports)) return false;
   
     const isAdjacentToActiveStructures = state.structures
       .filter(structure => !!structure && !!structure.ownerId)
       .map(({ row: structureRow, col: structureCol }) => {
-        const structureTile = structureTileMap[structureRow][structureCol]; // 'hide' === 0,'top' === 1, 'top-left' === 2
+        const structureTile = structureTilemap[structureRow][structureCol]; // 'hide' === 0,'top' === 1, 'top-left' === 2
         if (!structureTile) return false;
   
         const adjacentStructureTiles = this.adjacentStructuresToStructure(structureTile, structureRow, structureCol);
@@ -129,7 +128,9 @@ class TileManager {
   };
 
   isValidRoad(state: GameState, owner: Player, row: number, col: number) {
-    if (!roadTileMap[row][col])
+    const { structureTilemap, roadTilemap } = state.manifest;
+
+    if (!roadTilemap[row][col])
       return false;
 
     // Already owns this road...
@@ -140,7 +141,7 @@ class TileManager {
       .filter(structure => !state.isSetupPhase || !owner.lastStructureBuilt || (!!structure && structure.row === owner.lastStructureBuilt.row && structure.col === owner.lastStructureBuilt.col))
       .filter(structure => !!structure && structure.ownerId && structure.ownerId === owner.playerSessionId)
       .map(({ row: structureRow, col: structureCol }) => {
-        const structureTile = structureTileMap[structureRow][structureCol]; // 'hide' === 0,'top' === 1, 'top-left' === 2
+        const structureTile = structureTilemap[structureRow][structureCol]; // 'hide' === 0,'top' === 1, 'top-left' === 2
         if (!structureTile) return false;
   
         let intersections = [[structureRow * 2, structureCol - 1], [structureRow * 2, structureCol]];
@@ -170,7 +171,7 @@ class TileManager {
       .filter(road => !!road && road.ownerId && road.ownerId === owner.playerSessionId)
       .map(({ row: roadRow, col: roadCol }) => {
         // 0: 'hide', 1: 'top-left', 2: 'top-right', 3: 'left'
-        const roadTile = roadTileMap[roadRow][roadCol];
+        const roadTile = roadTilemap[roadRow][roadCol];
         if (!roadTile) return false;
   
         let intersections: number[][] = [];
@@ -205,9 +206,11 @@ class TileManager {
   };
 
   validSettlements(state: GameState, ownerId: string) {
+    const { structureTilemap } = state.manifest;
+
     const allValidSettlements: ValidStructurePosition[] = [];
 
-    structureTileMap
+    structureTilemap
       .forEach((row, rowIndex) => {
         row.forEach((s, colIndex) => {
           if (this.isValidSettlement(state, ownerId, rowIndex, colIndex)) {
@@ -221,9 +224,11 @@ class TileManager {
   };
 
   validRoads(state: GameState, player: Player) {
+    const { roadTilemap } = state.manifest;
+
     const allValidRoads: ValidStructurePosition[] = [];
 
-    roadTileMap
+    roadTilemap
       .forEach((row, rowIndex) => {
         row.forEach((s, colIndex) => {
           if (this.isValidRoad(state, player, rowIndex, colIndex)) {

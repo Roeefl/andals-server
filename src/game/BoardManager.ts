@@ -2,7 +2,6 @@ import { shuffle } from 'lodash';
 
 import GameState from '../game/GameState';
 import HexTile from '../schemas/HexTile';
-import hexTileMap from '../tilemaps/baseGame/hexes';
 import TileManager from './TileManager';
 import { absoluteIndex } from '../utils/board';
 
@@ -14,16 +13,16 @@ import {
 } from '../manifest';
 
 class BoardManager {
-  hasSameResourceInAdjacentHexes(adjacentHexes: number[][], board: HexTile[], row: number, col: number, resourceType: string) {
-    return adjacentHexes
-      .filter(([hexRow, hexCol]) => hexTileMap[hexRow][hexCol] === TILE_RESOURCE && (hexRow < row || (hexRow === row && hexCol < col)))
-      .map(([hexRow, hexCol]) => {
-        const tileIndex = absoluteIndex(hexRow, hexCol);
-        const otherTile: HexTile = board[tileIndex];
-        return otherTile.resource === resourceType;
-      })
-      .some(isSameResource => isSameResource);
-  }
+  // hasSameResourceInAdjacentHexes(adjacentHexes: number[][], board: HexTile[], row: number, col: number, resourceType: string) {
+  //   return adjacentHexes
+  //     .filter(([hexRow, hexCol]) => baseGameManifest.tilemap[hexRow][hexCol] === TILE_RESOURCE && (hexRow < row || (hexRow === row && hexCol < col)))
+  //     .map(([hexRow, hexCol]) => {
+  //       const tileIndex = absoluteIndex(hexRow, hexCol);
+  //       const otherTile: HexTile = board[tileIndex];
+  //       return otherTile.resource === resourceType;
+  //     })
+  //     .some(isSameResource => isSameResource);
+  // }
 
   /**
    * Generates a board array with a total of 49 hex tiles
@@ -41,16 +40,16 @@ class BoardManager {
     const harbors: string[] = shuffle(baseGameManifest.boardHarbors);
     let harborIndex: number = 0;
 
-    for (let r = 0; r < hexTileMap.length; r++) {
-      for (let t = 0; t < hexTileMap[r].length; t++) {
-        const currentTileType = hexTileMap[r][t];
+    for (let r = 0; r < baseGameManifest.tilemap.length; r++) {
+      for (let t = 0; t < baseGameManifest.tilemap[r].length; t++) {
+        const currentTileType = baseGameManifest.tilemap[r][t];
 
         let currentTile = null;
 
-        if (currentTileType === TILE_SPACER) {
+        if (currentTileType === 0) {
           currentTile = new HexTile(TILE_SPACER, r, t);
-        } else if (currentTileType === TILE_WATER) {
-          const tileIndex: number = absoluteIndex(r, t);
+        } else if (currentTileType === 2) {
+          const tileIndex: number = absoluteIndex(baseGameManifest.tilemap, r, t);
 
           if (baseGameManifest.harborIndices.includes(tileIndex)) {
             const nextHarbor = harbors[harborIndex];
@@ -101,16 +100,16 @@ class BoardManager {
     const harbors: string[] = shuffle(firstmenManifest.boardHarbors);
     let harborIndex: number = 0;
 
-    for (let r = 0; r < hexTileMap.length; r++) {
-      for (let t = 0; t < hexTileMap[r].length; t++) {
-        const currentTileType = hexTileMap[r][t];
+    for (let r = 0; r < firstmenManifest.tilemap.length; r++) {
+      for (let t = 0; t < firstmenManifest.tilemap[r].length; t++) {
+        const currentTileType = firstmenManifest.tilemap[r][t];
 
         let currentTile = null;
 
-        if (currentTileType === TILE_SPACER) {
+        if (currentTileType === 0) {
           currentTile = new HexTile(TILE_SPACER, r, t);
-        } else if (currentTileType === TILE_WATER) {
-          const tileIndex: number = absoluteIndex(r, t);
+        } else if (currentTileType === 2) {
+          const tileIndex: number = absoluteIndex(firstmenManifest.tilemap, r, t);
 
           if (firstmenManifest.harborIndices.includes(tileIndex)) {
             const nextHarbor = harbors[harborIndex];

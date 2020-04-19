@@ -1,6 +1,14 @@
 import { Loot, GameManifest } from '../interfaces';
 import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from '../roomTypes';
 
+import baseGameHexTileMap from '../tilemaps/baseGame/hexes';
+import baseGameStructureTileMap from '../tilemaps/baseGame/structures';
+import baseGameRoadTileMap from '../tilemaps/baseGame/roads';
+
+import firstMenHexTileMap from '../tilemaps/firstMen/hexes';
+import firstMenStructureTileMap from '../tilemaps/firstMen/structures';
+import firstMenRoadTileMap from '../tilemaps/firstMen/roads';
+
 export const resourceTypes: string[] = ['lumber', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'water', 'harborGeneric'];
 export const [LUMBER, BRICK, SHEEP, WHEAT, ORE, DESERT, WATER, HARBOR_GENERIC] = resourceTypes;
 
@@ -13,11 +21,11 @@ export const harborTypes = [LUMBER, BRICK, SHEEP, WHEAT, ORE, HARBOR_GENERIC];
 export const purchaseTypes: string[] = ['road', 'settlement', 'city', 'gameCard', 'guard'];
 export const [PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_CITY, PURCHASE_GAME_CARD, PURCHASE_GUARD] = purchaseTypes;
 
-const tileTypes  = ['resource', 'water', 'spacer'];
+const tileTypes  = ['spacer', 'resource', 'water'];
 export const [
+  TILE_SPACER,
   TILE_RESOURCE,
-  TILE_WATER,
-  TILE_SPACER
+  TILE_WATER
 ] = tileTypes;
 
 // 25 Development Cards:
@@ -131,6 +139,9 @@ const firstmenHarborIndices = [
 export const baseGameManifest: GameManifest = {
   roomType: ROOM_TYPE_BASE_GAME,
   purchaseTypes: purchaseTypes.filter(type => type !== PURCHASE_GUARD),
+  tilemap: baseGameHexTileMap,
+  structureTilemap: baseGameStructureTileMap,
+  roadTilemap: baseGameRoadTileMap,
   boardLayout: baseGameBoardLayout,
   boardValues: baseGameBoardValues,
   boardHarbors: baseGameHarbors,
@@ -140,6 +151,9 @@ export const baseGameManifest: GameManifest = {
 export const firstmenManifest: GameManifest = {
   roomType: ROOM_TYPE_FIRST_MEN,
   purchaseTypes,
+  tilemap: firstMenHexTileMap,
+  structureTilemap: firstMenStructureTileMap,
+  roadTilemap: firstMenRoadTileMap,
   boardLayout: firstmenBoardLayout,
   boardValues: firstmenBoardValues,
   boardHarbors: firstmenHarbors,

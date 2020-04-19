@@ -159,7 +159,7 @@ class GameBot extends Player {
     await delay(1500);
     
     const { row, col } = TileManager.bestRobberHextile(state, botSessionId);
-    return absoluteIndex(row, col);
+    return absoluteIndex(state.manifest.tilemap, row, col);
   }
 
   stealCard(state: GameState) {
