@@ -4,7 +4,7 @@ import { createServer } from 'http';
 import { Server } from 'colyseus';
 import BaseGame from './src/rooms/BaseGame';
 import FirstMenGame from './src/rooms/FirstMenGame';
-import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from './src/roomTypes';
+import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from './src/specs/roomTypes';
 
 const port = 1337;
 

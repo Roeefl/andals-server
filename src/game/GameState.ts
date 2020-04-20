@@ -8,7 +8,7 @@ import GameCard from '../schemas/GameCard';
 import { DESERT } from '../manifest';
 import { GameManifest, RoomOptions } from '../interfaces';
 
-import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from '../roomTypes';
+import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
 
 const totalResourceCards = 19;
 

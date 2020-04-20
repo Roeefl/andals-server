@@ -3,7 +3,7 @@ import Player from '../schemas/Player';
 import BankManager from '../game/BankManager';
 
 import { MESSAGE_GAME_LOG } from '../constants';
-import { ROOM_TYPE_BASE_GAME } from '../roomTypes';
+import { ROOM_TYPE_BASE_GAME } from '../specs/roomTypes';
 
 class TurnManager {
   initializeSetupPhase(state: GameState) {

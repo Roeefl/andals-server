@@ -5,7 +5,7 @@ import Structure from './Structure';
 import GameBot from './GameBot';
 import HeroCard from './HeroCard';
 
-import buildingCosts from '../buildingCosts';
+import buildingCosts from '../specs/buildingCosts';
 import {
   firstmenManifest,
   resourceCardTypes,

@@ -10,13 +10,14 @@ import BankManager from '../game/BankManager';
 import GameCardManager from '../game/GameCardManager';
 import HeroCardManager from '../game/HeroCardManager';
 
-import { MESSAGE_GAME_LOG, MESSAGE_PLACE_GUARD } from '../constants';
+import { MESSAGE_PLACE_GUARD, MESSAGE_PLACE_STRUCTURE, MESSAGE_PURCHASE_GAME_CARD } from '../constants';
 
 import {
-  firstmenManifest, PURCHASE_GUARD
+  firstmenManifest, PURCHASE_GUARD, PURCHASE_GAME_CARD
 } from '../manifest';
 import WildlingManager from '../game/WildlingManager';
 import FirstMenGameState from '../north/FirstMenGameState';
+import { tokensPerPurchase, wildlingTypes } from '../specs/wildlings';
 
 const firstMenMessageTypes: string[] = [
   MESSAGE_PLACE_GUARD
@@ -29,10 +30,10 @@ class FirstMenGame extends BaseGame {
     const board = BoardManager.firstMenBoard();
     const gameCards = GameCardManager.shuffle();
 
-    const tokens = WildlingManager.shuffleTokens();
+    const wildlingTokens = WildlingManager.shuffleTokens();
     const heroCards = HeroCardManager.shuffle();
     
-    const gameState = new FirstMenGameState(firstmenManifest, board, gameCards, roomOptions, tokens, heroCards);
+    const gameState = new FirstMenGameState(firstmenManifest, board, gameCards, roomOptions, wildlingTokens, heroCards);
     this.setState(gameState);
     
     this.populateWithBotsIfNeeded(roomOptions);
@@ -61,13 +62,20 @@ class FirstMenGame extends BaseGame {
     const { type } = data;
     const currentPlayer: Player = this.state.players[client.sessionId];
 
-    if (!firstMenMessageTypes.includes(type)) {
-      this.onGameAction(currentPlayer, type, data);
-    }
+    const state = this.state as FirstMenGameState;
 
-    if (type === MESSAGE_PLACE_GUARD) {
-      const { section = 0, position = 0 } = data;
-      this.onPlaceGuard(currentPlayer, section, position);
+    // if (!firstMenMessageTypes.includes(type))
+    this.onGameAction(currentPlayer, type, data);
+
+    switch (type) {
+      case MESSAGE_PLACE_GUARD:
+        break;
+
+      case MESSAGE_PLACE_STRUCTURE:
+      case MESSAGE_PURCHASE_GAME_CARD:
+        const { structureType = PURCHASE_GAME_CARD } = data;
+        WildlingManager.onPurchaseWithTokens(state, structureType || PURCHASE_GAME_CARD);
+        break;
     }
   };
 };

@@ -9,7 +9,7 @@ import Guard from '../schemas/Guard';
 import HeroCard from '../schemas/HeroCard';
 import WildlingToken from '../schemas/WildlingToken';
 
-import { GameManifest, RoomOptions, WildlingCounts } from '../interfaces';
+import { GameManifest, RoomOptions, WildlingCounts, ClanCampsManifest } from '../interfaces';
 import { initialSpawnWildlingCounts, clanNames } from '../specs/wildlings';
 
 class FirstMenGameState extends GameState {
@@ -43,11 +43,11 @@ class FirstMenGameState extends GameState {
       ...initialSpawnWildlingCounts
     });
 
-    const initialClanCamps = clanNames
+    const initialClanCamps: ClanCampsManifest = clanNames
       .reduce((acc, name) => {
         acc[name] = new ClanCamps(name);
         return acc;
-      }, {});
+      }, {} as ClanCampsManifest);
 
     this.clanCamps = new MapSchema<ClanCamps>({
       ...initialClanCamps

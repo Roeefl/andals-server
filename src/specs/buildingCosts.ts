@@ -1,4 +1,4 @@
-import { BuildingCosts } from './interfaces';
+import { BuildingCosts } from '../interfaces';
 
 const buildingCosts: BuildingCosts = {
   road: {

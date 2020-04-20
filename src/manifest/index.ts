@@ -1,5 +1,5 @@
 import { Loot, GameManifest } from '../interfaces';
-import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from '../roomTypes';
+import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
 
 import baseGameHexTileMap from '../tilemaps/baseGame/hexes';
 import baseGameStructureTileMap from '../tilemaps/baseGame/structures';

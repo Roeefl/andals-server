@@ -8,7 +8,7 @@ import TileManager, { ValidStructurePosition, ValidHextile } from '../game/TileM
 import { generateSessionId } from '../utils/sessionId';
 import { absoluteIndex } from '../utils/board';
 
-import { ROOM_TYPE_FIRST_MEN } from '../roomTypes';
+import { ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
 
 import {
   PURCHASE_ROAD,

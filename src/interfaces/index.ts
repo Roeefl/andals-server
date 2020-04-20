@@ -1,3 +1,5 @@
+import ClanCamps from '../schemas/ClanCamps';
+
 export interface RoomOptions {
   roomTitle?: string
   maxPlayers?: number
@@ -44,6 +46,14 @@ export interface ClansManifest {
   [key: string]: ClanManifest
 };
 
+export interface ClanCampsManifest {
+  [key: string]: ClanCamps
+};
+
 export interface WildlingCounts {
+  [key: string]: number
+};
+
+export interface TokensPerPurchase {
   [key: string]: number
 };

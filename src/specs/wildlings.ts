@@ -1,4 +1,4 @@
-import { ClanManifest, ClansManifest, WildlingCounts } from '../interfaces';
+import { ClanManifest, ClansManifest, WildlingCounts, TokensPerPurchase } from '../interfaces';
 
 export const clanNames = ['river', 'cave', 'hornfoot'];
 export const [CLAN_RIVER, CLAN_CAVE, CLAN_HORNFOOT] = clanNames;
@@ -22,6 +22,12 @@ export const wildlingTypes = ['regular', 'climber',' giant']
 export const [WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT] = wildlingTypes;
 
 export const totalTokens = 48;
+
+export const tokensPerPurchase: TokensPerPurchase = {
+  settlement: 1,
+  city: 2,
+  gameCard: 1
+}
 
 export const initialSpawnWildlingCounts: WildlingCounts = {
   regular: 24,
