@@ -5,7 +5,7 @@ interface cardManifest {
   description: string
 };
 
-const manifest: { [type:string] : cardManifest }  = {
+const manifest: { [type: string] : cardManifest }  = {
   // A "Knight" card allows a player to move the robber to any spot on the board
   // and then gets to take a card from any player that has a settlement or city on the blocked resource.
   knight: {

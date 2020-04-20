@@ -4,13 +4,13 @@ import GameState from '../game/GameState';
 import HexTile from '../schemas/HexTile';
 import GameCard from '../schemas/GameCard';
 import ClanCamps from '../schemas/ClanCamps';
-import ClanClearing from '../schemas/ClanClearing';
+import WildlingClearing from '../schemas/WildlingClearing';
 import Guard from '../schemas/Guard';
 import HeroCard from '../schemas/HeroCard';
 import WildlingToken from '../schemas/WildlingToken';
 
 import { GameManifest, RoomOptions, WildlingCounts, ClanCampsManifest } from '../interfaces';
-import { initialSpawnWildlingCounts, clanNames } from '../specs/wildlings';
+import { initialSpawnWildlingCounts, clanNames, clearings } from '../specs/wildlings';
 
 class FirstMenGameState extends GameState {
   @type("number")
@@ -22,8 +22,8 @@ class FirstMenGameState extends GameState {
   @type({ map: ClanCamps })
   clanCamps: MapSchema<ClanCamps>
 
-  @type({ map: ClanClearing })
-  clanClearings: MapSchema<ClanClearing>
+  @type([WildlingClearing])
+  wildlingClearings: WildlingClearing[]
 
   @type([Guard])
   wall: Guard[]
@@ -53,15 +53,12 @@ class FirstMenGameState extends GameState {
       ...initialClanCamps
     });
 
-    const initialClanClearings = clanNames
-      .reduce((acc, name) => {
-        acc[name] = new ClanClearing(name);
-        return acc;
-      }, {});
+    const initialClanClearings = clearings
+      .map(({ trails, clans }) => new WildlingClearing(trails, clans));
 
-    this.clanClearings = new MapSchema<ClanClearing>({
+    this.wildlingClearings = new ArraySchema<WildlingClearing>(
       ...initialClanClearings
-    });
+    );
 
     const initialWall = new Array(20).fill(new Guard(null, -1, -1));
     this.wall = new ArraySchema<Guard>(

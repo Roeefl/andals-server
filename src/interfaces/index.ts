@@ -46,6 +46,10 @@ export interface ClansManifest {
   [key: string]: ClanManifest
 };
 
+export interface WildlingClearing {
+  trails: number[]
+  clans: string[]
+};
 export interface ClanCampsManifest {
   [key: string]: ClanCamps
 };

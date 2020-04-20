@@ -1,9 +1,9 @@
-import { ClanManifest, ClansManifest, WildlingCounts, TokensPerPurchase } from '../interfaces';
+import { ClansManifest, WildlingCounts, TokensPerPurchase, WildlingClearing } from '../interfaces';
 
 export const clanNames = ['river', 'cave', 'hornfoot'];
 export const [CLAN_RIVER, CLAN_CAVE, CLAN_HORNFOOT] = clanNames;
 
-export const clans: ClansManifest = {
+export const clansManifest: ClansManifest = {
   river: {
     name: CLAN_RIVER,
     trails: [[1, 2], [3]]
@@ -17,6 +17,25 @@ export const clans: ClansManifest = {
     trails: [[6], [7, 8]]
   },
 };
+
+export const clearings: WildlingClearing[] = [
+  {
+    trails: [1, 2],
+    clans: [CLAN_RIVER]
+  },
+  {
+    trails: [3, 4],
+    clans: [CLAN_RIVER, CLAN_CAVE]
+  },
+  {
+    trails: [5, 6],
+    clans: [CLAN_CAVE, CLAN_HORNFOOT]
+  },
+  {
+    trails: [7, 8],
+    clans: [CLAN_HORNFOOT]
+  }
+];
 
 export const wildlingTypes = ['regular', 'climber',' giant']
 export const [WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT] = wildlingTypes;

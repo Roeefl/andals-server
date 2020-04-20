@@ -5,8 +5,6 @@ import { RoomOptions } from '../interfaces';
 import Player from '../schemas/Player';
 
 import BoardManager from '../game/BoardManager';
-import PurchaseManager from '../game/PurchaseManager';
-import BankManager from '../game/BankManager';
 import GameCardManager from '../game/GameCardManager';
 import HeroCardManager from '../game/HeroCardManager';
 
@@ -17,7 +15,7 @@ import {
 } from '../manifest';
 import WildlingManager from '../game/WildlingManager';
 import FirstMenGameState from '../north/FirstMenGameState';
-import { tokensPerPurchase, wildlingTypes } from '../specs/wildlings';
+import { tokensPerPurchase } from '../specs/wildlings';
 
 const firstMenMessageTypes: string[] = [
   MESSAGE_PLACE_GUARD
@@ -85,9 +83,11 @@ class FirstMenGame extends BaseGame {
 
       case MESSAGE_ROLL_DICE:
         const { dice = [3, 3, 1] } = data;
-        
         if (!state.isGameStarted || dice.length < 2) break;
-        // Advance through trails on matching rolls
+        
+        const wildlingDice: number = dice[2];
+        WildlingManager.onWildlingDiceRoll(state, wildlingDice);
+        break;
     }
   };
 };

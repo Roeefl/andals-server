@@ -1,9 +1,11 @@
 import { ArraySchema, MapSchema } from '@colyseus/schema';
 
 import FirstMenGameState from '../north/FirstMenGameState';
+
 import WildlingToken from '../schemas/WildlingToken';
 import ClanCamps from '../schemas/ClanCamps';
-import { totalTokens, clanNames, wildlingTypes, tokensPerPurchase } from '../specs/wildlings';
+
+import { totalTokens, clanNames, wildlingTypes, tokensPerPurchase, clansManifest } from '../specs/wildlings';
 
 class WildlingManager {
   shuffleTokens() {
@@ -43,7 +45,7 @@ class WildlingManager {
     
     state.spawnCounts[wildlingType] = state.spawnCounts[wildlingType] - 1;
 
-    const updatedCamps:string[] = [
+    const updatedCamps: string[] = [
       ...state.clanCamps[clanType].camps,
       wildlingType
     ];
@@ -51,8 +53,35 @@ class WildlingManager {
     state.clanCamps[clanType].camps = new ArraySchema<string>(
       ...updatedCamps
     );
+  }
 
-    // state.clanClearings;
+  // Advance through trails on matching rolls
+  onWildlingDiceRoll(state: FirstMenGameState, wildlingDice: number) {
+    state.wildlingClearings
+      .filter(({ trails }) => trails.includes(wildlingDice))
+      .forEach(clearing => {
+        const trailClan = Object
+          .values(clansManifest)
+          .find(manifest => manifest.trails.some(trails => trails.includes(wildlingDice)));
+
+        if (trailClan) {
+          const clan: ClanCamps = state.clanCamps[trailClan.name];
+
+          if (clan.camps.length) {
+            const [firstWildling] = clan.camps;
+
+            const updatedCamps: string[] = clan.camps.slice(1);
+            state.clanCamps[trailClan.name].camps = new ArraySchema<string>(
+              ...updatedCamps
+            );
+
+            clearing.counts = new MapSchema<Number>({
+              ...clearing.counts,
+              [firstWildling]: clearing.counts[firstWildling] + 1
+            });
+          }
+        };
+      });
   }
 }
 

@@ -7,7 +7,7 @@ interface HeroCardManifest {
   description?: string
 };
 
-export const manifest: { [type:string] : HeroCardManifest } = {
+export const manifest: { [type: string] : HeroCardManifest } = {
   JeorMormont: {
     order: 1,
     name: "Jeor Mormont",
