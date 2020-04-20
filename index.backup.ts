@@ -1,5 +1,4 @@
 // require('dotenv').config();
-// const cors = require('cors');
 
 // import { monitor } from '@colyseus/monitor';
 // // import socialRoutes from '@colyseus/social/express';
@@ -8,7 +7,6 @@
 
 // const port = Number(process.env.SERVER_PORT || 2568);
 
-// app.use(cors());
 
 // const server = createServer(app);
 // const gameServer = new Server({
