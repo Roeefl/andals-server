@@ -15,7 +15,7 @@ import { Loot, AvailableLoot } from '../interfaces';
 import buildingCosts from '../specs/buildingCosts';
 
 class BankManager {
-  setResourcesLoot(state: GameState, diceTotal?: number) {
+  setResourcesLoot(state: GameState, diceTotal?: number | null, isFirstLoot: boolean = false) {
     const updatedResourceCounts: Loot = {
       ...state.resourceCounts
     };
@@ -36,9 +36,10 @@ class BankManager {
       .filter(({ value }) => !diceTotal || value === diceTotal)
       // 18 Resource-type tiles left to loop over
       .forEach(({ resource, row: tileRow, col: tileCol }) => {
-        const adjacentStructures = TileManager.hexTileAdjacentStructures(tileRow, tileCol);
+        const adjacentStructures = TileManager.hexTileAdjacentStructures(tileRow, tileCol)
 
         state.structures
+          .filter(({ row, col, ownerId }) => !isFirstLoot || (row === state.players[ownerId].lastStructureBuilt.row && col === state.players[ownerId].lastStructureBuilt.col))
           .forEach(({ row, col, ownerId, type }) => {
             if (adjacentStructures.some(([sRow, sCol]) => sRow === row && sCol === col)) {
               const addedValue = type === PURCHASE_CITY ? 2 : 1;

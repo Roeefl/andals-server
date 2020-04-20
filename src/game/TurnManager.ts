@@ -144,7 +144,7 @@ class TurnManager {
     state.isSetupPhase = false;
     state.isGameStarted = true;
 
-    BankManager.setResourcesLoot(state);
+    BankManager.setResourcesLoot(state, null, true);
 
     broadcast(MESSAGE_GAME_LOG, 'Setup phase is complete. Game started!');
   }

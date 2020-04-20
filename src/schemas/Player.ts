@@ -331,16 +331,6 @@ class Player extends Schema {
     this.lastStructureBuilt = new Structure(this.playerSessionId, structure.type, structure.row, structure.col);
   }
 
-  // Object
-  //   .values(this.state.players)
-  //   .forEach(player => player.giveInitialResources());
-  // giveInitialResources() {
-  //   if (!this.lastStructureBuilt) return;
-  //   const { type, row, col } = this.lastStructureBuilt; // @TODO: Use this
-
-  //   this.onPurchase('NONE', false, true);
-  // }
-
   onCollectLoot() {
     const updatedResourceCounts = resourceCardTypes.reduce((acc, name) => {
       acc[name] = this.resourceCounts[name] + this.availableLoot[name];
