@@ -24,7 +24,7 @@ class TurnManager {
       .forEach(player => player.hasPlayedGameCard = false);
   }
 
-  finishTurn(state: GameState, player: Player, broadcast: (type: string, message: string) => void) {
+  finishTurn(state: GameState, player: Player, broadcast: (type: string, message: string, isEssential?: boolean) => void) {
     const {
       isSetupPhase,
       isTurnOrderPhase,
@@ -62,7 +62,7 @@ class TurnManager {
       this.initializeSetupPhase(state);
 
       broadcast(MESSAGE_GAME_LOG, 'Turn determination phase finished.');
-      broadcast(MESSAGE_GAME_LOG, 'Setup phase is starting.');
+      broadcast(MESSAGE_GAME_LOG, 'Setup phase is starting.', true);
       broadcast(MESSAGE_GAME_LOG, `${nickname} is first to play`);
       return;
     }
@@ -81,7 +81,7 @@ class TurnManager {
         return;
       }
 
-      if (setupPhaseTurns > LAST_PLAYER && setupPhaseTurns < (lastPlacementRound)) {
+      if (setupPhaseTurns > LAST_PLAYER && setupPhaseTurns < lastPlacementRound) {
         // Reverse turn order until the end of setup phase
         state.currentTurn = (currentTurn - 1) % state.maxClients;
         if (state.currentTurn < 0)
@@ -102,6 +102,7 @@ class TurnManager {
         else {
           this.initializeGuardPhase(state);
           state.setupPhaseTurns++;
+          broadcast(MESSAGE_GAME_LOG, 'Place your guards on the wall', true);
         }
 
         return;
@@ -139,14 +140,14 @@ class TurnManager {
     }
   }
 
-  startGame(state: GameState, broadcast: (type: string, message: string) => void) {
+  startGame(state: GameState, broadcast: (type: string, message: string, isEssential?: boolean) => void) {
     // END OF SETUP PHASE
     state.isSetupPhase = false;
     state.isGameStarted = true;
 
     BankManager.setResourcesLoot(state, null, true);
 
-    broadcast(MESSAGE_GAME_LOG, 'Setup phase is complete. Game started!');
+    broadcast(MESSAGE_GAME_LOG, 'Setup phase is complete. Game started!', true);
   }
 }
 

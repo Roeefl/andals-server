@@ -61,3 +61,8 @@ export interface WildlingCounts {
 export interface TokensPerPurchase {
   [key: string]: number
 };
+
+export interface ResourceToSteal {
+  stealFrom: string,
+  resource: string
+};

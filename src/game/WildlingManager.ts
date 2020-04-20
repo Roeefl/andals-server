@@ -18,13 +18,14 @@ class WildlingManager {
       const token = new WildlingToken(wildlingTypes[randomType], clanNames[randomClan]);
       tokens.push(token);
     };
-
+    
     return tokens;
   }
 
   onPurchaseWithTokens(state: FirstMenGameState, tokensToPlay: number) {
     for (let t = 0; t < tokensToPlay; t++) {
       const currentToken = state.wildlingTokens[t];
+      console.log("WildlingManager -> onPurchaseWithTokens -> currentToken", currentToken.clanType, currentToken.wildlingType)
       this.playToken(state, currentToken);
     };
 

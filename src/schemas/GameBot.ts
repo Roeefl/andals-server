@@ -19,7 +19,7 @@ import {
   LUMBER
 } from '../manifest';
 
-import { Loot } from '../interfaces';
+import { Loot, ResourceToSteal } from '../interfaces';
 import FirstMenGameState from '../north/FirstMenGameState';
 
 const wallSectionStartIndices = [0, 5, 10, 15];
@@ -166,15 +166,19 @@ class GameBot extends Player {
     return absoluteIndex(state.manifest.tilemap, row, col);
   }
 
-  stealCard(state: GameState) {
-    const randomIndex = Math.floor(Math.random() * this.allowStealingFrom.length);
-    const stealFrom: string = this.allowStealingFrom[randomIndex];
+  stealCard(state: GameState, fromWho: number = 0): ResourceToSteal | null {
+    if (this.allowStealingFrom.length <= fromWho)
+      return null;
 
+    const stealFrom: string = this.allowStealingFrom[fromWho];
     const owner: Player = state.players[stealFrom];
     
     const validResources = Object
       .entries(owner.resourceCounts)
       .filter(([resource, value]) => value > 0);
+
+    if (!validResources.length)
+      return this.stealCard(state, fromWho + 1);
 
     const randomResourceIndex = Math.floor(Math.random() * validResources.length);
     const [resource, value] = validResources[randomResourceIndex];

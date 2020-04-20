@@ -49,6 +49,7 @@ import {
   PURCHASE_GUARD
 } from '../manifest';
 
+import { tileIndex } from '../utils/board';
 import { RoomOptions, Loot } from '../interfaces';
 import FirstMenGameState from '../north/FirstMenGameState';
 
@@ -108,10 +109,11 @@ class BaseGame extends Room<GameState> {
     this.lock();
   }
 
-  broadcastToAll(type: string, data: Object = {}) {
+  broadcastToAll(type: string, data: Object = {}, isEssential: boolean = false) {
     this.broadcast({
       sender: this.state.roomTitle,
       type,
+      isEssential,
       ...data
     });
   }
@@ -214,7 +216,7 @@ class BaseGame extends Room<GameState> {
         this.broadcastToAll(MESSAGE_ROLL_DICE, {
           playerName: currentPlayer.nickname,
           dice
-        });
+        }, (dice.length >=2 && (dice[0] + dice[1] === 7)));
         
         if (this.state.isGameStarted)
           this.allBotsCollectLoot();
@@ -249,6 +251,10 @@ class BaseGame extends Room<GameState> {
         this.state.robberPosition = tile;
         currentPlayer.mustMoveRobber = false;
 
+        this.broadcastToAll(MESSAGE_GAME_LOG, {
+          message: `${currentPlayer.nickname} has moved the Robber to ${tileIndex(this.state.manifest.tilemap, tile)}`
+        })
+
         const allowStealingFrom = BoardManager.robberAdjacentPlayers(this.state);
         currentPlayer.allowStealingFrom = new ArraySchema<string>(
           ...allowStealingFrom
@@ -258,6 +264,11 @@ class BaseGame extends Room<GameState> {
 
       case MESSAGE_STEAL_CARD:
         TradeManager.onStealCard(this.state, currentPlayer, data.stealFrom, data.resource);
+
+        this.broadcastToAll(MESSAGE_GAME_LOG, {
+          message: `${currentPlayer.nickname} has stolen ${data.resource} from ${data.stealFrom}`
+        });
+        
         break;
 
       case MESSAGE_PLACE_ROAD:
@@ -281,7 +292,7 @@ class BaseGame extends Room<GameState> {
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} built a ${structureType}`
-        });
+        }, this.state.isGameStarted);
         break;
 
       case MESSAGE_PURCHASE_GAME_CARD:
@@ -291,7 +302,7 @@ class BaseGame extends Room<GameState> {
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} purchased a development card`
-        });
+        }, this.state.isGameStarted);
         break;
 
       case MESSAGE_PLAY_GAME_CARD:
@@ -341,7 +352,9 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_FINISH_TURN:
-        TurnManager.finishTurn(this.state, currentPlayer, (broadcastType: string, broadcastMessage: string) => this.broadcastToAll(broadcastType, { message: broadcastMessage }));
+        TurnManager.finishTurn(this.state, currentPlayer,
+          (broadcastType: string, broadcastMessage: string, isEssential: boolean = false) => this.broadcastToAll(broadcastType, { message: broadcastMessage }, isEssential)
+        );
         await this.advanceBot(this.currentPlayer as GameBot);
 
         // In case any player did not pick up his loot - give it to him 
@@ -384,7 +397,7 @@ class BaseGame extends Room<GameState> {
   
     this.broadcastToAll(MESSAGE_GAME_LOG, {
       message: `${currentPlayer.nickname} has placed a Guard in [Section ${section}, Position ${position}]`
-    });
+    }, this.state.isGameStarted);
   }
 
   async advanceBot(currentBot: GameBot) {
@@ -441,7 +454,9 @@ class BaseGame extends Room<GameState> {
   
     if (currentBot.allowStealingFrom.length) {
       const stealData = currentBot.stealCard(this.state);
-      this.onGameAction(currentBot, MESSAGE_STEAL_CARD, stealData);
+      
+      if (stealData)
+        this.onGameAction(currentBot, MESSAGE_STEAL_CARD, stealData);
     }
 
     if (currentBot.hasResources.guard) {
@@ -533,7 +548,7 @@ class BaseGame extends Room<GameState> {
 
     this.broadcastToAll(MESSAGE_GAME_LOG, {
       message: 'Starting turn order determination phase'
-    });
+    }, true);
 
     this.state.isGameReady = true;
     this.state.isTurnOrderPhase = true;
