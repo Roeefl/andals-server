@@ -1,62 +1,51 @@
-require('dotenv').config();
-const cors = require('cors');
+// require('dotenv').config();
+// const cors = require('cors');
 
-import express from 'express';
-import path from 'path';
-import { createServer } from 'http';
-import { Server } from 'colyseus';
-import { monitor } from '@colyseus/monitor';
-// import socialRoutes from '@colyseus/social/express';
+// import { monitor } from '@colyseus/monitor';
+// // import socialRoutes from '@colyseus/social/express';
 
-import { API } from './src/api';
-import BaseGame from './src/rooms/BaseGame';
+// // import { RoomOptions } from './src/interfaces';
 
-// import { RoomOptions } from './src/interfaces';
+// const port = Number(process.env.SERVER_PORT || 2568);
 
-const port = Number(process.env.SERVER_PORT || 2568);
+// app.use(cors());
 
-const app = express();
+// const server = createServer(app);
+// const gameServer = new Server({
+//   server
+// });
 
-app.use(cors());
-app.use(express.json())
+// // Register ChatRoom with initial options, as "chat_with_options"
+// // onInit(options) will receive client join options + options registered here.
+// // const roomOptions: RoomOptions = {
+// //   roomTitle: "Test Game Room"
+// // };
 
-const server = createServer(app);
-const gameServer = new Server({
-  server
-});
+// // router.use('/', express.static(path));
 
-// Register ChatRoom with initial options, as "chat_with_options"
-// onInit(options) will receive client join options + options registered here.
-// const roomOptions: RoomOptions = {
-//   roomTitle: "Test Game Room"
-// };
+// // const router = express.Router();
+// // const monitorPath = path.join(__dirname, '/');
+// // router.use('/', express.static(monitorPath));
 
-// router.use('/', express.static(path));
 
-// const router = express.Router();
-// const monitorPath = path.join(__dirname, '/');
-// router.use('/', express.static(monitorPath));
+// app.get('/', function(req, res) {
+//   res.sendFile(path.join(__dirname + '/index.html'));
+// });
 
-// router.use('/api', API());
+// /**
+//  * Register @colyseus/social routes
+//  *
+//  * - uncomment if you want to use default authentication (https://docs.colyseus.io/authentication/)
+//  * - also uncomment the import statement
+//  */
+// // app.use("/", socialRoutes);
 
-app.get('/', function(req, res) {
-  res.sendFile(path.join(__dirname + '/index.html'));
-});
+// // register colyseus monitor AFTER registering your room handlers
+// app.use('/colyseus', monitor());
 
-/**
- * Register @colyseus/social routes
- *
- * - uncomment if you want to use default authentication (https://docs.colyseus.io/authentication/)
- * - also uncomment the import statement
- */
-// app.use("/", socialRoutes);
+// gameServer.onShutdown(() => console.info('game server is going down.'));
 
-// register colyseus monitor AFTER registering your room handlers
-app.use('/colyseus', monitor());
+// gameServer.listen(port);
 
-gameServer.onShutdown(() => console.info('game server is going down.'));
-
-gameServer.listen(port);
-
-const serverUrl = process.env.SERVER_URL || 'ws://localhost';
-console.info(`Server Started | ${serverUrl}:${port}`);
+// const serverUrl = process.env.SERVER_URL || 'ws://localhost';
+// console.info(`Server Started | ${serverUrl}:${port}`);

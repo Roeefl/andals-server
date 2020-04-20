@@ -66,6 +66,10 @@ class GameBot extends Player {
     return generate.nameObject.name;
   }
 
+  async think(time: number = 1000) {
+    await delay(time);
+  }
+
   static async rollDice(roomType: string) {
     await delay(500);
 

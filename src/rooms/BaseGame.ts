@@ -427,6 +427,8 @@ class BaseGame extends Room<GameState> {
     const botDice: number[] = await GameBot.rollDice(this.state.roomType);
     this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
 
+    await currentBot.think(2000);
+
     if (currentBot.mustMoveRobber) {
       const tile = await GameBot.desiredRobberTile(this.state, currentBot.playerSessionId);
       this.onGameAction(currentBot, MESSAGE_MOVE_ROBBER, { tile });

@@ -10,7 +10,7 @@ import BankManager from '../game/BankManager';
 import GameCardManager from '../game/GameCardManager';
 import HeroCardManager from '../game/HeroCardManager';
 
-import { MESSAGE_PLACE_GUARD, MESSAGE_PLACE_STRUCTURE, MESSAGE_PURCHASE_GAME_CARD } from '../constants';
+import { MESSAGE_PLACE_GUARD, MESSAGE_PLACE_STRUCTURE, MESSAGE_PURCHASE_GAME_CARD, MESSAGE_REVEAL_WILDLING_TOKENS, MESSAGE_ROLL_DICE } from '../constants';
 
 import {
   firstmenManifest, PURCHASE_GUARD, PURCHASE_GAME_CARD
@@ -73,9 +73,21 @@ class FirstMenGame extends BaseGame {
 
       case MESSAGE_PLACE_STRUCTURE:
       case MESSAGE_PURCHASE_GAME_CARD:
+        if (!state.isGameStarted) break;
+
         const { structureType = PURCHASE_GAME_CARD } = data;
-        WildlingManager.onPurchaseWithTokens(state, structureType || PURCHASE_GAME_CARD);
+        const tokensToPlay = tokensPerPurchase[structureType || PURCHASE_GAME_CARD];
+        const tokens = state.wildlingTokens.slice(0, tokensToPlay);
+
+        WildlingManager.onPurchaseWithTokens(state, tokensToPlay);
+        this.broadcastToAll(MESSAGE_REVEAL_WILDLING_TOKENS, { tokens });        
         break;
+
+      case MESSAGE_ROLL_DICE:
+        const { dice = [3, 3, 1] } = data;
+        
+        if (!state.isGameStarted || dice.length < 2) break;
+        // Advance through trails on matching rolls
     }
   };
 };

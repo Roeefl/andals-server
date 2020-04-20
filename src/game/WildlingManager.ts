@@ -1,11 +1,9 @@
 import { ArraySchema, MapSchema } from '@colyseus/schema';
 
-import GameState from '../game/GameState';
+import FirstMenGameState from '../north/FirstMenGameState';
 import WildlingToken from '../schemas/WildlingToken';
 import ClanCamps from '../schemas/ClanCamps';
-
 import { totalTokens, clanNames, wildlingTypes, tokensPerPurchase } from '../specs/wildlings';
-import FirstMenGameState from '../north/FirstMenGameState';
 
 class WildlingManager {
   shuffleTokens() {
@@ -22,13 +20,11 @@ class WildlingManager {
     return tokens;
   }
 
-  onPurchaseWithTokens(state: FirstMenGameState, purchaseType: string) {
-    const tokensToPlay = tokensPerPurchase[purchaseType];
-
+  onPurchaseWithTokens(state: FirstMenGameState, tokensToPlay: number) {
     for (let t = 0; t < tokensToPlay; t++) {
       const currentToken = state.wildlingTokens[t];
       this.playToken(state, currentToken);
-    }
+    };
 
     const updatedWildlingTokens = state.wildlingTokens.slice(tokensToPlay);
 
@@ -40,11 +36,11 @@ class WildlingManager {
   playToken(state: FirstMenGameState, token: WildlingToken) {
     const { wildlingType, clanType } = token;
 
-    // state.spawnCounts = new MapSchema<Number>({
-    //   ...state.spawnCounts,
-    //   [wildlingType]: state.spawnCounts[wildlingType] - 1
-    // });
-
+    if (state.spawnCounts[wildlingType] < 1) {
+      console.error('Unable to play token: ', wildlingType, clanType);
+      return;
+    }
+    
     state.spawnCounts[wildlingType] = state.spawnCounts[wildlingType] - 1;
 
     const updatedCamps:string[] = [

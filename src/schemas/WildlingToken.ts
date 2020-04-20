@@ -7,15 +7,11 @@ class WildlingToken extends Schema {
   @type("string")
   clanType: string
 
-  @type("boolean")
-  wasPlayed: boolean
-
   constructor(wildlingType: string, clanType: string) {
     super();
 
     this.wildlingType = wildlingType;
     this.clanType = clanType;
-    this.wasPlayed = false;
   }
 };
 
