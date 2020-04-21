@@ -1,8 +1,11 @@
 import { type, Schema, ArraySchema } from '@colyseus/schema';
 
-class ClanCamps extends Schema {
+class ClanArea extends Schema {
   @type("string")
   clanType: string
+
+  @type("number")
+  campfires: number
 
   @type(["string"])
   camps: string[]
@@ -11,8 +14,9 @@ class ClanCamps extends Schema {
     super();
 
     this.clanType = clanType;
+    this.campfires = 4;
     this.camps = new ArraySchema<string>();
   }
 };
 
-export default ClanCamps;
+export default ClanArea;

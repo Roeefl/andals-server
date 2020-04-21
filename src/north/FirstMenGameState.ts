@@ -3,13 +3,13 @@ import GameState from '../game/GameState';
 
 import HexTile from '../schemas/HexTile';
 import GameCard from '../schemas/GameCard';
-import ClanCamps from '../schemas/ClanCamps';
+import ClanArea from '../schemas/ClanArea';
 import WildlingClearing from '../schemas/WildlingClearing';
 import Guard from '../schemas/Guard';
 import HeroCard from '../schemas/HeroCard';
 import WildlingToken from '../schemas/WildlingToken';
 
-import { GameManifest, RoomOptions, WildlingCounts, ClanCampsManifest } from '../interfaces';
+import { GameManifest, RoomOptions, WildlingCounts, ClanAreaManifest } from '../interfaces';
 import { initialSpawnWildlingCounts, clanNames, clearings } from '../specs/wildlings';
 
 class FirstMenGameState extends GameState {
@@ -19,8 +19,8 @@ class FirstMenGameState extends GameState {
   @type({ map: "number" })
   spawnCounts: WildlingCounts
 
-  @type({ map: ClanCamps })
-  clanCamps: MapSchema<ClanCamps>
+  @type({ map: ClanArea })
+  clanAreas: MapSchema<ClanArea>
 
   @type([WildlingClearing])
   wildlingClearings: WildlingClearing[]
@@ -43,21 +43,21 @@ class FirstMenGameState extends GameState {
       ...initialSpawnWildlingCounts
     });
 
-    const initialClanCamps: ClanCampsManifest = clanNames
+    const initialClanAreas: ClanAreaManifest = clanNames
       .reduce((acc, name) => {
-        acc[name] = new ClanCamps(name);
+        acc[name] = new ClanArea(name);
         return acc;
-      }, {} as ClanCampsManifest);
+      }, {} as ClanAreaManifest);
 
-    this.clanCamps = new MapSchema<ClanCamps>({
-      ...initialClanCamps
+    this.clanAreas = new MapSchema<ClanArea>({
+      ...initialClanAreas
     });
 
-    const initialClanClearings = clearings
+    const initialClearings = clearings
       .map(({ trails, clans }) => new WildlingClearing(trails, clans));
 
     this.wildlingClearings = new ArraySchema<WildlingClearing>(
-      ...initialClanClearings
+      ...initialClearings
     );
 
     const initialWall = new Array(20).fill(new Guard(null, -1, -1));

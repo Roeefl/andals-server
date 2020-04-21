@@ -3,9 +3,11 @@ import { ArraySchema, MapSchema } from '@colyseus/schema';
 import FirstMenGameState from '../north/FirstMenGameState';
 
 import WildlingToken from '../schemas/WildlingToken';
-import ClanCamps from '../schemas/ClanCamps';
+import ClanArea from '../schemas/ClanArea';
+import WildlingClearing from '../schemas/WildlingClearing';
 
 import { totalTokens, clanNames, wildlingTypes, tokensPerPurchase, clansManifest } from '../specs/wildlings';
+import { ClanManifest } from '../interfaces';
 
 class WildlingManager {
   shuffleTokens() {
@@ -20,6 +22,51 @@ class WildlingManager {
     };
     
     return tokens;
+  }
+
+  /**
+   * Deploys a single wildling from the spawn area to one of the clan camps
+   *
+   * @param {FirstMenGameState} state
+   * @param {string} wildlingType
+   * @param {string} clan: which clan to deploy to
+   * @memberof WildlingManager
+   */
+  deployWildling(state: FirstMenGameState, wildlingType: string, clan: string) {
+    state.spawnCounts[wildlingType]--;
+
+    const currentClan: ClanArea = state.clanAreas[clan];
+
+    const updatedCamps: string[] = [
+      ...currentClan.camps,
+      wildlingType
+    ];
+    
+    currentClan.camps = new ArraySchema<string>(
+      ...updatedCamps
+    );
+
+    if (currentClan.camps.length > currentClan.campfires)
+      this.wildlingsRush(state, currentClan);
+  }
+
+  /**
+   * When a fifth wildling moves to a clan area that already has 4 wildlings, a wildling rush occurs.
+   * The wildlings in the two camps closest to the trails immediately advance.
+   * The wildling in the lowest camp uses the lower numbered trail, and the wildling in the next closest camp uses the higher numbered trail
+   *
+   * @param {FirstMenGameState} state
+   * @param {ClanArea} clan
+   * @memberof WildlingManager
+   */
+  wildlingsRush(state: FirstMenGameState, clan: ClanArea) {
+    const [firstWildling, secondWildling] = clan.camps;
+
+    const clanManifest: ClanManifest = clansManifest[clan.clanType];
+    const [firstClearing, secondClearing] = clanManifest.clearings;
+
+    this.wildlingAdvancesToClearing(clan, state.wildlingClearings[firstClearing], firstWildling);
+    this.wildlingAdvancesToClearing(clan, state.wildlingClearings[secondClearing], secondWildling);
   }
 
   onPurchaseWithTokens(state: FirstMenGameState, tokensToPlay: number) {
@@ -44,20 +91,23 @@ class WildlingManager {
       return;
     }
     
-    state.spawnCounts[wildlingType] = state.spawnCounts[wildlingType] - 1;
+    this.deployWildling(state, wildlingType, clanType);
+  }
 
-    const updatedCamps: string[] = [
-      ...state.clanCamps[clanType].camps,
-      wildlingType
-    ];
-
-    state.clanCamps[clanType].camps = new ArraySchema<string>(
+  wildlingAdvancesToClearing(clan: ClanArea, clearing: WildlingClearing, wildling: string) {
+    const updatedCamps: string[] = clan.camps.slice(1);
+    clan.camps = new ArraySchema<string>(
       ...updatedCamps
     );
+
+    clearing.counts = new MapSchema<Number>({
+      ...clearing.counts,
+      [wildling]: clearing.counts[wildling] + 1
+    });
   }
 
   // Advance through trails on matching rolls
-  onWildlingDiceRoll(state: FirstMenGameState, wildlingDice: number) {
+  wildlingsAdvance(state: FirstMenGameState, wildlingDice: number) {
     state.wildlingClearings
       .filter(({ trails }) => trails.includes(wildlingDice))
       .forEach(clearing => {
@@ -66,20 +116,11 @@ class WildlingManager {
           .find(manifest => manifest.trails.some(trails => trails.includes(wildlingDice)));
 
         if (trailClan) {
-          const clan: ClanCamps = state.clanCamps[trailClan.name];
+          const clan: ClanArea = state.clanAreas[trailClan.name];
 
           if (clan.camps.length) {
             const [firstWildling] = clan.camps;
-
-            const updatedCamps: string[] = clan.camps.slice(1);
-            state.clanCamps[trailClan.name].camps = new ArraySchema<string>(
-              ...updatedCamps
-            );
-
-            clearing.counts = new MapSchema<Number>({
-              ...clearing.counts,
-              [firstWildling]: clearing.counts[firstWildling] + 1
-            });
+            this.wildlingAdvancesToClearing(clan, clearing, firstWildling);
           }
         };
       });

@@ -86,7 +86,7 @@ class FirstMenGame extends BaseGame {
         if (!state.isGameStarted || dice.length < 2) break;
         
         const wildlingDice: number = dice[2];
-        WildlingManager.onWildlingDiceRoll(state, wildlingDice);
+        WildlingManager.wildlingsAdvance(state, wildlingDice);
         break;
     }
   };

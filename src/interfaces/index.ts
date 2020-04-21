@@ -1,4 +1,4 @@
-import ClanCamps from '../schemas/ClanCamps';
+import ClanArea from '../schemas/ClanArea';
 
 export interface RoomOptions {
   roomTitle?: string
@@ -40,6 +40,7 @@ export interface GameManifest {
 export interface ClanManifest {
   name: string
   trails: number[][]
+  clearings: number[]
 };
 
 export interface ClansManifest {
@@ -50,8 +51,8 @@ export interface WildlingClearing {
   trails: number[]
   clans: string[]
 };
-export interface ClanCampsManifest {
-  [key: string]: ClanCamps
+export interface ClanAreaManifest {
+  [key: string]: ClanArea
 };
 
 export interface WildlingCounts {

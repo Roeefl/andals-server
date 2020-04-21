@@ -6,15 +6,18 @@ export const [CLAN_RIVER, CLAN_CAVE, CLAN_HORNFOOT] = clanNames;
 export const clansManifest: ClansManifest = {
   river: {
     name: CLAN_RIVER,
-    trails: [[1, 2], [3]]
+    trails: [[1, 2], [3]],
+    clearings: [0, 1]
   },
   cave: {
     name: CLAN_CAVE,
-    trails: [[4], [5]]
+    trails: [[4], [5]],
+    clearings: [1, 2]
   },
   hornfoot: {
     name: CLAN_HORNFOOT,
-    trails: [[6], [7, 8]]
+    trails: [[6], [7, 8]],
+    clearings: [2, 3]
   },
 };
 
