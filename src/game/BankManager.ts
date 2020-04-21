@@ -31,8 +31,7 @@ class BankManager {
       }, {} as AvailableLoot);
     
     // Game started - round 1 or higher - allocate resources from the bank to players according to hexes state
-    state.board
-      .filter(({ type, resource }, index) => type === TILE_RESOURCE && !!resource && resource !== DESERT && index !== state.robberPosition)
+    state.lootableHextiles
       .filter(({ value }) => !diceTotal || value === diceTotal)
       // 18 Resource-type tiles left to loop over
       .forEach(({ resource, row: tileRow, col: tileCol }) => {

@@ -248,8 +248,7 @@ class TileManager {
       population: 0
     };
 
-    state.board
-      .filter(({ type, resource }, index) => type === TILE_RESOURCE && !!resource && resource !== DESERT && index !== state.robberPosition)
+    state.lootableHextiles
       .forEach(({ row: tileRow, col: tileCol }) => {
         const adjacentStructures = this.hexTileAdjacentStructures(tileRow, tileCol);
 

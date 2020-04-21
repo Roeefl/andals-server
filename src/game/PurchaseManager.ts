@@ -15,6 +15,8 @@ import {
   TILE_WATER
 } from '../manifest';
 
+import { wallSectionSize } from '../specs/wall';
+
 class PurchaseManager {
   onPurchaseStructure(state: GameState, data: any, ownerId: string, structureType: string = PURCHASE_SETTLEMENT) {
     const { row, col } = data;
@@ -94,7 +96,7 @@ class PurchaseManager {
     const updatedWall = [
       ...state.wall
     ];
-    updatedWall[section * 5 + position] = guard;
+    updatedWall[section * wallSectionSize + position] = guard;
     
     state.wall = new ArraySchema<Guard>(
       ...updatedWall

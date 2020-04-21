@@ -16,6 +16,9 @@ class HexTile extends Schema {
   @type("number")
   value: number
 
+  @type("string")
+  occupiedBy: string | null
+
   constructor(type: string, row: number, col: number, resource: string = '', value: number = 0) {
     super();
 
@@ -24,6 +27,7 @@ class HexTile extends Schema {
     this.col = col;
     this.resource = resource;
     this.value = value;
+    this.occupiedBy = null;
   }
 };
 

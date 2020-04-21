@@ -6,7 +6,7 @@ import WildlingToken from '../schemas/WildlingToken';
 import ClanArea from '../schemas/ClanArea';
 import WildlingClearing from '../schemas/WildlingClearing';
 
-import { totalTokens, clanNames, wildlingTypes, tokensPerPurchase, clansManifest } from '../specs/wildlings';
+import { totalTokens, clanNames, wildlingTypes, clansManifest, WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT } from '../specs/wildlings';
 import { ClanManifest } from '../interfaces';
 
 class WildlingManager {
@@ -65,8 +65,8 @@ class WildlingManager {
     const clanManifest: ClanManifest = clansManifest[clan.clanType];
     const [firstClearing, secondClearing] = clanManifest.clearings;
 
-    this.wildlingAdvancesToClearing(clan, state.wildlingClearings[firstClearing], firstWildling);
-    this.wildlingAdvancesToClearing(clan, state.wildlingClearings[secondClearing], secondWildling);
+    this.wildlingAdvancesToClearing(state, clan, state.wildlingClearings[firstClearing], firstWildling);
+    this.wildlingAdvancesToClearing(state, clan, state.wildlingClearings[secondClearing], secondWildling);
   }
 
   onPurchaseWithTokens(state: FirstMenGameState, tokensToPlay: number) {
@@ -94,7 +94,7 @@ class WildlingManager {
     this.deployWildling(state, wildlingType, clanType);
   }
 
-  wildlingAdvancesToClearing(clan: ClanArea, clearing: WildlingClearing, wildling: string) {
+  wildlingAdvancesToClearing(state: FirstMenGameState, clan: ClanArea, clearing: WildlingClearing, wildling: string) {
     const updatedCamps: string[] = clan.camps.slice(1);
     clan.camps = new ArraySchema<string>(
       ...updatedCamps
@@ -104,6 +104,43 @@ class WildlingManager {
       ...clearing.counts,
       [wildling]: clearing.counts[wildling] + 1
     });
+
+    // Assess clearing
+    this.assessClearing(state, clearing, wildling);
+  }
+
+  assessClearing(state: FirstMenGameState, clearing: WildlingClearing, recentWildling: string) {
+    const { clearingIndex } = clearing;
+    const guardsOnWallSection = state.guardsOnWallSection(clearingIndex);
+
+    if (recentWildling === WILDLING_CLIMBER) {
+      this.wildlingsAdvanceToBoard([recentWildling]);
+      return;
+    }
+
+    if (recentWildling === WILDLING_GIANT) {
+      if (!guardsOnWallSection) {
+        state.wallBreaches++
+      };
+
+      state.onGuardKilled(clearingIndex);
+      state.spawnCounts[WILDLING_GIANT]++;
+      return;
+    }
+
+    if (recentWildling === WILDLING_REGULAR) {
+      const regularWildlingsInClearing = clearing.counts[WILDLING_REGULAR];
+
+      if (regularWildlingsInClearing > guardsOnWallSection) {
+        this.wildlingsAdvanceToBoard(Array(regularWildlingsInClearing).fill(WILDLING_REGULAR));
+        state.wallBreaches++;
+      };
+    }
+  }
+
+  wildlingsAdvanceToBoard(wildlings: string[]) {
+    // blocks the first hex not occupied by a wildling directly south of the wall section.
+    // occupiedBy
   }
 
   // Advance through trails on matching rolls
@@ -120,7 +157,7 @@ class WildlingManager {
 
           if (clan.camps.length) {
             const [firstWildling] = clan.camps;
-            this.wildlingAdvancesToClearing(clan, clearing, firstWildling);
+            this.wildlingAdvancesToClearing(state, clan, clearing, firstWildling);
           }
         };
       });

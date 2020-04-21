@@ -5,7 +5,7 @@ import HexTile from '../schemas/HexTile';
 import Structure from '../schemas/Structure';
 import Road from '../schemas/Road';
 import GameCard from '../schemas/GameCard';
-import { DESERT } from '../manifest';
+import { DESERT, TILE_RESOURCE } from '../manifest';
 import { GameManifest, RoomOptions } from '../interfaces';
 
 import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
@@ -143,6 +143,15 @@ class GameState extends Schema {
     this.ports = new ArraySchema<number>(
       ...randomPortIndices
     );
+  }
+
+  get lootableHextiles() {
+    return this.board
+      .filter(({ type, resource, occupiedBy = null }, index) => (
+        type === TILE_RESOURCE &&
+        !!resource && resource !== DESERT &&
+        index !== this.robberPosition && !occupiedBy
+      ));
   }
 };
 

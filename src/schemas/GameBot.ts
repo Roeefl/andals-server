@@ -22,7 +22,7 @@ import {
 import { Loot, ResourceToSteal } from '../interfaces';
 import FirstMenGameState from '../north/FirstMenGameState';
 
-const wallSectionStartIndices = [0, 5, 10, 15];
+import { wallSectionsCount, wallSectionSize } from '../specs/wall';
 
 class GameBot extends Player {
   constructor(color: string, playerIndex: number, replacing?: Player) {
@@ -138,16 +138,13 @@ class GameBot extends Player {
 
   static async validGuard(state: FirstMenGameState, botSessionId: string) {
     await delay(1000);
-    const { wall } = state;
-
+    
     const bestPosition = {
       section: 3,
       position: 4
     };
 
-    const wallSections = wallSectionStartIndices.map(startPos => wall.slice(startPos, startPos + 5));
-
-    wallSections.forEach((section, s) => {
+    state.wallSections.forEach((section, s) => {
       for (let p = 0; p < 5; p++) {
         if (p < bestPosition.position && !section[p].ownerId) {
           bestPosition.section = s;
