@@ -8,7 +8,7 @@ import BoardManager from '../game/BoardManager';
 import GameCardManager from '../game/GameCardManager';
 import HeroCardManager from '../game/HeroCardManager';
 
-import { MESSAGE_PLACE_GUARD, MESSAGE_PLACE_STRUCTURE, MESSAGE_PURCHASE_GAME_CARD, MESSAGE_REVEAL_WILDLING_TOKENS, MESSAGE_ROLL_DICE } from '../constants';
+import { MESSAGE_PLACE_GUARD, MESSAGE_PLACE_STRUCTURE, MESSAGE_PURCHASE_GAME_CARD, MESSAGE_WILDLINGS_REVEAL_TOKENS, MESSAGE_ROLL_DICE, MESSAGE_GAME_VICTORY } from '../constants';
 
 import {
   firstmenManifest, PURCHASE_GUARD, PURCHASE_GAME_CARD
@@ -78,7 +78,7 @@ class FirstMenGame extends BaseGame {
         const tokens = state.wildlingTokens.slice(0, tokensToPlay);
 
         WildlingManager.onPurchaseWithTokens(state, tokensToPlay);
-        this.broadcastToAll(MESSAGE_REVEAL_WILDLING_TOKENS, { tokens });        
+        this.broadcastToAll(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens });
         break;
 
       case MESSAGE_ROLL_DICE:
@@ -86,10 +86,26 @@ class FirstMenGame extends BaseGame {
         if (!state.isGameStarted || dice.length < 2) break;
         
         const wildlingDice: number = dice[2];
-        WildlingManager.wildlingsAdvance(state, wildlingDice);
+        WildlingManager.wildlingsAdvance(state, wildlingDice,
+          (broadcastType: string, data: any, isEssential: boolean = false) => this.broadcastToAll(broadcastType, data, isEssential));
+
+        this.evaluateBreaches();
         break;
     }
   };
+
+  // 3 wall breaches end the game
+  evaluateBreaches() {
+    const state = this.state as FirstMenGameState;
+
+    if (state.wallBreaches >= 3) {
+      state.isVictory = true;
+
+      this.broadcastToAll(MESSAGE_GAME_VICTORY, {
+        playerName: 'ASSSESS' // @TODO: Calculate winner by guards + VP etc
+      });
+    }
+  }
 };
 
 export default FirstMenGame;

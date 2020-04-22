@@ -580,6 +580,8 @@ class BaseGame extends Room<GameState> {
           this.broadcastToAll(MESSAGE_GAME_VICTORY, {
             playerName: player.nickname
           });
+
+          this.state.isVictory = true;
         }
       });
   }

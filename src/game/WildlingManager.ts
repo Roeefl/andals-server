@@ -8,6 +8,7 @@ import WildlingClearing from '../schemas/WildlingClearing';
 
 import { totalTokens, clanNames, wildlingTypes, clansManifest, WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT } from '../specs/wildlings';
 import { ClanManifest } from '../interfaces';
+import { MESSAGE_WILDLINGS_ADVANCE_CLEARING, MESSAGE_WILDLINGS_WALL_BATTLE } from '../constants';
 
 class WildlingManager {
   shuffleTokens() {
@@ -22,6 +23,32 @@ class WildlingManager {
     };
     
     return tokens;
+  }
+
+  onPurchaseWithTokens(state: FirstMenGameState, tokensToPlay: number) {
+    for (let t = 0; t < tokensToPlay; t++) {
+      const currentToken = state.wildlingTokens[t];
+      console.log("WildlingManager -> onPurchaseWithTokens -> currentToken", currentToken.clanType, currentToken.wildlingType);
+
+      this.playToken(state, currentToken);
+    };
+
+    const updatedWildlingTokens = state.wildlingTokens.slice(tokensToPlay);
+
+    state.wildlingTokens = new ArraySchema<WildlingToken>(
+      ...updatedWildlingTokens
+    );
+  }
+
+  playToken(state: FirstMenGameState, token: WildlingToken) {
+    const { wildlingType, clanType } = token;
+
+    if (state.spawnCounts[wildlingType] < 1) {
+      console.error('Unable to play token: ', wildlingType, clanType);
+      return;
+    }
+    
+    this.deployWildling(state, wildlingType, clanType);
   }
 
   /**
@@ -69,82 +96,55 @@ class WildlingManager {
     this.wildlingAdvancesToClearing(state, clan, state.wildlingClearings[secondClearing], secondWildling);
   }
 
-  onPurchaseWithTokens(state: FirstMenGameState, tokensToPlay: number) {
-    for (let t = 0; t < tokensToPlay; t++) {
-      const currentToken = state.wildlingTokens[t];
-      console.log("WildlingManager -> onPurchaseWithTokens -> currentToken", currentToken.clanType, currentToken.wildlingType)
-      this.playToken(state, currentToken);
-    };
-
-    const updatedWildlingTokens = state.wildlingTokens.slice(tokensToPlay);
-
-    state.wildlingTokens = new ArraySchema<WildlingToken>(
-      ...updatedWildlingTokens
-    );
-  }
-
-  playToken(state: FirstMenGameState, token: WildlingToken) {
-    const { wildlingType, clanType } = token;
-
-    if (state.spawnCounts[wildlingType] < 1) {
-      console.error('Unable to play token: ', wildlingType, clanType);
-      return;
-    }
-    
-    this.deployWildling(state, wildlingType, clanType);
-  }
-
-  wildlingAdvancesToClearing(state: FirstMenGameState, clan: ClanArea, clearing: WildlingClearing, wildling: string) {
-    const updatedCamps: string[] = clan.camps.slice(1);
-    clan.camps = new ArraySchema<string>(
-      ...updatedCamps
-    );
-
-    clearing.counts = new MapSchema<Number>({
-      ...clearing.counts,
-      [wildling]: clearing.counts[wildling] + 1
-    });
-
-    // Assess clearing
-    this.assessClearing(state, clearing, wildling);
-  }
-
-  assessClearing(state: FirstMenGameState, clearing: WildlingClearing, recentWildling: string) {
+  evaluateClearing(state: FirstMenGameState, clearing: WildlingClearing, recentWildling: string): String | null {
     const { clearingIndex } = clearing;
     const guardsOnWallSection = state.guardsOnWallSection(clearingIndex);
 
     if (recentWildling === WILDLING_CLIMBER) {
-      this.wildlingsAdvanceToBoard([recentWildling]);
-      return;
+      this.onWildlingsInvade([recentWildling]);
+      return WILDLING_CLIMBER;
     }
 
     if (recentWildling === WILDLING_GIANT) {
       if (!guardsOnWallSection) {
-        state.wallBreaches++
+        this.onWallBreach(state, clearing);
       };
 
       state.onGuardKilled(clearingIndex);
       state.spawnCounts[WILDLING_GIANT]++;
-      return;
+      return WILDLING_GIANT;
     }
 
     if (recentWildling === WILDLING_REGULAR) {
       const regularWildlingsInClearing = clearing.counts[WILDLING_REGULAR];
 
       if (regularWildlingsInClearing > guardsOnWallSection) {
-        this.wildlingsAdvanceToBoard(Array(regularWildlingsInClearing).fill(WILDLING_REGULAR));
-        state.wallBreaches++;
+        this.onWildlingsInvade(Array(regularWildlingsInClearing).fill(WILDLING_REGULAR));
+
+        state.onGuardKilled(clearingIndex);
+        this.onWallBreach(state, clearing);
+
+        return WILDLING_REGULAR;
       };
     }
+    
+    return null;
   }
 
-  wildlingsAdvanceToBoard(wildlings: string[]) {
+  onWallBreach(state: FirstMenGameState, breachedClearing: WildlingClearing) {
+    state.wallBreaches++;
+
+    // Then, one at a time, each of the wildlings on that clearing jumps over the Wall.
+    this.onWildlingsInvade(breachedClearing.allWildlings);
+  }
+  
+  onWildlingsInvade(wildlings: string[]) { 
     // blocks the first hex not occupied by a wildling directly south of the wall section.
     // occupiedBy
   }
 
   // Advance through trails on matching rolls
-  wildlingsAdvance(state: FirstMenGameState, wildlingDice: number) {
+  wildlingsAdvance(state: FirstMenGameState, wildlingDice: number, broadcast: (type: string, data: any, isEssential?: boolean) => void) {
     state.wildlingClearings
       .filter(({ trails }) => trails.includes(wildlingDice))
       .forEach(clearing => {
@@ -157,10 +157,30 @@ class WildlingManager {
 
           if (clan.camps.length) {
             const [firstWildling] = clan.camps;
-            this.wildlingAdvancesToClearing(state, clan, clearing, firstWildling);
+            const invader = this.wildlingAdvancesToClearing(state, clan, clearing, firstWildling);
+            
+            if (invader)
+              broadcast(MESSAGE_WILDLINGS_WALL_BATTLE, { invader }, true);
+            else
+              broadcast(MESSAGE_WILDLINGS_ADVANCE_CLEARING, { wildling: firstWildling }, true);
           }
         };
       });
+  }
+
+  wildlingAdvancesToClearing(state: FirstMenGameState, clan: ClanArea, clearing: WildlingClearing, wildling: string): String | null {
+    const updatedCamps: string[] = clan.camps.slice(1);
+    clan.camps = new ArraySchema<string>(
+      ...updatedCamps
+    );
+
+    clearing.counts = new MapSchema<Number>({
+      ...clearing.counts,
+      [wildling]: clearing.counts[wildling] + 1
+    });
+
+    // Assess clearing
+    return this.evaluateClearing(state, clearing, wildling);
   }
 }
 

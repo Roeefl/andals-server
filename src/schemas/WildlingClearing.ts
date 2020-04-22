@@ -33,9 +33,15 @@ class WildlingClearing extends Schema {
     });
   }
 
-  get totalWildlings() {
-    const wildlingCounts: number[] = Object.values(this.counts);
-    return wildlingCounts.reduce((c1, c2) => c1 + c2, 0);
+  get allWildlings() {
+    return Object
+      .entries(this.counts)
+      .reduce((wildlings, [type, count]) => {
+        return [
+          ...wildlings,
+          ...Array(count).fill(type)
+        ];
+      }, []);
   }
 };
 
