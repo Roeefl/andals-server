@@ -1,5 +1,7 @@
 import { type, Schema, ArraySchema } from '@colyseus/schema';
 
+import Wildling from './Wildling';
+
 class ClanArea extends Schema {
   @type("string")
   clanType: string
@@ -7,15 +9,15 @@ class ClanArea extends Schema {
   @type("number")
   campfires: number
 
-  @type(["string"])
-  camps: string[]
+  @type([Wildling])
+  camps: Wildling[]
 
   constructor(clanType: string) {
     super();
 
     this.clanType = clanType;
     this.campfires = 4;
-    this.camps = new ArraySchema<string>();
+    this.camps = new ArraySchema<Wildling>();
   }
 };
 

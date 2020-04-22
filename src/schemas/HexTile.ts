@@ -1,4 +1,5 @@
 import { type, Schema } from '@colyseus/schema';
+import Wildling from './Wildling';
 
 class HexTile extends Schema {
   @type("string")
@@ -17,7 +18,7 @@ class HexTile extends Schema {
   value: number
 
   @type("string")
-  occupiedBy: string | null
+  occupiedBy: Wildling | null
 
   constructor(type: string, row: number, col: number, resource: string = '', value: number = 0) {
     super();
