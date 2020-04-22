@@ -140,12 +140,12 @@ class GameBot extends Player {
     await delay(1000);
     
     const bestPosition = {
-      section: 3,
-      position: 4
+      section: wallSectionsCount - 1,
+      position: wallSectionSize - 1
     };
 
     state.wallSections.forEach((section, s) => {
-      for (let p = 0; p < 5; p++) {
+      for (let p = 0; p < wallSectionSize; p++) {
         if (p < bestPosition.position && !section[p].ownerId) {
           bestPosition.section = s;
           bestPosition.position = p;

@@ -3,20 +3,42 @@ import { ClansManifest, WildlingCounts, TokensPerPurchase, WildlingClearing } fr
 export const clanNames = ['river', 'cave', 'hornfoot'];
 export const [CLAN_RIVER, CLAN_CAVE, CLAN_HORNFOOT] = clanNames;
 
+const passages: number[][] = [
+  [1, 2],
+  [3],
+  [4],
+  [5],
+  [6],
+  [7, 8]
+];
+
+// Trails 1 through 8
+export const trailRoutes = [
+  [],
+  [2, 10, 17, 25],
+  [2, 11, 19, 28],
+  [3, 11, 18, 26],
+  [3, 12, 20, 29],
+  [4, 12, 19, 27],
+  [4, 13, 21, 30],
+  [5, 13, 20, 28],
+  [5, 14, 22, 30]
+];
+
 export const clansManifest: ClansManifest = {
   river: {
     name: CLAN_RIVER,
-    trails: [[1, 2], [3]],
+    trails: [passages[0], passages[1]],
     clearings: [0, 1]
   },
   cave: {
     name: CLAN_CAVE,
-    trails: [[4], [5]],
+    trails: [passages[2], passages[3]],
     clearings: [1, 2]
   },
   hornfoot: {
     name: CLAN_HORNFOOT,
-    trails: [[6], [7, 8]],
+    trails: [passages[4], passages[5]],
     clearings: [2, 3]
   },
 };
