@@ -62,8 +62,8 @@ export const clearings: WildlingClearing[] = [
   }
 ];
 
-export const wildlingTypes = ['regular', 'climber',' giant']
-export const [WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT] = wildlingTypes;
+export const wildlingTypes = ['regular', 'climber', 'giant', 'whiteWalker']
+export const [WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT, WILDLING_WHITE_WALKER] = wildlingTypes;
 
 export const totalTokens = 48;
 
@@ -76,11 +76,13 @@ export const tokensPerPurchase: TokensPerPurchase = {
 export const initialSpawnWildlingCounts: WildlingCounts = {
   regular: 24,
   climber: 8,
-  giant: 8
+  giant: 8,
+  whiteWalker: 0
 };
 
 export const initialClearingWildlingCounts: WildlingCounts = {
   regular: 0,
   climber: 0,
-  giant: 0
+  giant: 0,
+  whiteWalker: 0
 };

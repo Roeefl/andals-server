@@ -119,19 +119,21 @@ class BaseGame extends Room<GameState> {
   }
 
   onJoin(client: Client, options: any) {
+    this.onPlayerJoin(client.sessionId, options)
+  }
+  
+  onPlayerJoin(clientSessionId: string, options: any) {
     const color = playerColors[this.activeClients];
-    const addedPlayer = new Player(client.sessionId, options, color, this.activeClients);
-    
-    this.state.players[client.sessionId] = addedPlayer;
+    const addedPlayer = new Player(clientSessionId, options, color, this.activeClients);
+    this.state.players[clientSessionId] = addedPlayer;
     
     this.broadcast({
       type: MESSAGE_GAME_LOG,
       sender: this.state.roomTitle,
-      message: `${addedPlayer.nickname || client.sessionId} has joined the room.`
-    }, {
-      except: client
+      message: `${addedPlayer.nickname || clientSessionId} has joined the room.`
     });
-  
+    //, { except: client }
+
     if (this.activeClients >= this.state.maxClients)
       this.lock();
   };
@@ -216,7 +218,7 @@ class BaseGame extends Room<GameState> {
         this.broadcastToAll(MESSAGE_ROLL_DICE, {
           playerName: currentPlayer.nickname,
           dice
-        }, (dice.length >=2 && (dice[0] + dice[1] === 7)));
+        }, (this.state.isGameStarted && dice.length >=2 && (dice[0] + dice[1] === 7)));
         
         if (this.state.isGameStarted)
           this.allBotsCollectLoot();

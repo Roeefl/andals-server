@@ -54,7 +54,7 @@ export const manifest: { [type: string] : HeroCardManifest } = {
     title: "First Ranger",
     description: "Remove 1 Wildling North of the Wall: Remove 1 wildling from a clearing or a camp, return it to the Frostfangs. If you remove a wildling from a camp and there are more wildlings in the camps farther from the clearings than the wildling you removed, move them each 1 camp closer to the clearings. Then, reveal a wildling token from the pool and place it accordingly. You can do this before or after your own production roll."
   },
-  Ygirtte: {
+  Ygritte: {
     name: "Ygritte",
     title: "Freefolk Spearwife",
     description: "Remove 1 Wildling from the Gift: Choose 1 wildling in the Gift and return it to the Frostfangs. You can do this before or after your own production roll."
@@ -64,7 +64,7 @@ export const manifest: { [type: string] : HeroCardManifest } = {
     title: "Wandering Crow",
     description: "Patrol Card Becomes a Guard: When you build, discard 1 Ranger Patrol card that you have already played and build a guard for free. You can do this before or after your own production roll."
   },
-  QhorinHalfHand: {
+  QhorinHalfhand: {
     name: "Qhorin Half-Hand",
     title: "Ranger",
     description: "Chase Tormund North: You may move Tormund back to his camp. You receive 1 resource of the type produced by the land that Tormund left. You can do this before or after your own production roll."
@@ -72,7 +72,7 @@ export const manifest: { [type: string] : HeroCardManifest } = {
 };
 
 export const heroCardTypes = Object.keys(manifest);
-export const [JeorMormont, BowenMarsh, SamwellTarly, OthellYarwyck, AlliserThorne, Melisandre, ManceRayder, BenjenStark, Ygirtte, Yoren, QhorinHalfHand] = heroCardTypes;
+export const [JeorMormont, BowenMarsh, SamwellTarly, OthellYarwyck, AlliserThorne, Melisandre, ManceRayder, BenjenStark, Ygritte, Yoren, QhorinHalfhand] = heroCardTypes;
 
 class HeroCard extends Schema {
   @type("string")

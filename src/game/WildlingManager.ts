@@ -7,7 +7,7 @@ import ClanArea from '../schemas/ClanArea';
 import WildlingClearing from '../schemas/WildlingClearing';
 import Wildling from '../schemas/Wildling';
 
-import { totalTokens, clanNames, wildlingTypes, clansManifest, trailRoutes, WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT } from '../specs/wildlings';
+import { totalTokens, clanNames, wildlingTypes, clansManifest, trailRoutes, WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT, WILDLING_WHITE_WALKER } from '../specs/wildlings';
 import { ClanManifest } from '../interfaces';
 import { MESSAGE_WILDLINGS_ADVANCE_CLEARING, MESSAGE_WILDLINGS_WALL_BATTLE } from '../constants';
 
@@ -101,32 +101,37 @@ class WildlingManager {
     const { clearingIndex } = clearing;
     const guardsOnWallSection = state.guardsOnWallSection(clearingIndex);
 
-    if (recentWildling.type === WILDLING_CLIMBER) {
-      this.onWildlingsInvade(state, clearing, [recentWildling], lastDice);
-      return recentWildling;
-    }
+    switch (recentWildling.type) {
+      case WILDLING_CLIMBER:
+        this.onWildlingsInvade(state, clearing, [recentWildling], lastDice);
+        return recentWildling;
 
-    if (recentWildling.type === WILDLING_GIANT) {
-      if (!guardsOnWallSection) {
-        this.onWallBreach(state, clearing, lastDice);
-      };
-
-      state.onGuardKilled(clearingIndex);
-      state.spawnCounts[WILDLING_GIANT]++;
-      return recentWildling;
-    }
-
-    if (recentWildling.type === WILDLING_REGULAR) {
-      const regularWildlingsInClearing = clearing.wildlingsCountOfType(WILDLING_REGULAR);
-
-      if (regularWildlingsInClearing > guardsOnWallSection) {
-        this.onWildlingsInvade(state, clearing, clearing.wildlingsOfType(WILDLING_REGULAR), lastDice);
+      case WILDLING_GIANT:
+        if (!guardsOnWallSection) {
+          this.onWallBreach(state, clearing, lastDice);
+        };
 
         state.onGuardKilled(clearingIndex);
-        this.onWallBreach(state, clearing, lastDice);
-
+        state.spawnCounts[WILDLING_GIANT]++;
         return recentWildling;
-      };
+
+      case WILDLING_REGULAR:
+        const regularWildlingsInClearing = clearing.wildlingsCountOfType(WILDLING_REGULAR);
+
+        if (regularWildlingsInClearing > guardsOnWallSection) {
+          this.onWildlingsInvade(state, clearing, clearing.wildlingsOfType(WILDLING_REGULAR), lastDice);
+
+          state.onGuardKilled(clearingIndex);
+          this.onWallBreach(state, clearing, lastDice);
+
+          return recentWildling;
+        };
+
+      case WILDLING_WHITE_WALKER:
+        break;
+
+      default:
+        break;
     }
     
     return null;

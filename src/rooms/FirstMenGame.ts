@@ -36,25 +36,8 @@ class FirstMenGame extends BaseGame {
     
     this.populateWithBotsIfNeeded(roomOptions);
 
-    this.assignInitialHeroCards();
+    HeroCardManager.assignInitialHeroCards(this.state as FirstMenGameState);
   };
-
-  assignInitialHeroCards() {
-    const state = this.state as FirstMenGameState;
-    let cardIndex = 0;
-
-    Object
-      .keys(this.state.players)
-      .forEach(sessionId => {
-        const player: Player = this.state.players[sessionId];
-        const heroCard = state.heroCards[cardIndex];
-
-        heroCard.ownerId = player.playerSessionId;
-        player.currentHeroCard = heroCard;
-
-        cardIndex++;
-      });
-  }
 
   onMessage(client: Client, data: any) {
     const { type } = data;
@@ -93,6 +76,11 @@ class FirstMenGame extends BaseGame {
         break;
     }
   };
+
+  onJoin(client: Client, options: any) {
+    this.onPlayerJoin(client.sessionId, options);
+    HeroCardManager.assignInitialHeroCard(this.state as FirstMenGameState, client.sessionId);
+  }
 
   // 3 wall breaches end the game
   evaluateBreaches() {
