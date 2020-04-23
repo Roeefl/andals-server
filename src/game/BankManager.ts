@@ -86,6 +86,13 @@ class BankManager {
     const totalPayments: Loot = buildingCosts[purchaseType];
     this.returnToBank(state, totalPayments);
   }
+
+  loseResource(state: GameState, resource: string) {
+    state.resourceCounts = new MapSchema<Number>({
+      ...state.resourceCounts,
+      [resource]: state.resourceCounts[resource] - 1
+    });
+  }
 }
 
 export default new BankManager();

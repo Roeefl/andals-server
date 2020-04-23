@@ -23,10 +23,10 @@ class WildlingManager {
       });
   }
 
-  onPurchaseWithTokens(state: FirstMenGameState, tokensToPlay: number): void {
+  onTokensRevealed(state: FirstMenGameState, tokensToPlay: number): void {
     for (let t = 0; t < tokensToPlay; t++) {
       const currentToken = state.wildlingTokens[t];
-      console.log("WildlingManager -> onPurchaseWithTokens -> currentToken", currentToken.clanType, currentToken.wildlingType);
+      console.log("WildlingManager -> onTokensRevealed -> currentToken", currentToken.clanType, currentToken.wildlingType);
 
       this.playToken(state, currentToken);
     };

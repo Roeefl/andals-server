@@ -67,7 +67,7 @@ class GameState extends Schema {
   isVictory: boolean = false;
 
   @type("number")
-  robberPosition: number = -1;
+  robberPosition: number = 0;
 
   @type({ map: Player })
   players = new MapSchema<Player>();
@@ -92,9 +92,6 @@ class GameState extends Schema {
 
   @type(["number"])
   ports: ArraySchema<number>
-
-  @type("number")
-  bankTradeStandardRate
 
   constructor(manifest: GameManifest, board: HexTile[], gameCards: GameCard[], roomOptions: RoomOptions) {
     super();
@@ -127,8 +124,6 @@ class GameState extends Schema {
       ...board
     );
 
-    this.bankTradeStandardRate = 4;
-
     // 19 Resource cards of each terrain tile
     this.resourceCounts = new MapSchema<Number>({
       lumber: totalResourceCards,
@@ -142,7 +137,8 @@ class GameState extends Schema {
       ...gameCards
     );
     
-    this.robberPosition = board.findIndex(tile => tile.resource === DESERT);
+    const desertTile: number = board.findIndex(tile => tile.resource === DESERT);
+    if (desertTile >= 0) this.robberPosition = desertTile;
 
     this.roads = new ArraySchema<Road>();
     this.structures = new ArraySchema<Structure>();

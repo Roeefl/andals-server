@@ -6,13 +6,13 @@ class Wildling extends Schema {
   type: string
 
   @type("number")
-  occupiesTile
+  occupiesTile: number | null
 
   constructor(type: string = WILDLING_REGULAR) {
     super();
 
     this.type = type;
-    this.occupiesTile = -1;
+    this.occupiesTile = null;
   }
 };
 

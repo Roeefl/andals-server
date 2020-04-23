@@ -3,23 +3,35 @@ import BaseGame from './BaseGame';
 import { RoomOptions } from '../interfaces';
 
 import Player from '../schemas/Player';
+import HexTile from '../schemas/HexTile';
 
 import BoardManager from '../game/BoardManager';
 import GameCardManager from '../game/GameCardManager';
 import HeroCardManager from '../game/HeroCardManager';
+import BankManager from '../game/BankManager';
 
-import { MESSAGE_PLACE_GUARD, MESSAGE_PLACE_STRUCTURE, MESSAGE_PURCHASE_GAME_CARD, MESSAGE_WILDLINGS_REVEAL_TOKENS, MESSAGE_ROLL_DICE, MESSAGE_GAME_VICTORY } from '../constants';
+import {
+  MESSAGE_PLACE_GUARD,
+  MESSAGE_PLACE_STRUCTURE,
+  MESSAGE_PURCHASE_GAME_CARD,
+  MESSAGE_WILDLINGS_REVEAL_TOKENS,
+  MESSAGE_ROLL_DICE,
+  MESSAGE_PLAY_HERO_CARD,
+  MESSAGE_GAME_VICTORY,
+  MESSAGE_TRADE_WITH_BANK,
+  MESSAGE_MOVE_ROBBER,
+  MESSAGE_WILDLINGS_REMOVE_FROM_TILE
+} from '../constants';
 
 import {
   firstmenManifest, PURCHASE_GUARD, PURCHASE_GAME_CARD
 } from '../manifest';
+
 import WildlingManager from '../game/WildlingManager';
 import FirstMenGameState from '../north/FirstMenGameState';
 import { tokensPerPurchase } from '../specs/wildlings';
 
-const firstMenMessageTypes: string[] = [
-  MESSAGE_PLACE_GUARD
-];
+import { HERO_CARD_BowenMarsh, HERO_CARD_QhorinHalfhand } from '../schemas/HeroCard';
 
 class FirstMenGame extends BaseGame {
   onCreate(roomOptions: RoomOptions) {
@@ -45,9 +57,21 @@ class FirstMenGame extends BaseGame {
 
     const state = this.state as FirstMenGameState;
 
-    // if (!firstMenMessageTypes.includes(type))
+    let lastRobberPosition: number = -1;
+
+    // PRE-onGameAction | previous actions needed only in FirstMen mode:
+    switch (type) {
+      case MESSAGE_MOVE_ROBBER:
+        lastRobberPosition = state.robberPosition;
+        break;
+
+      default:
+        break;
+    }
+
     this.onGameAction(currentPlayer, type, data);
 
+    // POST-onGameAction | additional actions needed only in FirstMen mode:
     switch (type) {
       case MESSAGE_PLACE_GUARD:
         break;
@@ -60,7 +84,7 @@ class FirstMenGame extends BaseGame {
         const tokensToPlay = tokensPerPurchase[structureType || PURCHASE_GAME_CARD];
         const tokens = state.wildlingTokens.slice(0, tokensToPlay);
 
-        WildlingManager.onPurchaseWithTokens(state, tokensToPlay);
+        WildlingManager.onTokensRevealed(state, tokensToPlay);
         this.broadcastToAll(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens });
         break;
 
@@ -74,6 +98,45 @@ class FirstMenGame extends BaseGame {
 
         this.evaluateBreaches();
         break;
+        
+      case MESSAGE_PLAY_HERO_CARD:
+        const { heroType } = data;
+        
+        HeroCardManager.playHeroCard(state, currentPlayer, heroType);
+        WildlingManager.onTokensRevealed(state, tokensToPlay);
+        
+        this.broadcastToAll(MESSAGE_PLAY_HERO_CARD, {
+          playerName: currentPlayer.nickname,
+          heroCard: currentPlayer.currentHeroCard
+        });
+        break;
+
+      case MESSAGE_TRADE_WITH_BANK:
+        if (currentPlayer.heroPrivilege === HERO_CARD_BowenMarsh)
+          currentPlayer.bankTradeRate = firstmenManifest.bankTradeRate;
+        break;
+
+      case MESSAGE_MOVE_ROBBER:
+        if (currentPlayer.heroPrivilege === HERO_CARD_QhorinHalfhand) {
+          const lastRobberTile: HexTile = state.board[lastRobberPosition];
+          
+          if (lastRobberTile.resource) {
+            currentPlayer.addResource(lastRobberTile.resource);
+            BankManager.loseResource(state, lastRobberTile.resource);
+          }
+        }
+
+      case MESSAGE_WILDLINGS_REMOVE_FROM_TILE:
+        const { tileIndex } = data;
+
+        if (tileIndex) {
+          const wildling = state.board[tileIndex].occupiedBy;
+
+          state.spawnCounts[wildling.type]++;
+          state.board[tileIndex].occupiedBy = null;
+
+          wildling.occupiesTile = null;
+        }
     }
   };
 

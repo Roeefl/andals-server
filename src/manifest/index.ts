@@ -138,7 +138,8 @@ export const baseGameManifest: GameManifest = {
   boardLayout: baseGameBoardLayout,
   boardValues: baseGameBoardValues,
   boardHarbors: baseGameHarbors,
-  harborIndices: baseGameHarborIndices
+  harborIndices: baseGameHarborIndices,
+  bankTradeRate: 4
 };
 
 export const firstmenManifest: GameManifest = {
@@ -150,5 +151,6 @@ export const firstmenManifest: GameManifest = {
   boardLayout: firstmenBoardLayout,
   boardValues: firstmenBoardValues,
   boardHarbors: firstmenHarbors,
-  harborIndices: firstmenHarborIndices
+  harborIndices: firstmenHarborIndices,
+  bankTradeRate: 3
 };

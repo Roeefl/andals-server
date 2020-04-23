@@ -12,7 +12,9 @@ import {
   CARD_KNIGHT, CARD_VICTORY_POINT,
   PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_GAME_CARD, PURCHASE_CITY,
   initialResourceCounts,
-  PURCHASE_GUARD
+  PURCHASE_GUARD,
+  HARBOR_GENERIC,
+  baseGameManifest
 } from '../manifest';
 
 import { Loot, BuildingCost } from '../interfaces';
@@ -113,6 +115,9 @@ class Player extends Schema {
   @type(["string"])
   allowStealingFrom: string[]
 
+  @type("boolean")
+  isVisibleSteal = false
+
   @type({ map: "boolean" })
   ownedHarbors: OwnedHarbors
 
@@ -158,7 +163,10 @@ class Player extends Schema {
   @type("boolean")
   allowDirectTrade: boolean = false;
 
-  constructor(sessionId: string, options: PlayerOptions, color: string, playerIndex: number) {
+  @type("number")
+  bankTradeRate: number
+
+  constructor(sessionId: string, options: PlayerOptions, color: string, playerIndex: number, bankTradeRate: number = baseGameManifest.bankTradeRate) {
     super();
     
     const { nickname = 'John Doe' } = options;
@@ -202,6 +210,7 @@ class Player extends Schema {
     });
 
     this.isBot = false;
+    this.bankTradeRate = bankTradeRate;
   }
 
   restore(fromBot: GameBot) {
@@ -448,12 +457,14 @@ class Player extends Schema {
     const updatedHarbors: OwnedHarbors = {
       ...this.ownedHarbors,
       [harborType]: true
-    } ;
-
+    };
 
     this.ownedHarbors = new MapSchema<Boolean>({
       ...updatedHarbors
     });
+
+    if (harborType === HARBOR_GENERIC)
+      this.bankTradeRate = 3;
   }
 };
 

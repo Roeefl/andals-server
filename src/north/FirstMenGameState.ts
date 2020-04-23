@@ -41,8 +41,6 @@ class FirstMenGameState extends GameState {
 
     this.wallBreaches = 0;
 
-    this.bankTradeStandardRate = 3;
-
     this.spawnCounts = new MapSchema<Number>({
       ...initialSpawnWildlingCounts
     });

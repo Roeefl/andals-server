@@ -35,6 +35,7 @@ export interface GameManifest {
   boardValues: number[]
   boardHarbors: string[]
   harborIndices: number[]
+  bankTradeRate: number
 };
 
 export interface ClanManifest {
