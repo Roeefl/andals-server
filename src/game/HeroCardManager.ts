@@ -46,29 +46,29 @@ class HeroCardManager {
     );
   }
 
-  playHeroCard(state: FirstMenGameState, player: Player, type: string) {
-    if (player.hasPlayedHeroCard) {
-      // player.mustSwapHeroCard();
-    }
+  playHeroCard(state: FirstMenGameState, currentPlayer: Player, type: string, isDiscard: boolean = false) {
+    const swapAfterPlay: boolean = isDiscard || currentPlayer.hasPlayedHeroCard;
 
-    player.hasPlayedHeroCard = true;
-    player.currentHeroCard.wasPlayed = true;
-    player.heroPrivilege = type;
+    // @TODO: Only need 1 of those 2
+    currentPlayer.hasPlayedHeroCard = true;
+    currentPlayer.currentHeroCard.wasPlayed = true;
+
+    currentPlayer.heroPrivilege = type;
 
     switch (type) {
       case HERO_CARD_BowenMarsh:
-        player.bankTradeRate = 1;
+        currentPlayer.bankTradeRate = 1;
         break;
 
       case HERO_CARD_QhorinHalfhand:
-        player.mustMoveRobber = true;
+        currentPlayer.mustMoveRobber = true;
         break;
       
       case HERO_CARD_ManceRayder:
-        player.allowStealingFrom = new ArraySchema<string>(
-          ...this.higherVpOpponents(state, player)
+        currentPlayer.allowStealingFrom = new ArraySchema<string>(
+          ...this.higherVpOpponents(state, currentPlayer)
         );
-        player.isVisibleSteal = true;
+        currentPlayer.isVisibleSteal = true;
         break;
 
       case HERO_CARD_AlliserThorne:
@@ -81,6 +81,28 @@ class HeroCardManager {
       default:
         break;
     }
+
+    if (swapAfterPlay)
+      this.swapPlayerCard(state, currentPlayer);
+  }
+
+  swapPlayerCard(state: FirstMenGameState, currentPlayer: Player) {
+    const swappedHeroCard = currentPlayer.currentHeroCard;
+    swappedHeroCard.ownerId = null;
+    swappedHeroCard.wasPlayed = false;
+    
+    const [nextHeroCard] = state.heroCards;
+    currentPlayer.currentHeroCard = nextHeroCard;
+    nextHeroCard.ownerId = currentPlayer.playerSessionId;
+
+    const updatedHeroCards: HeroCard[] = [
+      ...state.heroCards,
+      swappedHeroCard
+    ].slice(1);
+
+    state.heroCards = new ArraySchema<HeroCard>(
+      ...updatedHeroCards
+    );
   }
 
   higherVpOpponents(state: FirstMenGameState, currentPlayer: Player) {

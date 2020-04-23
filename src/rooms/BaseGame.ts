@@ -255,7 +255,7 @@ class BaseGame extends Room<GameState> {
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} has moved the Robber to ${tileIndex(this.state.manifest.tilemap, tile)}`
-        })
+        });
 
         const allowStealingFrom = BoardManager.robberAdjacentPlayers(this.state);
         currentPlayer.allowStealingFrom = new ArraySchema<string>(
@@ -581,7 +581,7 @@ class BaseGame extends Room<GameState> {
         if (player.victoryPoints >= 10) {
           this.broadcastToAll(MESSAGE_GAME_VICTORY, {
             playerName: player.nickname
-          });
+          }, true);
 
           this.state.isVictory = true;
         }

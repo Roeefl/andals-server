@@ -85,7 +85,7 @@ class FirstMenGame extends BaseGame {
         const tokens = state.wildlingTokens.slice(0, tokensToPlay);
 
         WildlingManager.onTokensRevealed(state, tokensToPlay);
-        this.broadcastToAll(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens });
+        this.broadcastToAll(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens }, true);
         break;
 
       case MESSAGE_ROLL_DICE:
@@ -100,15 +100,15 @@ class FirstMenGame extends BaseGame {
         break;
         
       case MESSAGE_PLAY_HERO_CARD:
-        const { heroType } = data;
+        const { heroType, isDiscard = false } = data;
         
-        HeroCardManager.playHeroCard(state, currentPlayer, heroType);
-        WildlingManager.onTokensRevealed(state, tokensToPlay);
+        HeroCardManager.playHeroCard(state, currentPlayer, heroType, isDiscard);
+        // WildlingManager.onTokensRevealed(state, 1);
         
         this.broadcastToAll(MESSAGE_PLAY_HERO_CARD, {
           playerName: currentPlayer.nickname,
           heroCard: currentPlayer.currentHeroCard
-        });
+        }, true);
         break;
 
       case MESSAGE_TRADE_WITH_BANK:
@@ -154,7 +154,7 @@ class FirstMenGame extends BaseGame {
 
       this.broadcastToAll(MESSAGE_GAME_VICTORY, {
         playerName: 'ASSSESS' // @TODO: Calculate winner by guards + VP etc
-      });
+      }, true);
     }
   }
 };
