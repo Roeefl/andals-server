@@ -116,7 +116,8 @@ class HeroCardManager {
       ...updatedHeroCards
     );
 
-    currentPlayer.hasPlayedHeroCard = false;
+    // currentPlayer.hasPlayedHeroCard = false;
+    currentPlayer.heroPrivilege = null;
   }
 
   higherVpOpponents(state: FirstMenGameState, currentPlayer: Player) {
