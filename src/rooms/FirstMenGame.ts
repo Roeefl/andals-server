@@ -101,14 +101,16 @@ class FirstMenGame extends BaseGame {
         
       case MESSAGE_PLAY_HERO_CARD:
         const { heroType, isDiscard = false } = data;
-        
-        HeroCardManager.playHeroCard(state, currentPlayer, heroType, isDiscard);
-        // WildlingManager.onTokensRevealed(state, 1);
-        
+        console.log("FirstMenGame -> onMessage -> heroType", heroType, isDiscard)
+
         this.broadcastToAll(MESSAGE_PLAY_HERO_CARD, {
           playerName: currentPlayer.nickname,
           heroCard: currentPlayer.currentHeroCard
         }, true);
+        
+        HeroCardManager.playHeroCard(state, currentPlayer, heroType, isDiscard);
+        // WildlingManager.onTokensRevealed(state, 1);
+        
         break;
 
       case MESSAGE_TRADE_WITH_BANK:
@@ -135,7 +137,7 @@ class FirstMenGame extends BaseGame {
           state.spawnCounts[wildling.type]++;
           state.board[tileIndex].occupiedBy = null;
 
-          wildling.occupiesTile = null;
+          wildling.occupiesTile = -1;
         }
     }
   };

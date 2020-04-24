@@ -18,6 +18,7 @@ import HeroCard, {
 
 import Player from '../schemas/Player';
 import FirstMenGameState from '../north/FirstMenGameState';
+import { PURCHASE_GUARD } from '../manifest';
 
 class HeroCardManager {
   shuffle() {
@@ -47,6 +48,7 @@ class HeroCardManager {
   }
 
   playHeroCard(state: FirstMenGameState, currentPlayer: Player, type: string, isDiscard: boolean = false) {
+    console.log("HeroCardManager -> playHeroCard -> type", type)
     const swapAfterPlay: boolean = isDiscard || currentPlayer.hasPlayedHeroCard;
 
     // @TODO: Only need 1 of those 2
@@ -54,6 +56,7 @@ class HeroCardManager {
     currentPlayer.currentHeroCard.wasPlayed = true;
 
     currentPlayer.heroPrivilege = type;
+    console.log("HeroCardManager -> playHeroCard -> heroPrivilege",currentPlayer.heroPrivilege)
 
     switch (type) {
       case HERO_CARD_BowenMarsh:
@@ -73,6 +76,8 @@ class HeroCardManager {
 
       case HERO_CARD_AlliserThorne:
         // When you build a guard, substitute 1 of the 3 resources with any 1 other resource of your choice
+        currentPlayer.flexiblePurchase = PURCHASE_GUARD;
+        currentPlayer.allowFlexiblePurchase(PURCHASE_GUARD);
         break;
 
       case HERO_CARD_Ygritte:
@@ -88,12 +93,17 @@ class HeroCardManager {
 
   swapPlayerCard(state: FirstMenGameState, currentPlayer: Player) {
     const swappedHeroCard = currentPlayer.currentHeroCard;
+    console.log("HeroCardManager -> swapPlayerCard -> swappedHeroCard", swappedHeroCard)
     swappedHeroCard.ownerId = null;
     swappedHeroCard.wasPlayed = false;
+    console.log("HeroCardManager -> swapPlayerCard -> swappedHeroCard", swappedHeroCard)
     
     const [nextHeroCard] = state.heroCards;
+    console.log("HeroCardManager -> swapPlayerCard -> nextHeroCard", nextHeroCard)
     currentPlayer.currentHeroCard = nextHeroCard;
+    console.log("HeroCardManager -> swapPlayerCard -> currentPlayer.currentHeroCard", currentPlayer.currentHeroCard)
     nextHeroCard.ownerId = currentPlayer.playerSessionId;
+    nextHeroCard.wasPlayed = false;
 
     const updatedHeroCards: HeroCard[] = [
       ...state.heroCards,
@@ -103,6 +113,8 @@ class HeroCardManager {
     state.heroCards = new ArraySchema<HeroCard>(
       ...updatedHeroCards
     );
+    console.log("HeroCardManager -> swapPlayerCard -> state.heroCards", state.heroCards)
+    currentPlayer.hasPlayedHeroCard = false;
   }
 
   higherVpOpponents(state: FirstMenGameState, currentPlayer: Player) {

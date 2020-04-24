@@ -17,7 +17,7 @@ class HexTile extends Schema {
   @type("number")
   value: number
 
-  @type("string")
+  @type(Wildling)
   occupiedBy: Wildling | null
 
   constructor(type: string, row: number, col: number, resource: string = '', value: number = 0) {

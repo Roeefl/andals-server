@@ -61,8 +61,8 @@ class TurnManager {
 
       this.initializeSetupPhase(state);
 
-      broadcast(MESSAGE_GAME_LOG, 'Turn determination phase finished.');
-      broadcast(MESSAGE_GAME_LOG, 'Setup phase is starting.', true);
+      broadcast(MESSAGE_GAME_LOG, 'Finished turn order phase');
+      broadcast(MESSAGE_GAME_LOG, 'Starting setup phase', true);
       broadcast(MESSAGE_GAME_LOG, `${nickname} is first to play`);
       return;
     }
@@ -147,7 +147,7 @@ class TurnManager {
 
     BankManager.setResourcesLoot(state, null, true);
 
-    broadcast(MESSAGE_GAME_LOG, 'Setup phase is complete. Game started!', true);
+    broadcast(MESSAGE_GAME_LOG, 'Finished setup phase. GAME STARTING!', true);
   }
 }
 

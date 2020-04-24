@@ -38,4 +38,11 @@ const buildingCosts: BuildingCosts = {
   }
 };
 
+export function totalResourceTypesRequired(purchaseType: string) {
+  return Object
+    .values(buildingCosts[purchaseType])
+    .filter(value => value > 0)
+    .length;
+};
+
 export default buildingCosts;
