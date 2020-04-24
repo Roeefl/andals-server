@@ -1,4 +1,5 @@
 import { Client } from 'colyseus';
+import { minBy, maxBy } from 'lodash';
 import BaseGame from './BaseGame';
 import { RoomOptions } from '../interfaces';
 
@@ -17,6 +18,7 @@ import {
   MESSAGE_WILDLINGS_REVEAL_TOKENS,
   MESSAGE_ROLL_DICE,
   MESSAGE_PLAY_HERO_CARD,
+  MESSAGE_SELECT_HERO_CARD,
   MESSAGE_GAME_VICTORY,
   MESSAGE_TRADE_WITH_BANK,
   MESSAGE_MOVE_ROBBER,
@@ -65,6 +67,13 @@ class FirstMenGame extends BaseGame {
         lastRobberPosition = state.robberPosition;
         break;
 
+      case MESSAGE_SELECT_HERO_CARD:
+        const { heroType } = data;
+        console.log("FirstMenGame -> onMessage -> heroType", heroType)
+        currentPlayer.swappingHeroCard = false
+        HeroCardManager.swapPlayerHeroCard(state, currentPlayer, heroType);
+        break;
+
       default:
         break;
     }
@@ -96,7 +105,7 @@ class FirstMenGame extends BaseGame {
         WildlingManager.wildlingsAdvance(state, wildlingDice,
           (broadcastType: string, data: any, isEssential: boolean = false) => this.broadcastToAll(broadcastType, data, isEssential));
 
-        this.evaluateBreaches();
+        this.evaluateWildlingVictory();
         break;
         
       case MESSAGE_PLAY_HERO_CARD:
@@ -148,14 +157,39 @@ class FirstMenGame extends BaseGame {
   }
 
   // 3 wall breaches end the game
-  evaluateBreaches() {
+  evaluateWildlingVictory() {
     const state = this.state as FirstMenGameState;
 
-    if (state.wallBreaches >= 3) {
+    // If the number of wildlings in the Gift exceeds 7 (8 or more) the game ends immediately.
+    const occupiedBoardTiles = state.board
+      .filter(({ occupiedBy }) => !!occupiedBy)
+      .length;
+
+    if (state.wallBreaches >= 3 || occupiedBoardTiles >= 8) {
       state.isVictory = true;
 
+      let winner: Player = null;
+      
+      winner = minBy(
+        Object.values(state.players),
+        player => player.guards
+      );
+
+      const othersWithSameGuardsCount: Player[] = Object
+        .values(state.players)
+        .filter(({ guards }) => guards === winner.guards);
+
+      if (othersWithSameGuardsCount.length > 1) {
+        winner = maxBy(
+          othersWithSameGuardsCount,
+          player => player.victoryPoints
+        );
+      };
+
+      // @TODO: If still tied, the tied player with the oldest guard on the wall wins (guard on the lowest number in any wall section).
+
       this.broadcastToAll(MESSAGE_GAME_VICTORY, {
-        playerName: 'ASSSESS' // @TODO: Calculate winner by guards + VP etc
+        playerName: winner.nickname
       }, true);
     }
   }

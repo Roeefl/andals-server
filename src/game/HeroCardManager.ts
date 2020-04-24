@@ -88,39 +88,42 @@ class HeroCardManager {
     }
 
     if (swapAfterPlay)
-      this.swapPlayerCard(state, currentPlayer);
+      currentPlayer.swappingHeroCard = true;
   }
 
-  swapPlayerCard(state: FirstMenGameState, currentPlayer: Player) {
+  swapPlayerHeroCard(state: FirstMenGameState, currentPlayer: Player, heroType?: string) {
+    const desiredHeroCard = heroType
+      ? state.heroCards.find(({ type }) => type === heroType)
+      : state.heroCards[0];
+
+    if (!!heroType && !desiredHeroCard)
+      return this.swapPlayerHeroCard(state, currentPlayer);
+    
     const swappedHeroCard = currentPlayer.currentHeroCard;
-    console.log("HeroCardManager -> swapPlayerCard -> swappedHeroCard", swappedHeroCard)
     swappedHeroCard.ownerId = null;
     swappedHeroCard.wasPlayed = false;
-    console.log("HeroCardManager -> swapPlayerCard -> swappedHeroCard", swappedHeroCard)
-    
-    const [nextHeroCard] = state.heroCards;
-    console.log("HeroCardManager -> swapPlayerCard -> nextHeroCard", nextHeroCard)
-    currentPlayer.currentHeroCard = nextHeroCard;
-    console.log("HeroCardManager -> swapPlayerCard -> currentPlayer.currentHeroCard", currentPlayer.currentHeroCard)
-    nextHeroCard.ownerId = currentPlayer.playerSessionId;
-    nextHeroCard.wasPlayed = false;
+
+    currentPlayer.currentHeroCard = desiredHeroCard;
+    desiredHeroCard.ownerId = currentPlayer.playerSessionId;
+    desiredHeroCard.wasPlayed = false;
 
     const updatedHeroCards: HeroCard[] = [
-      ...state.heroCards,
+      ...state.heroCards.filter(({ type }) => type !== desiredHeroCard.type),
       swappedHeroCard
-    ].slice(1);
-
+    ];
+    
     state.heroCards = new ArraySchema<HeroCard>(
       ...updatedHeroCards
     );
-    console.log("HeroCardManager -> swapPlayerCard -> state.heroCards", state.heroCards)
+
     currentPlayer.hasPlayedHeroCard = false;
   }
 
   higherVpOpponents(state: FirstMenGameState, currentPlayer: Player) {
     return Object
       .values(state.players)
-      .filter(player => player.victoryPoints > currentPlayer.victoryPoints);
+      .filter(player => player.victoryPoints > currentPlayer.victoryPoints)
+      .map(player => player.playerSessionId);
   }
 }
 
