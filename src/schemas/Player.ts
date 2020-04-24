@@ -5,7 +5,7 @@ import Structure from './Structure';
 import GameBot from './GameBot';
 import HeroCard from './HeroCard';
 
-import buildingCosts from '../specs/buildingCosts';
+import buildingCosts, { totalResourceTypesRequired } from '../specs/buildingCosts';
 import {
   firstmenManifest,
   resourceCardTypes,
@@ -142,6 +142,9 @@ class Player extends Schema {
   @type({ map: "boolean" })
   hasResources: MapSchema<Boolean> 
 
+  @type("string")
+  flexiblePurchase: string | null
+
   @type("boolean")
   hasLongestRoad: boolean = false;
 
@@ -211,6 +214,7 @@ class Player extends Schema {
 
     this.isBot = false;
     this.bankTradeRate = bankTradeRate;
+    this.flexiblePurchase = null;
   }
 
   restore(fromBot: GameBot) {
@@ -326,7 +330,10 @@ class Player extends Schema {
     const updatedHasResources = firstmenManifest.purchaseTypes.reduce((acc, purchaseType) => {
       acc[purchaseType] = Object
         .entries(this.resourceCounts)
-        .every(([resource, value]) => value >= buildingCosts[purchaseType][resource]);
+        .every(([resource, value]) => (
+          value >= buildingCosts[purchaseType][resource] &&
+          (purchaseType !== PURCHASE_GAME_CARD || this[purchaseType] > 0)
+        ));
 
       return acc;
     }, {} as HasResources);
@@ -465,6 +472,22 @@ class Player extends Schema {
 
     if (harborType === HARBOR_GENERIC)
       this.bankTradeRate = 3;
+  }
+
+  eligibleResourceTypesForPurchase(purchaseType: string) {
+    return Object
+      .entries(this.resourceCounts)
+      .map(([resource, value]) => value >= buildingCosts[purchaseType][resource])
+      .length;
+  }
+
+  allowFlexiblePurchase(purchaseType: string) {
+    const hasEnough: boolean = this.eligibleResourceTypesForPurchase(purchaseType) >= totalResourceTypesRequired(purchaseType) - 1;
+
+    this.hasResources = new MapSchema<Boolean>({
+      ...this.hasResources,
+      [purchaseType]: hasEnough
+    });
   }
 };
 
