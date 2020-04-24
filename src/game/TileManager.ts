@@ -1,3 +1,5 @@
+import { minBy } from 'lodash';
+
 import GameState from '../game/GameState';
 import HexTile from '../schemas/HexTile';
 import Player from '../schemas/Player';
@@ -6,13 +8,17 @@ import { TILE_WATER, TILE_RESOURCE, DESERT } from '../manifest';
 export interface ValidStructurePosition {
   row: number
   col: number
+  loot?: number
+  lootableTiles?: number
 };
 
 export interface ValidHextile {
   population: number
   row: number
   col: number
-}
+};
+
+const BEST_TILE_VALUE = 7;
 
 class TileManager {
   // hexTileAdjacentHexes(row: number, col: number) {
@@ -205,24 +211,6 @@ class TileManager {
     return isAllowedPerStructure.some(allowed => allowed) || isAllowedPerRoad.some(allowed => allowed);
   };
 
-  validSettlements(state: GameState, ownerId: string) {
-    const { structureTilemap } = state.manifest;
-
-    const allValidSettlements: ValidStructurePosition[] = [];
-
-    structureTilemap
-      .forEach((row, rowIndex) => {
-        row.forEach((s, colIndex) => {
-          if (this.isValidSettlement(state, ownerId, rowIndex, colIndex)) {
-            const settlement: ValidStructurePosition = { row: rowIndex, col: colIndex };
-            allValidSettlements.push(settlement);
-          }
-        })
-      });
-
-    return allValidSettlements;
-  };
-
   validRoads(state: GameState, player: Player) {
     const { roadTilemap } = state.manifest;
 
@@ -267,6 +255,61 @@ class TileManager {
 
     return bestHextile;
   }
+
+  highestDiceRollProbability(totalResourceValues: number, lootableTiles: number = 2) {
+    const divideBy = lootableTiles * BEST_TILE_VALUE;
+    return Math.abs(1 - (totalResourceValues / divideBy));
+  }
+
+  bestSettlement(state: GameState, ownerId: string): ValidStructurePosition {
+    const allValidSettlements: ValidStructurePosition[] = [];
+
+    state.lootableHextiles
+      .forEach(({ row: tileRow, col: tileCol, value }) => {
+        const adjacentStructures = this.hexTileAdjacentStructures(tileRow, tileCol);
+
+        adjacentStructures.forEach(([settlementRow, settlementCol]) => {
+          if (this.isValidSettlement(state, ownerId, settlementRow, settlementCol)) {
+            const existingSettlement = allValidSettlements.find(({ row, col, loot }) => row === settlementRow && col === settlementCol);
+
+            if (existingSettlement) {
+              existingSettlement.loot += value;
+              existingSettlement.lootableTiles++;
+            } else {
+              const initSettlement: ValidStructurePosition = {
+                row: settlementRow,
+                col: settlementCol,
+                loot: value,
+                lootableTiles: 1
+              };
+
+              allValidSettlements.push(initSettlement)
+            }
+          }
+        });
+      });
+
+    const threeAdjacentTilesSettlements = allValidSettlements.filter(({ lootableTiles }) => lootableTiles >= 3);
+    if (threeAdjacentTilesSettlements.length) {
+      return minBy(
+        threeAdjacentTilesSettlements,
+        settlement => this.highestDiceRollProbability(settlement.loot, settlement.lootableTiles)
+      );
+    }
+
+    const twoAdjacentTilesSettlements = allValidSettlements.filter(({ lootableTiles }) => lootableTiles === 2);
+    if (twoAdjacentTilesSettlements.length) {
+      return minBy(
+        twoAdjacentTilesSettlements,
+        settlement => this.highestDiceRollProbability(settlement.loot, settlement.lootableTiles)
+      );
+    }
+
+    return minBy(
+      allValidSettlements,
+      settlement => this.highestDiceRollProbability(settlement.loot, settlement.lootableTiles)
+    );
+  };
 }
 
 export default new TileManager();

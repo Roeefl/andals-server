@@ -89,16 +89,13 @@ class GameBot extends Player {
   static async validSettlement(state: GameState, botSessionId: string) {
     await delay(1500);
 
-    const validSettlements: ValidStructurePosition[] = TileManager.validSettlements(state, botSessionId);
-    if (!validSettlements.length) return null;
-
-    const randomIndex = Math.floor(Math.random() * validSettlements.length);
-    const settlement: ValidStructurePosition = validSettlements[randomIndex];
-
+    const bestSettlement: ValidStructurePosition = TileManager.bestSettlement(state, botSessionId);
+    
+    if (!bestSettlement) return null;
     return {
       structureType: PURCHASE_SETTLEMENT,
-      row: settlement.row,
-      col: settlement.col
+      row: bestSettlement.row,
+      col: bestSettlement.col
     };
   }
 

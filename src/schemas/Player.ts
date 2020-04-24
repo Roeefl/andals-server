@@ -164,6 +164,9 @@ class Player extends Schema {
   heroPrivilege: string | null = null;
 
   @type("boolean")
+  swappingHeroCard: boolean = false;
+
+  @type("boolean")
   allowDirectTrade: boolean = false;
 
   @type("number")

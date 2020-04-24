@@ -158,6 +158,7 @@ class WildlingManager {
         
         if (!currentTile.occupiedBy) {
           state.board[tileIndex].occupiedBy = wildling;
+          wildling.occupiesTile = tileIndex;
           hasInvaded = true;
         }
 

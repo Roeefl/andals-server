@@ -18,10 +18,13 @@ class TurnManager {
       .forEach(player => player.initialGuardSetupPhase());
   }
 
-  resetHasPlayedGameCard(state: GameState) {
+  resetHasPlayedStatus(state: GameState) {
     Object
       .values(state.players)
-      .forEach(player => player.hasPlayedGameCard = false);
+      .forEach(player => {
+        player.hasPlayedGameCard = false
+        player.hasPlayedHeroCard = false;
+      });
   }
 
   finishTurn(state: GameState, player: Player, broadcast: (type: string, message: string, isEssential?: boolean) => void) {
@@ -129,7 +132,7 @@ class TurnManager {
     state.currentTurn = (currentTurn + 1) % state.maxClients;
     const isEndOfRound: Boolean = currentTurn === roundStarter;
 
-    this.resetHasPlayedGameCard(state);
+    this.resetHasPlayedStatus(state);
 
     if (!state.isTurnOrderPhase)
       broadcast(MESSAGE_GAME_LOG, `${player.nickname} finished his turn`);
@@ -145,9 +148,8 @@ class TurnManager {
     state.isSetupPhase = false;
     state.isGameStarted = true;
 
-    BankManager.setResourcesLoot(state, null, true);
-
     broadcast(MESSAGE_GAME_LOG, 'Finished setup phase. GAME STARTING!', true);
+    BankManager.setResourcesLoot(state, null, true);
   }
 }
 
