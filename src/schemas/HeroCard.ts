@@ -99,7 +99,30 @@ const manifest: { [type: string] : HeroCardManifest } = {
     name: "Petyr Baelish",
     title: "Lord Protector of the Vale",
     description: "Chaos is a Ladder: You may choose any 2 players and swap their current hero cards."
+  },
+  TywinLannister: {
+    name: "Tywin Lannister",
+    title: "Lord of Casterly Rock",
+    description: "A lion does not concern himself regarding sheep: Trade any of your resource cards with the supply for one sheep resource card."
+  },
+  Thoros: {
+    name: "Thoros of Myr",
+    title: "Priest of R'hollor",
+    description: "The one true god: Whenever one of your guards gets killed during an attack on the wall, instantly revive him and place him back at any wall section."
+  },
+  // TheonGrejoy: {
+  //   name: "Theon Greyjoy",
+  //   title: "Reek",
+  //   description: "What is dead may never die: "
+  // },
+  StannisBaratheon: {
+    name: "Stannis Baratheon",
+    title: "The prince that was promised",
+    description: "March to the wall: You may immediately move one of your guards to any wall section."
   }
+  // JonSnow: {
+  //   The runt of the litter
+  // }
 };
 
 export const heroCardTypes = Object.keys(manifest);
