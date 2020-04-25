@@ -81,17 +81,17 @@ class BankManager {
     });
   }
 
-  onBankPayment(state: GameState, purchaseType: string, flexiblePurchase: FlexiblePurchase) {
+  onBankPayment(state: GameState, purchaseType: string, flexiblePurchase?: FlexiblePurchase) {
     if (!state.isGameStarted) return;
     
     const totalPayments: Loot = buildingCosts[purchaseType];
 
-    const { swapWhich, swapWith } = flexiblePurchase;
+    const { swapWhich, swapWith } = flexiblePurchase || {};
     console.log("onBankPayment -> swapWith", swapWith)
     console.log("onBankPayment -> swapWhich", swapWhich)
     if (swapWhich && swapWith) {
-      totalPayments[swapWhich]--;
-      totalPayments[swapWith]++;
+      totalPayments[swapWhich]++;
+      totalPayments[swapWith]--;
     }
     console.log("onBankPayment -> totalPayments", totalPayments)
 

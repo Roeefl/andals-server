@@ -30,8 +30,9 @@ class HeroCardManager {
 
   assignInitialHeroCards(state: FirstMenGameState) {
     Object
-      .keys(state.players)
-      .forEach(sessionId => this.assignInitialHeroCard(state, sessionId));
+      .values(state.players)
+      .filter(player => player.isBot)
+      .forEach(bot => this.assignInitialHeroCard(state, bot.playerSessionId));
   }
 
   assignInitialHeroCard(state: FirstMenGameState, clientSessionId: string) {

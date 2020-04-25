@@ -265,7 +265,7 @@ class Player extends Schema {
     });
   }
 
-  onPurchase(type: string, isSetupPhase: boolean = false, isEndSetupPhase: boolean = false, flexiblePurchase: FlexiblePurchase) {
+  onPurchase(type: string, isSetupPhase: boolean = false, isEndSetupPhase: boolean = false, flexiblePurchase?: FlexiblePurchase) {
     if (type === PURCHASE_ROAD) {
       this.roads--;
     } else if (type === PURCHASE_SETTLEMENT) {
@@ -306,13 +306,13 @@ class Player extends Schema {
       }, {} as BuildingCost);
 
 
-      const { swapWhich, swapWith } = flexiblePurchase;
+      const { swapWhich, swapWith } = flexiblePurchase || {};
       console.log("onPurchase -> swapWhich", swapWhich)
       console.log("onPurchase -> swapWith", swapWith)
 
       if (swapWhich && swapWith) {
-        updatedResourceCounts[swapWhich]--;
-        updatedResourceCounts[swapWith]++;
+        updatedResourceCounts[swapWhich]++;
+        updatedResourceCounts[swapWith]--;
       }
       console.log("onPurchase -> updatedResourceCounts", updatedResourceCounts)
 

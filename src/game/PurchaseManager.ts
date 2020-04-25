@@ -104,7 +104,7 @@ class PurchaseManager {
     );
   
    const owner: Player = state.players[ownerId];
-   owner.onPurchase(PURCHASE_GUARD, state.isSetupPhase, flexiblePurchase);
+   owner.onPurchase(PURCHASE_GUARD, state.isSetupPhase, false, flexiblePurchase);
   }
 }
 
