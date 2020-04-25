@@ -22,6 +22,7 @@ import {
   MESSAGE_DISCARD_HALF_DECK,
   MESSAGE_FINISH_TURN,
   MESSAGE_PLACE_ROAD,
+  MESSAGE_REMOVE_ROAD,
   MESSAGE_PLACE_STRUCTURE,
   MESSAGE_PURCHASE_GAME_CARD,
   MESSAGE_PLAY_GAME_CARD,
@@ -276,15 +277,25 @@ class BaseGame extends Room<GameState> {
 
       case MESSAGE_PLACE_ROAD:
         PurchaseManager.onPurchaseRoad(this.state, data, currentPlayer.playerSessionId);
-        BankManager.onBankPayment(this.state, PURCHASE_ROAD);
         
-        if (currentPlayer.roadBuildingPhase > 0) {
-          currentPlayer.advanceRoadBuildingPhase();
-        }
+        if (!currentPlayer.allowFreeRoads)
+          BankManager.onBankPayment(this.state, PURCHASE_ROAD);
+        else 
+          currentPlayer.allowFreeRoads--;
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
-          message: `${currentPlayer.nickname} built a road`
+          message: `${currentPlayer.nickname} has built a road at [${data.row}, ${data.col}]`
         });
+        break;
+
+      case MESSAGE_REMOVE_ROAD:
+        PurchaseManager.onRemoveRoad(this.state, data, currentPlayer.playerSessionId);
+
+        this.broadcastToAll(MESSAGE_GAME_LOG, {
+          message: `${currentPlayer.nickname} has removed a road at [${data.row}, ${data.col}]`
+        });
+
+        currentPlayer.allowRemoveRoad = false;
         break;
 
       case MESSAGE_PLACE_STRUCTURE:
@@ -292,6 +303,8 @@ class BaseGame extends Room<GameState> {
         PurchaseManager.onPurchaseStructure(this.state, data, currentPlayer.playerSessionId, structureType);
         BankManager.onBankPayment(this.state, structureType);
         this.evaluateVictoryStatus();
+
+        currentPlayer.flexiblePurchase = null;
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} built a ${structureType}`
@@ -375,6 +388,7 @@ class BaseGame extends Room<GameState> {
         } = data;
 
         this.onPlaceGuard(currentPlayer, section, position, { swapWhich, swapWith });
+        currentPlayer.flexiblePurchase = null;
         break;
 
       case MESSAGE_READY:

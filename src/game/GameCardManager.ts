@@ -29,7 +29,7 @@ class GameCardManager {
 
       case CARD_ROAD_BUILDING:
         player.roads = player.roads + 2;
-        player.roadBuildingPhase = 1;
+        player.allowFreeRoads = 2;
         break;
 
       case CARD_YEAR_OF_PLENTY:

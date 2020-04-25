@@ -107,7 +107,7 @@ class Player extends Schema {
   mustMoveRobber: boolean = false
   
   @type("number")
-  roadBuildingPhase: number = 0
+  allowFreeRoads: number = 0
 
   @type("boolean")
   isDeclaringMonopoly: boolean = false
@@ -171,6 +171,12 @@ class Player extends Schema {
 
   @type("number")
   bankTradeRate: number
+  
+  @type("boolean")
+  allowRemoveRoad: boolean = false;
+
+  @type("string")
+  allowKill: string | null = null;
 
   constructor(sessionId: string, options: PlayerOptions, color: string, playerIndex: number, bankTradeRate: number = baseGameManifest.bankTradeRate) {
     super();
@@ -265,7 +271,7 @@ class Player extends Schema {
     });
   }
 
-  onPurchase(type: string, isSetupPhase: boolean = false, isEndSetupPhase: boolean = false, flexiblePurchase?: FlexiblePurchase) {
+  onPurchase(type: string, isSetupPhase: boolean = false, dontUpdateResourceCounts: boolean = false, flexiblePurchase?: FlexiblePurchase) {
     if (type === PURCHASE_ROAD) {
       this.roads--;
     } else if (type === PURCHASE_SETTLEMENT) {
@@ -297,30 +303,31 @@ class Player extends Schema {
       return;
     };
 
-    if (!isEndSetupPhase) {
-      const costs: BuildingCost = buildingCosts[type];
+    if (dontUpdateResourceCounts) {
+      this.updateHasResources();
+      return;
+    };
+    
+    const costs: BuildingCost = buildingCosts[type];
 
-      const updatedResourceCounts = resourceCardTypes.reduce((acc, name) => {
-        acc[name] = this.resourceCounts[name] - costs[name];
-        return acc;
-      }, {} as BuildingCost);
+    const updatedResourceCounts = resourceCardTypes.reduce((acc, name) => {
+      acc[name] = this.resourceCounts[name] - costs[name];
+      return acc;
+    }, {} as BuildingCost);
 
+    const { swapWhich, swapWith } = flexiblePurchase || {};
+    console.log("onPurchase -> swapWhich", swapWhich)
+    console.log("onPurchase -> swapWith", swapWith)
 
-      const { swapWhich, swapWith } = flexiblePurchase || {};
-      console.log("onPurchase -> swapWhich", swapWhich)
-      console.log("onPurchase -> swapWith", swapWith)
-
-      if (swapWhich && swapWith) {
-        updatedResourceCounts[swapWhich]++;
-        updatedResourceCounts[swapWith]--;
-      }
-      console.log("onPurchase -> updatedResourceCounts", updatedResourceCounts)
-
-      this.resourceCounts = new MapSchema<Number>({
-        ...updatedResourceCounts
-      });
+    if (swapWhich && swapWith) {
+      updatedResourceCounts[swapWhich]++;
+      updatedResourceCounts[swapWith]--;
     }
+    console.log("onPurchase -> updatedResourceCounts", updatedResourceCounts)
 
+    this.resourceCounts = new MapSchema<Number>({
+      ...updatedResourceCounts
+    });
     this.updateHasResources();
   }
 
@@ -455,14 +462,6 @@ class Player extends Schema {
       ...this.resourceCounts,
       [resource]: this.resourceCounts[resource] - 1
     });
-  }
-
-  advanceRoadBuildingPhase() {
-    this.roadBuildingPhase++;
-
-    if (this.roadBuildingPhase === 3) {
-      this.roadBuildingPhase = 0;
-    }
   }
 
   gaveAllOfResourceType(resource: string) {

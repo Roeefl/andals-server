@@ -94,8 +94,8 @@ class FirstMenGameState extends GameState {
       .length;
   }
 
-  onGuardKilled(sectionIndex: number) {
-    const killedGuardIndex: number = sectionIndex * wallSectionSize;
+  onGuardKilled(sectionIndex: number, position: number = 0) {
+    const killedGuardIndex: number = (sectionIndex * wallSectionSize) + position;
 
     const killedGuard: Guard = this.wall[killedGuardIndex];
     if (!killedGuard.ownerId) return;

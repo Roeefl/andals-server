@@ -60,15 +60,31 @@ class PurchaseManager {
       ...state.roads,
       road
     ];
-    
     state.roads = new ArraySchema<Road>(
       ...updatedRoads
     );
 
     const owner: Player = state.players[ownerId];
-    owner.onPurchase(PURCHASE_ROAD, state.isSetupPhase);
-
+    owner.onPurchase(PURCHASE_ROAD, state.isSetupPhase, owner.allowFreeRoads > 0);
     // this.evaluateLongestRoad();
+  }
+
+  onRemoveRoad(state: GameState, data: any, ownerId: string) {
+    const { row, col } = data;
+
+    const existingRoadIndex = state.roads.findIndex(road => road.row === row && road.col === col);
+    console.log("onRemoveRoad -> existingRoadIndex", existingRoadIndex)
+
+    const updatedRoads = state.roads.filter((road, index) => index !== existingRoadIndex);
+    state.roads = new ArraySchema<Road>(
+      ...updatedRoads
+    );
+
+    const owner: Player = state.players[ownerId];
+    owner.roads++;
+
+    // Owner should receive 'free road' flag
+    // Road was not actually removed
   }
 
   evaluateLongestRoad() {

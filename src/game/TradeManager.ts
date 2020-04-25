@@ -87,6 +87,7 @@ class TradeManager {
     otherPlayer.stolenResource(resource);
 
     currentPlayer.allowStealingFrom = new ArraySchema<string>();
+    currentPlayer.isVisibleSteal = false;
   }
 
   onMonopoly(state: GameState, monopolyPlayer: Player, resource: string) {

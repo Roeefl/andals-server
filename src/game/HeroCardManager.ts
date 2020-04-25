@@ -13,7 +13,8 @@ import HeroCard, {
   HERO_CARD_BenjenStark,
   HERO_CARD_Ygritte,
   HERO_CARD_Yoren,
-  HERO_CARD_QhorinHalfhand
+  HERO_CARD_QhorinHalfhand,
+  HERO_CARD_IlynPayne
 } from '../schemas/HeroCard';
 
 import Player from '../schemas/Player';
@@ -82,6 +83,18 @@ class HeroCardManager {
         break;
 
       case HERO_CARD_Ygritte:
+        break;
+
+      case HERO_CARD_OthellYarwyck:
+        currentPlayer.allowRemoveRoad = true;
+        // Remove 1 of your roads from the board 
+        // and rebuild it for free at a different legal location. 
+        // The road you remove must only be connected on 1 of its 2 ends to your pieces. Ignore opponents’ pieces when checking connections.
+        break;
+
+      case HERO_CARD_IlynPayne:
+        // You may immediately remove any Guard on the wall which belongs to another player, and return it to him
+        currentPlayer.allowKill = PURCHASE_GUARD;
         break;
 
       default:

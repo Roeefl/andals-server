@@ -21,7 +21,8 @@ import {
   MESSAGE_GAME_VICTORY,
   MESSAGE_TRADE_WITH_BANK,
   MESSAGE_MOVE_ROBBER,
-  MESSAGE_WILDLINGS_REMOVE_FROM_TILE
+  MESSAGE_WILDLINGS_REMOVE_FROM_TILE,
+  MESSAGE_REMOVE_GUARD
 } from '../constants';
 
 import {
@@ -133,6 +134,8 @@ class FirstMenGame extends BaseGame {
           }
         }
 
+        break;
+
       case MESSAGE_WILDLINGS_REMOVE_FROM_TILE:
         const { tileIndex } = data;
 
@@ -144,6 +147,18 @@ class FirstMenGame extends BaseGame {
 
           wildling.occupiesTile = -1;
         }
+
+        break;
+
+      case MESSAGE_REMOVE_GUARD:
+        const {
+          section,
+          position = 0
+        } = data;
+
+        state.onGuardKilled(section, position);
+        currentPlayer.allowKill = null;
+        break;
     }
   };
 
