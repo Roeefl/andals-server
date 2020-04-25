@@ -51,7 +51,7 @@ import {
 } from '../manifest';
 
 import { tileIndex } from '../utils/board';
-import { RoomOptions, Loot } from '../interfaces';
+import { RoomOptions, Loot, FlexiblePurchase } from '../interfaces';
 import FirstMenGameState from '../north/FirstMenGameState';
 
 const maxReconnectionTime = 5 * 60;
@@ -367,8 +367,14 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_PLACE_GUARD:
-        const { section = 0, position = 0 } = data;
-        this.onPlaceGuard(currentPlayer, section, position);
+        const {
+          section = 0,
+          position = 0,
+          swapWhich,
+          swapWith
+        } = data;
+
+        this.onPlaceGuard(currentPlayer, section, position, { swapWhich, swapWith });
         break;
 
       case MESSAGE_READY:
@@ -393,9 +399,9 @@ class BaseGame extends Room<GameState> {
       });
   }
 
-  onPlaceGuard(currentPlayer: Player, section: number, position: number) {
-    PurchaseManager.onPurchaseGuard(this.state as FirstMenGameState, currentPlayer.playerSessionId, section, position);
-    BankManager.onBankPayment(this.state, PURCHASE_GUARD);
+  onPlaceGuard(currentPlayer: Player, section: number, position: number, flexiblePurchase: FlexiblePurchase) {
+    PurchaseManager.onPurchaseGuard(this.state as FirstMenGameState, currentPlayer.playerSessionId, section, position, flexiblePurchase);
+    BankManager.onBankPayment(this.state, PURCHASE_GUARD, flexiblePurchase);
     this.evaluateVictoryStatus();
   
     this.broadcastToAll(MESSAGE_GAME_LOG, {

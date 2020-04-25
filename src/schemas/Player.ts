@@ -17,7 +17,7 @@ import {
   baseGameManifest
 } from '../manifest';
 
-import { Loot, BuildingCost } from '../interfaces';
+import { Loot, BuildingCost, FlexiblePurchase } from '../interfaces';
 
 export interface PlayerOptions {
   nickname: string
@@ -265,7 +265,7 @@ class Player extends Schema {
     });
   }
 
-  onPurchase(type: string, isSetupPhase: boolean = false, isEndSetupPhase: boolean = false) {
+  onPurchase(type: string, isSetupPhase: boolean = false, isEndSetupPhase: boolean = false, flexiblePurchase: FlexiblePurchase) {
     if (type === PURCHASE_ROAD) {
       this.roads--;
     } else if (type === PURCHASE_SETTLEMENT) {
@@ -304,6 +304,17 @@ class Player extends Schema {
         acc[name] = this.resourceCounts[name] - costs[name];
         return acc;
       }, {} as BuildingCost);
+
+
+      const { swapWhich, swapWith } = flexiblePurchase;
+      console.log("onPurchase -> swapWhich", swapWhich)
+      console.log("onPurchase -> swapWith", swapWith)
+
+      if (swapWhich && swapWith) {
+        updatedResourceCounts[swapWhich]--;
+        updatedResourceCounts[swapWith]++;
+      }
+      console.log("onPurchase -> updatedResourceCounts", updatedResourceCounts)
 
       this.resourceCounts = new MapSchema<Number>({
         ...updatedResourceCounts

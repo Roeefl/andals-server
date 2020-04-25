@@ -16,6 +16,7 @@ import {
 } from '../manifest';
 
 import { wallSectionSize } from '../specs/wall';
+import { FlexiblePurchase } from '../interfaces';
 
 class PurchaseManager {
   onPurchaseStructure(state: GameState, data: any, ownerId: string, structureType: string = PURCHASE_SETTLEMENT) {
@@ -90,7 +91,7 @@ class PurchaseManager {
     );
   }
 
-  onPurchaseGuard(state: FirstMenGameState, ownerId: string, section: number, position: number) {
+  onPurchaseGuard(state: FirstMenGameState, ownerId: string, section: number, position: number, flexiblePurchase: FlexiblePurchase) {
     const guard = new Guard(ownerId, section, position);
     
     const updatedWall = [
@@ -103,7 +104,7 @@ class PurchaseManager {
     );
   
    const owner: Player = state.players[ownerId];
-   owner.onPurchase(PURCHASE_GUARD, state.isSetupPhase);
+   owner.onPurchase(PURCHASE_GUARD, state.isSetupPhase, flexiblePurchase);
   }
 }
 

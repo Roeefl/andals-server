@@ -11,7 +11,7 @@ import {
   initialResourceCounts,
   PURCHASE_CITY
 } from '../manifest';
-import { Loot, AvailableLoot } from '../interfaces';
+import { Loot, AvailableLoot, FlexiblePurchase } from '../interfaces';
 import buildingCosts from '../specs/buildingCosts';
 
 class BankManager {
@@ -81,10 +81,20 @@ class BankManager {
     });
   }
 
-  onBankPayment(state: GameState, purchaseType: string) {
+  onBankPayment(state: GameState, purchaseType: string, flexiblePurchase: FlexiblePurchase) {
     if (!state.isGameStarted) return;
     
     const totalPayments: Loot = buildingCosts[purchaseType];
+
+    const { swapWhich, swapWith } = flexiblePurchase;
+    console.log("onBankPayment -> swapWith", swapWith)
+    console.log("onBankPayment -> swapWhich", swapWhich)
+    if (swapWhich && swapWith) {
+      totalPayments[swapWhich]--;
+      totalPayments[swapWith]++;
+    }
+    console.log("onBankPayment -> totalPayments", totalPayments)
+
     this.returnToBank(state, totalPayments);
   }
 

@@ -12,7 +12,6 @@ import HeroCardManager from '../game/HeroCardManager';
 import BankManager from '../game/BankManager';
 
 import {
-  MESSAGE_PLACE_GUARD,
   MESSAGE_PLACE_STRUCTURE,
   MESSAGE_PURCHASE_GAME_CARD,
   MESSAGE_WILDLINGS_REVEAL_TOKENS,
@@ -82,9 +81,6 @@ class FirstMenGame extends BaseGame {
 
     // POST-onGameAction | additional actions needed only in FirstMen mode:
     switch (type) {
-      case MESSAGE_PLACE_GUARD:
-        break;
-
       case MESSAGE_PLACE_STRUCTURE:
       case MESSAGE_PURCHASE_GAME_CARD:
         if (!state.isGameStarted) break;

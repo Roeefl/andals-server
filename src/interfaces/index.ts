@@ -25,6 +25,11 @@ export interface AvailableLoot {
   [key: string]: Loot
 };
 
+export interface FlexiblePurchase {
+  swapWhich: string
+  swapWith: string
+};
+
 export interface GameManifest {
   roomType: string
   purchaseTypes: string[]
