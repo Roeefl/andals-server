@@ -1,4 +1,7 @@
+import { ArraySchema } from '@colyseus/schema';
 import { shuffle } from 'lodash';
+
+import GameState from './GameState';
 
 import GameCard from '../schemas/GameCard';
 import Player from '../schemas/Player';
@@ -9,11 +12,21 @@ import {
 } from '../manifest';
 
 class GameCardManager {
-  shuffle() {
+  initialShuffledDeck() {
     const shuffledCards: string[] = shuffle(boardGameCards);
     
     return shuffledCards
       .map(card => new GameCard(card))
+  }
+
+  shuffleDeck(state: GameState) {
+    const updatedGameCards = [
+      ...shuffle(state.gameCards)
+    ];
+
+    state.gameCards = new ArraySchema<GameCard>(
+      ...updatedGameCards
+    );
   }
 
   playGameCard(player: Player, cardType: String, cardIndex: number) {

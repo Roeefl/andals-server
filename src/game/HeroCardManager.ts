@@ -1,8 +1,11 @@
 import { ArraySchema } from '@colyseus/schema';
 import { shuffle } from 'lodash';
 
+import FirstMenGameState from '../north/FirstMenGameState';
+import Player from '../schemas/Player';
+import GameCard from '../schemas/GameCard';
+
 import HeroCard, {
-  heroCardTypes,
   HERO_CARD_JeorMormont,
   HERO_CARD_BowenMarsh,
   HERO_CARD_SamwellTarly,
@@ -14,12 +17,13 @@ import HeroCard, {
   HERO_CARD_Ygritte,
   HERO_CARD_Yoren,
   HERO_CARD_QhorinHalfhand,
-  HERO_CARD_IlynPayne
+  HERO_CARD_IlynPayne,
+  HERO_CARD_EuronGrejoy,
+  HERO_CARD_TywinLannister,
+  HERO_CARD_Thoros
 } from '../schemas/HeroCard';
 
-import Player from '../schemas/Player';
-import FirstMenGameState from '../north/FirstMenGameState';
-import { PURCHASE_GUARD } from '../manifest';
+import { PURCHASE_GUARD, PURCHASE_GAME_CARD, CARD_KNIGHT } from '../manifest';
 
 class HeroCardManager {
   shuffle() {
@@ -58,7 +62,7 @@ class HeroCardManager {
     currentPlayer.currentHeroCard.wasPlayed = true;
 
     currentPlayer.heroPrivilege = type;
-    console.log("HeroCardManager -> playHeroCard -> heroPrivilege",currentPlayer.heroPrivilege)
+    console.log("HeroCardManager -> playHeroCard -> heroPrivilege", currentPlayer.heroPrivilege)
 
     switch (type) {
       case HERO_CARD_BowenMarsh:
@@ -95,6 +99,66 @@ class HeroCardManager {
       case HERO_CARD_IlynPayne:
         // You may immediately remove any Guard on the wall which belongs to another player, and return it to him
         currentPlayer.allowKill = PURCHASE_GUARD;
+        break;
+
+      case HERO_CARD_JeorMormont:
+        // Demand 1 resource card each from all players.
+        // The cards must be of the same resource type.
+        // For each resource card you receive, give the respective player 1 resource card of your choice in return.
+
+        currentPlayer.allowStealingFrom = new ArraySchema<string>(
+          ...state.otherPlayersSessionIds(currentPlayer)
+        );
+        currentPlayer.isVisibleSteal = true;
+
+        break;
+
+      case HERO_CARD_SamwellTarly:
+        // If, after resolving any production roll (not a “7”), you receive no resource cards, take any 1 resource card of your choice from the supply.
+        break;
+
+      case HERO_CARD_Melisandre:
+        // Choose your development card from the 3 top cards of the deck, then reshuffle the deck
+        currentPlayer.flexiblePurchase = PURCHASE_GAME_CARD;
+        currentPlayer.allowFlexiblePurchase(PURCHASE_GAME_CARD);
+        currentPlayer.isVisiblePurchaseGameCard = true;
+        break;
+
+      case HERO_CARD_BenjenStark:
+        // Remove 1 wildling from a clearing or a camp, return it to the Frostfangs.
+        // If you remove a wildling from a camp and there are more wildlings in the camps farther from the clearings than the wildling you removed,
+        // move them each 1 camp closer to the clearings.
+        // Then, reveal a wildling token from the pool and place it accordingly.
+
+        break;
+
+      case HERO_CARD_Yoren:
+        const playedKnightCardIndex: number = currentPlayer.gameCards
+          .findIndex(({ type, wasPlayed }) => type === CARD_KNIGHT && wasPlayed);
+
+        if (playedKnightCardIndex < 0) break;
+
+        // Discard 1 Knight gameCard that player has already played
+        state.gameCards = new ArraySchema<GameCard>(
+          ...state.gameCards,
+          currentPlayer.gameCards[playedKnightCardIndex]
+        );
+
+        currentPlayer.onReturnGameCard(playedKnightCardIndex);
+        
+        currentPlayer.allowFreeGuard = true;
+        break;
+
+      case HERO_CARD_EuronGrejoy:
+        currentPlayer.bankTradeRate = 2;
+        break;
+
+      case HERO_CARD_TywinLannister:
+        // Trade any of your resource cards with the supply for one sheep resource card
+        break;
+
+      case HERO_CARD_Thoros:
+        // Instantly revive him and place him back at any wall section
         break;
 
       default:

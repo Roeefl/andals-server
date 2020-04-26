@@ -1,9 +1,8 @@
 import { ArraySchema, MapSchema } from '@colyseus/schema';
 
 import GameState from '../game/GameState';
-import BankManager from '../game/BankManager';
-
 import Player from '../schemas/Player';
+import { HERO_CARD_JeorMormont } from '../schemas/HeroCard';
 
 import { initialResourceCounts } from '../manifest';
 import { Loot } from '../interfaces';
@@ -85,6 +84,16 @@ class TradeManager {
     
     currentPlayer.addResource(resource);
     otherPlayer.stolenResource(resource);
+
+    if (currentPlayer.heroPrivilege === HERO_CARD_JeorMormont) {
+      currentPlayer.allowStealingFrom = new ArraySchema<string>(
+        ...currentPlayer.allowStealingFrom.filter(sessionId => sessionId !== stealFrom)
+      );
+      if (!currentPlayer.allowStealingFrom.length)
+        currentPlayer.isVisibleSteal = false;
+
+      return;
+    }
 
     currentPlayer.allowStealingFrom = new ArraySchema<string>();
     currentPlayer.isVisibleSteal = false;

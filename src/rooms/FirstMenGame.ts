@@ -5,6 +5,7 @@ import { RoomOptions } from '../interfaces';
 
 import Player from '../schemas/Player';
 import HexTile from '../schemas/HexTile';
+import DiceRoll from '../schemas/DiceRoll';
 
 import BoardManager from '../game/BoardManager';
 import GameCardManager from '../game/GameCardManager';
@@ -12,6 +13,7 @@ import HeroCardManager from '../game/HeroCardManager';
 import BankManager from '../game/BankManager';
 
 import {
+  MESSAGE_FINISH_TURN,
   MESSAGE_PLACE_STRUCTURE,
   MESSAGE_PURCHASE_GAME_CARD,
   MESSAGE_WILDLINGS_REVEAL_TOKENS,
@@ -22,7 +24,12 @@ import {
   MESSAGE_TRADE_WITH_BANK,
   MESSAGE_MOVE_ROBBER,
   MESSAGE_WILDLINGS_REMOVE_FROM_TILE,
-  MESSAGE_REMOVE_GUARD
+  MESSAGE_WILDLINGS_REMOVE_FROM_CAMP,
+  MESSAGE_WILDLINGS_REMOVE_FROM_CLEARING,
+  MESSAGE_REMOVE_GUARD,
+  MESSAGE_REMOVE_ROAD,
+  MESSAGE_STEAL_CARD,
+  MESSAGE_COLLECT_RESOURCE_LOOT
 } from '../constants';
 
 import {
@@ -33,14 +40,21 @@ import WildlingManager from '../game/WildlingManager';
 import FirstMenGameState from '../north/FirstMenGameState';
 import { tokensPerPurchase } from '../specs/wildlings';
 
-import { HERO_CARD_BowenMarsh, HERO_CARD_QhorinHalfhand } from '../schemas/HeroCard';
+import {
+  HERO_CARD_BowenMarsh,
+  HERO_CARD_QhorinHalfhand,
+  HERO_CARD_SamwellTarly,
+  HERO_CARD_OthellYarwyck,
+  HERO_CARD_Melisandre,
+  HERO_CARD_EuronGrejoy
+} from '../schemas/HeroCard';
 
 class FirstMenGame extends BaseGame {
   onCreate(roomOptions: RoomOptions) {
     console.info("FirstMenGame | onCreate | roomOptions: ", roomOptions);
 
     const board = BoardManager.firstMenBoard();
-    const gameCards = GameCardManager.shuffle();
+    const gameCards = GameCardManager.initialShuffledDeck();
 
     const wildlingTokens = WildlingManager.shuffleTokens();
     const heroCards = HeroCardManager.shuffle();
@@ -53,35 +67,55 @@ class FirstMenGame extends BaseGame {
     HeroCardManager.assignInitialHeroCards(this.state as FirstMenGameState);
   };
 
+  /** PRE-onGameAction | PREVIOUS actions needed only in FirstMen mode */
+  preGameAction(state: FirstMenGameState, currentPlayer: Player, messageData: any): number {
+    switch (messageData.type) {
+      case MESSAGE_MOVE_ROBBER:
+        return state.robberPosition;
+
+      case MESSAGE_SELECT_HERO_CARD:
+        const { heroType } = messageData;
+        console.log("FirstMenGame -> onMessage -> heroType", heroType)
+
+        currentPlayer.swappingHeroCard = false
+        HeroCardManager.swapPlayerHeroCard(state, currentPlayer, heroType);
+        break;
+
+      case MESSAGE_WILDLINGS_REMOVE_FROM_CAMP:
+        const { clanName, campIndex } = messageData;
+        console.log("FirstMenGame -> onMessage -> campIndex", campIndex)
+        console.log("FirstMenGame -> onMessage -> clanName", clanName)
+
+        break;
+
+      case MESSAGE_WILDLINGS_REMOVE_FROM_CLEARING:
+        const { clearingIndex, wildlingIndex } = messageData;
+        console.log("FirstMenGame -> onMessage -> wildlingIndex", wildlingIndex)
+        console.log("FirstMenGame -> onMessage -> clearingIndex", clearingIndex)
+
+        break;
+      
+      default:
+        break;
+    }
+
+    return -1;
+  }
+
   onMessage(client: Client, data: any) {
     const { type } = data;
     const currentPlayer: Player = this.state.players[client.sessionId];
 
     const state = this.state as FirstMenGameState;
 
-    let lastRobberPosition: number = -1;
-
-    // PRE-onGameAction | previous actions needed only in FirstMen mode:
-    switch (type) {
-      case MESSAGE_MOVE_ROBBER:
-        lastRobberPosition = state.robberPosition;
-        break;
-
-      case MESSAGE_SELECT_HERO_CARD:
-        const { heroType } = data;
-        console.log("FirstMenGame -> onMessage -> heroType", heroType)
-        currentPlayer.swappingHeroCard = false
-        HeroCardManager.swapPlayerHeroCard(state, currentPlayer, heroType);
-        break;
-
-      default:
-        break;
-    }
-
+    const lastRobberPosition: number = this.preGameAction(state, currentPlayer, data);
     this.onGameAction(currentPlayer, type, data);
-
-    // POST-onGameAction | additional actions needed only in FirstMen mode:
-    switch (type) {
+    this.postGameAction(state, currentPlayer, data, lastRobberPosition);
+  };
+  
+  /** POST-onGameAction | additional actions needed only in FirstMen mode: */
+  postGameAction(state: FirstMenGameState, currentPlayer: Player, data: any, lastRobberPosition: number) {
+    switch (data.type) {
       case MESSAGE_PLACE_STRUCTURE:
       case MESSAGE_PURCHASE_GAME_CARD:
         if (!state.isGameStarted) break;
@@ -92,10 +126,25 @@ class FirstMenGame extends BaseGame {
 
         WildlingManager.onTokensRevealed(state, tokensToPlay);
         this.broadcastToAll(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens }, true);
+
+        if (data.type === MESSAGE_PURCHASE_GAME_CARD && currentPlayer.heroPrivilege === HERO_CARD_Melisandre) {
+          currentPlayer.flexiblePurchase = null;
+          currentPlayer.isVisiblePurchaseGameCard = false;
+
+          GameCardManager.shuffleDeck(state);
+        };
+        
         break;
 
       case MESSAGE_ROLL_DICE:
         const { dice = [3, 3, 1] } = data;
+        const roll = new DiceRoll(dice);
+
+        // Samwell Tarly check
+        if (currentPlayer.heroPrivilege === HERO_CARD_SamwellTarly && roll.value !== 7 && currentPlayer.totalAvailableLoot === 0) {
+          BankManager.giveOneResourceOfEach(currentPlayer);
+        };
+
         if (!state.isGameStarted || dice.length < 2) break;
         
         const wildlingDice: number = dice[2];
@@ -150,17 +199,43 @@ class FirstMenGame extends BaseGame {
 
         break;
 
+      case MESSAGE_FINISH_TURN:
+        if (currentPlayer.heroPrivilege === HERO_CARD_EuronGrejoy)
+          currentPlayer.bankTradeRate = firstmenManifest.bankTradeRate;
+        break;
+
+      case MESSAGE_REMOVE_ROAD:
+        // Othell check
+        if (currentPlayer.heroPrivilege === HERO_CARD_OthellYarwyck)
+          currentPlayer.allowFreeRoads = 2;
+        break;
+
       case MESSAGE_REMOVE_GUARD:
         const {
           section,
           position = 0
         } = data;
 
-        state.onGuardKilled(section, position);
+        state.onGuardKilled(section, position, false);
         currentPlayer.allowKill = null;
         break;
+
+      case MESSAGE_STEAL_CARD:
+        const { stealFrom, giveBack } = data;
+        if (!giveBack) break;
+
+        const otherPlayer: Player = this.state.players[stealFrom];
+        currentPlayer.stolenResource(giveBack);
+        otherPlayer.addResource(giveBack);
+        break;
+
+      case MESSAGE_COLLECT_RESOURCE_LOOT:
+        // Samwell Tarly check
+        if (currentPlayer.heroPrivilege === HERO_CARD_SamwellTarly && !currentPlayer.allowCollectAll)
+          BankManager.resetResourcesLoot(currentPlayer);
+        break;
     }
-  };
+  }
 
   onJoin(client: Client, options: any) {
     this.onPlayerJoin(client.sessionId, options);

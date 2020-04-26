@@ -65,11 +65,7 @@ class BankManager {
       ...updatedResourceCounts
     });
   }
-
-  onPlayerCollectAllLoot(player: Player) {
-    player.onCollectLoot();
-  }
-
+  
   returnToBank(state: GameState, discardedCounts: Loot) {
     const updatedResourceCounts: Loot = resourceCardTypes.reduce((acc, name) => {
       acc[name] = state.resourceCounts[name] + discardedCounts[name];
@@ -103,6 +99,30 @@ class BankManager {
       ...state.resourceCounts,
       [resource]: state.resourceCounts[resource] - 1
     });
+  }
+
+  giveOneResourceOfEach(currentPlayer: Player) {
+    const oneOfEach: Loot = {
+      lumber: 1,
+      sheep: 1,
+      brick: 1,
+      wheat: 1,
+      ore: 1
+    };
+
+    currentPlayer.availableLoot = new MapSchema<Number>({
+      ...oneOfEach
+    });
+
+    currentPlayer.allowCollectAll = false;
+  }
+
+  resetResourcesLoot(currentPlayer: Player) {
+    currentPlayer.availableLoot = new MapSchema<Number>({
+      ...initialResourceCounts
+    });
+
+    currentPlayer.allowCollectAll = true;
   }
 }
 

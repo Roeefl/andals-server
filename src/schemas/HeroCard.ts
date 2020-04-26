@@ -11,6 +11,7 @@ interface HeroCardManifest {
 
 const manifest: { [type: string] : HeroCardManifest } = {
   JeorMormont: {
+    isReady: true,
     order: 1,
     name: "Jeor Mormont",
     title: "Lord Commander of the Night's Watch",
@@ -27,6 +28,7 @@ const manifest: { [type: string] : HeroCardManifest } = {
   },
   SamwellTarly: {
     order: 3,
+    isReady: true,
     name: "Samwell Tarly",
     title: "Steward",
     ability: "Master's Sufficiency",
@@ -50,6 +52,7 @@ const manifest: { [type: string] : HeroCardManifest } = {
   },
   Melisandre: {
     order: 6,
+    isReady: true,
     name: "Melisandre",
     title: "Red Priestess of R'hllor",
     ability: "Manipulate Development Cards",
@@ -63,6 +66,7 @@ const manifest: { [type: string] : HeroCardManifest } = {
     description: "After resolving your production roll, look at the hand of resource cards of 1 opponent who has more victory points than you and take 1 resource card of your choice."
   },
   BenjenStark: {
+    isReady: true,
     name: "Benjen Stark",
     title: "First Ranger",
     ability: "Coldhands",
@@ -76,6 +80,7 @@ const manifest: { [type: string] : HeroCardManifest } = {
     description: "Choose 1 wildling in the Gift and return it to the Frostfangs. You can do this before or after your own production roll."
   },
   Yoren: {
+    isReady: true,
     name: "Yoren",
     title: "Wandering Crow",
     ability: "New Recruits",
@@ -96,22 +101,11 @@ const manifest: { [type: string] : HeroCardManifest } = {
     description: "You may immediately remove any Guard on the wall which belongs to another player, and return it to him."
   },
   EuronGreyjoy: {
+    isReady: true,
     name: "Euron Greyjoy",
     title: "King of Salt and Rock",
     ability: "Iron Fleet Occupation",
     description: "You may trade any resource cards with the supply at a rate of 2:1, as if you had a settlement on each of the harbor trading posts."
-  },
-  DavosSeaworth: {
-    name: "Davos Seaworth",
-    title: "Admiral of the Narrow Sea",
-    ability: "",
-    description: ""
-  },
-  RobbStark: {
-    name: "Robb Stark",
-    title: "The King in the North",
-    ability: "",
-    description: "Rally to the King: If Tormund"
   },
   Littlefinger: {
     name: "Petyr Baelish",
@@ -120,28 +114,43 @@ const manifest: { [type: string] : HeroCardManifest } = {
     description: "You may choose any 2 players and swap their current hero cards."
   },
   TywinLannister: {
+    isReady: true,
     name: "Tywin Lannister",
     title: "Lord of Casterly Rock",
     ability: "A lion does not concern himself with the Sheep",
     description: "Trade any of your resource cards with the supply for one sheep resource card."
   },
   Thoros: {
+    isReady: true,
     name: "Thoros of Myr",
     title: "Priest of R'hollor",
     ability: "The one True God",
-    description: "The one true god: Whenever one of your guards gets killed during an attack on the wall, instantly revive him and place him back at any wall section."
+    description: "Whenever one of your guards gets killed during an attack on the wall, instantly revive him and place him back at any wall section."
   },
+  StannisBaratheon: {
+    isReady: true,
+    name: "Stannis Baratheon",
+    title: "Azor Ahai",
+    ability: "March to the Wall",
+    description: "You may immediately move one of your guards to any wall section."
+  },
+  // DavosSeaworth: {
+  //   name: "Davos Seaworth",
+  //   title: "Admiral of the Narrow Sea",
+  //   ability: "",
+  //   description: ""
+  // },
+  // RobbStark: {
+  //   name: "Robb Stark",
+  //   title: "The King in the North",
+  //   ability: "",
+  //   description: "Rally to the King: If Tormund"
+  // },
   // TheonGrejoy: {
   //   name: "Theon Greyjoy",
   //   title: "Reek",
   //   description: "What is dead may never die: "
   // },
-  StannisBaratheon: {
-    name: "Stannis Baratheon",
-    title: "The prince that was promised",
-    ability: "March to the Wall",
-    description: "You may immediately move one of your guards to any wall section."
-  }
   // JonSnow: {
   //   The runt of the litter
   // }
@@ -162,9 +171,12 @@ export const [
   HERO_CARD_QhorinHalfhand,
   HERO_CARD_IlynPayne,
   HERO_CARD_EuronGrejoy,
-  HERO_CARD_DavosSeaworth,
-  HERO_CARD_RobbStark,
-  HERO_CARD_Littlefinger
+  HERO_CARD_Littlefinger,
+  HERO_CARD_TywinLannister,
+  HERO_CARD_Thoros,
+  HERO_CARD_Stannis,
+  // HERO_CARD_DavosSeaworth,
+  // HERO_CARD_RobbStark,
 ] = heroCardTypes;
 
 class HeroCard extends Schema {
@@ -179,6 +191,9 @@ class HeroCard extends Schema {
 
   @type("string")
   title: string
+
+  @type("string")
+  ability: string
 
   @type("string")
   description: string
@@ -196,6 +211,7 @@ class HeroCard extends Schema {
     this.order = manifest[type].order || 0;
     this.name = manifest[type].name;
     this.title = manifest[type].title;
+    this.ability = manifest[type].ability || '';
     this.description = manifest[type].description || '';
     this.ownerId = null;
   }
@@ -204,7 +220,7 @@ class HeroCard extends Schema {
     return Object
       .entries(manifest)
       .filter(([key, heroCard]) => heroCard.isReady)
-      .map(([key, heroCard]) => key);
+      .map(([key]) => key);
   }
 };
 

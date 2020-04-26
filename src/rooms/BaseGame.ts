@@ -19,6 +19,7 @@ import {
   MESSAGE_READY,
   MESSAGE_ROLL_DICE,
   MESSAGE_COLLECT_ALL_LOOT,
+  MESSAGE_COLLECT_RESOURCE_LOOT,
   MESSAGE_DISCARD_HALF_DECK,
   MESSAGE_FINISH_TURN,
   MESSAGE_PLACE_ROAD,
@@ -38,8 +39,7 @@ import {
   MESSAGE_TRADE_REMOVE_CARD,
   MESSAGE_TRADE_CONFIRM,
   MESSAGE_TRADE_REFUSE,
-  MESSAGE_PLACE_GUARD,
-  MESSAGE_PLAY_HERO_CARD
+  MESSAGE_PLACE_GUARD
 } from '../constants';
 
 import {
@@ -84,7 +84,7 @@ class BaseGame extends Room<GameState> {
     console.info("BaseGame | onCreate | roomOptions: ", roomOptions);
 
     const board = BoardManager.baseGameBoard();
-    const gameCards = GameCardManager.shuffle();
+    const gameCards = GameCardManager.initialShuffledDeck();
     
     const gameState = new GameState(baseGameManifest, board, gameCards, roomOptions);
     this.setState(gameState);
@@ -233,7 +233,16 @@ class BaseGame extends Room<GameState> {
           loot: currentPlayer.availableLoot
         });
 
-        BankManager.onPlayerCollectAllLoot(currentPlayer);
+        currentPlayer.onCollectLoot();
+        break;
+
+      case MESSAGE_COLLECT_RESOURCE_LOOT:
+        this.broadcastToAll(MESSAGE_COLLECT_RESOURCE_LOOT, {
+          playerName: currentPlayer.nickname,
+          resource: data.resource
+        });
+
+        currentPlayer.onCollectSingleResoruceLoot(data.resource);
         break;
 
       case MESSAGE_DISCARD_HALF_DECK:
@@ -269,10 +278,11 @@ class BaseGame extends Room<GameState> {
       case MESSAGE_STEAL_CARD:
         TradeManager.onStealCard(this.state, currentPlayer, data.stealFrom, data.resource);
 
-        this.broadcastToAll(MESSAGE_GAME_LOG, {
-          message: `${currentPlayer.nickname} has stolen ${data.resource} from ${data.stealFrom}`
-        });
-        
+        if (!data.giveBack) {
+          this.broadcastToAll(MESSAGE_GAME_LOG, {
+            message: `${currentPlayer.nickname} has stolen ${data.resource} from ${data.stealFrom}`
+          });
+        }
         break;
 
       case MESSAGE_PLACE_ROAD:
@@ -312,13 +322,17 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_PURCHASE_GAME_CARD:
-        PurchaseManager.onPurchaseGameCard(this.state, currentPlayer.playerSessionId);
+        const { selectedCardIndex } = data;
+
+        PurchaseManager.onPurchaseGameCard(this.state, currentPlayer.playerSessionId, selectedCardIndex);
         BankManager.onBankPayment(this.state, PURCHASE_GAME_CARD);
+
         this.evaluateVictoryStatus();
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} purchased a development card`
         }, this.state.isGameStarted);
+
         break;
 
       case MESSAGE_PLAY_GAME_CARD:
@@ -414,13 +428,18 @@ class BaseGame extends Room<GameState> {
   }
 
   onPlaceGuard(currentPlayer: Player, section: number, position: number, flexiblePurchase: FlexiblePurchase) {
-    PurchaseManager.onPurchaseGuard(this.state as FirstMenGameState, currentPlayer.playerSessionId, section, position, flexiblePurchase);
-    BankManager.onBankPayment(this.state, PURCHASE_GUARD, flexiblePurchase);
+    PurchaseManager.onPurchaseGuard(this.state as FirstMenGameState, currentPlayer.playerSessionId, section, position, flexiblePurchase, currentPlayer.allowFreeGuard);
+
+    if (!currentPlayer.allowFreeGuard)
+      BankManager.onBankPayment(this.state, PURCHASE_GUARD, flexiblePurchase);
+
     this.evaluateVictoryStatus();
   
     this.broadcastToAll(MESSAGE_GAME_LOG, {
       message: `${currentPlayer.nickname} has placed a Guard in [Section ${section}, Position ${position}]`
     }, this.state.isGameStarted);
+
+    currentPlayer.allowFreeGuard = false;
   }
 
   async advanceBot(currentBot: GameBot) {

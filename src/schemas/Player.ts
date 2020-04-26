@@ -96,7 +96,10 @@ class Player extends Schema {
 
   @type("boolean")
   hasPlayedGameCard: boolean = false
-  
+
+  @type("boolean")
+  isVisiblePurchaseGameCard: boolean = false;
+ 
   @type({ map: "number" })
   resourceCounts: MapSchema<Number> // Loot
   
@@ -108,6 +111,9 @@ class Player extends Schema {
   
   @type("number")
   allowFreeRoads: number = 0
+
+  @type("boolean")
+  allowFreeGuard: boolean = false
 
   @type("boolean")
   isDeclaringMonopoly: boolean = false
@@ -177,6 +183,9 @@ class Player extends Schema {
 
   @type("string")
   allowKill: string | null = null;
+
+  @type("boolean")
+  allowCollectAll: boolean = true;
 
   constructor(sessionId: string, options: PlayerOptions, color: string, playerIndex: number, bankTradeRate: number = baseGameManifest.bankTradeRate) {
     super();
@@ -331,7 +340,7 @@ class Player extends Schema {
     this.updateHasResources();
   }
 
-  onPurchaseCard(purchasedCard: GameCard) {
+  onPurchaseGameCard(purchasedCard: GameCard) {
     const updatedCards = [
       ...this.gameCards,
       purchasedCard
@@ -345,6 +354,16 @@ class Player extends Schema {
 
     if (purchasedCard.type = CARD_VICTORY_POINT)
       this.victoryPoints++;
+  }
+
+  onReturnGameCard(gameCardIndex: number) {
+    const updatedGameCards = [
+      ...this.gameCards
+    ].filter((card, index) => index !== gameCardIndex);
+    
+    this.gameCards = new ArraySchema<GameCard>(
+      ...updatedGameCards
+    );
   }
 
   updateHasResources() {
@@ -366,6 +385,22 @@ class Player extends Schema {
 
   saveLastStructure(structure: Structure) {
     this.lastStructureBuilt = new Structure(this.playerSessionId, structure.type, structure.row, structure.col);
+  }
+
+  onCollectSingleResoruceLoot(resource: string) {
+    if (!resource) return;
+
+    this.resourceCounts = new MapSchema<Number>({
+      ...this.resourceCounts,
+      [resource]: this.resourceCounts[resource] + this.availableLoot[resource]
+    });
+
+    this.availableLoot = new MapSchema<Number>({
+      ...this.availableLoot,
+      [resource]: 0
+    });
+
+    this.updateHasResources(); 
   }
 
   onCollectLoot() {

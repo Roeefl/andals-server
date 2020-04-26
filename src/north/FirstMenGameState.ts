@@ -6,7 +6,7 @@ import GameCard from '../schemas/GameCard';
 import ClanArea from '../schemas/ClanArea';
 import WildlingClearing from '../schemas/WildlingClearing';
 import Guard from '../schemas/Guard';
-import HeroCard from '../schemas/HeroCard';
+import HeroCard, { HERO_CARD_Thoros } from '../schemas/HeroCard';
 import WildlingToken from '../schemas/WildlingToken';
 import Player from '../schemas/Player';
 
@@ -94,7 +94,7 @@ class FirstMenGameState extends GameState {
       .length;
   }
 
-  onGuardKilled(sectionIndex: number, position: number = 0) {
+  onGuardKilled(sectionIndex: number, position: number = 0, isKilledByWildlings: boolean = true) {
     const killedGuardIndex: number = (sectionIndex * wallSectionSize) + position;
 
     const killedGuard: Guard = this.wall[killedGuardIndex];
@@ -102,6 +102,10 @@ class FirstMenGameState extends GameState {
 
     const owner: Player = this.players[killedGuard.ownerId];
     owner.guards++;
+
+    if (isKilledByWildlings && owner.heroPrivilege === HERO_CARD_Thoros) {
+      owner.allowFreeGuard = true;
+    };
 
     const updatedWall = [
       ...this.wall

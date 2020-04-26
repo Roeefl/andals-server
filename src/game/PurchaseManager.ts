@@ -91,12 +91,15 @@ class PurchaseManager {
     // @TODO: implement
   }
 
-  onPurchaseGameCard(state: GameState, ownerId: string) {
-    const randomCardIndex = Math.floor(Math.random() * state.gameCards.length);
+  onPurchaseGameCard(state: GameState, ownerId: string, selectedCardIndex: number = -1) {
+    const randomCardIndex = selectedCardIndex < 0
+      ? Math.floor(Math.random() * state.gameCards.length)
+      : selectedCardIndex;
+      
     const selectedCard: GameCard = state.gameCards[randomCardIndex];
 
     const owner: Player = state.players[ownerId];
-    owner.onPurchaseCard(selectedCard);
+    owner.onPurchaseGameCard(selectedCard);
 
     const updatedGameCards = [
       ...state.gameCards
@@ -107,7 +110,7 @@ class PurchaseManager {
     );
   }
 
-  onPurchaseGuard(state: FirstMenGameState, ownerId: string, section: number, position: number, flexiblePurchase: FlexiblePurchase) {
+  onPurchaseGuard(state: FirstMenGameState, ownerId: string, section: number, position: number, flexiblePurchase?: FlexiblePurchase, isFree: boolean = false) {
     const guard = new Guard(ownerId, section, position);
     
     const updatedWall = [
@@ -120,7 +123,7 @@ class PurchaseManager {
     );
   
    const owner: Player = state.players[ownerId];
-   owner.onPurchase(PURCHASE_GUARD, state.isSetupPhase, false, flexiblePurchase);
+   owner.onPurchase(PURCHASE_GUARD, state.isSetupPhase, isFree, flexiblePurchase);
   }
 }
 

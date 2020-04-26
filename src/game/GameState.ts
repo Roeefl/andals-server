@@ -157,6 +157,12 @@ class GameState extends Schema {
         index !== this.robberPosition && !occupiedBy
       ));
   }
+
+  otherPlayersSessionIds(currentPlayer: Player) {
+    return Object
+      .keys(this.players)
+      .filter(sessionId => sessionId !== currentPlayer.playerSessionId);
+  }
 };
 
 export default GameState;

@@ -111,7 +111,7 @@ class WildlingManager {
           this.onWallBreach(state, clearing, lastDice);
         };
 
-        state.onGuardKilled(clearingIndex);
+        state.onGuardKilled(clearingIndex, 0, true);
         state.spawnCounts[WILDLING_GIANT]++;
         return recentWildling;
 
@@ -121,7 +121,7 @@ class WildlingManager {
         if (regularWildlingsInClearing > guardsOnWallSection) {
           this.onWildlingsInvade(state, clearing, clearing.wildlingsOfType(WILDLING_REGULAR), lastDice);
 
-          state.onGuardKilled(clearingIndex);
+          state.onGuardKilled(clearingIndex, 0, true);
           this.onWallBreach(state, clearing, lastDice);
 
           return recentWildling;
