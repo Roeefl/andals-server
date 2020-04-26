@@ -401,7 +401,7 @@ class BaseGame extends Room<GameState> {
           swapWith
         } = data;
 
-        this.onPlaceGuard(currentPlayer, section, position, { swapWhich, swapWith });
+        this.onGuardPurchase(currentPlayer, section, position, { swapWhich, swapWith });
         currentPlayer.flexiblePurchase = null;
         break;
 
@@ -427,7 +427,7 @@ class BaseGame extends Room<GameState> {
       });
   }
 
-  onPlaceGuard(currentPlayer: Player, section: number, position: number, flexiblePurchase: FlexiblePurchase) {
+  onGuardPurchase(currentPlayer: Player, section: number, position: number, flexiblePurchase: FlexiblePurchase) {
     PurchaseManager.onPurchaseGuard(this.state as FirstMenGameState, currentPlayer.playerSessionId, section, position, flexiblePurchase, currentPlayer.allowFreeGuard);
 
     if (!currentPlayer.allowFreeGuard)

@@ -112,11 +112,35 @@ class FirstMenGameState extends GameState {
     ];
     updatedWall[killedGuardIndex] = new Guard(null, -1, -1);
 
-    for (let g = 1; g < wallSectionSize; g++) {
+    for (let g = 1; g < (wallSectionSize - position); g++) {
       updatedWall[killedGuardIndex + g - 1] = updatedWall[killedGuardIndex + g];
     };
 
     updatedWall[killedGuardIndex + wallSectionSize - 1] = new Guard(null, -1, -1);
+
+    this.wall = new ArraySchema<Guard>(
+      ...updatedWall
+    );
+  }
+
+  onGuardRelocate(fromSection: number, fromPosition: number, toSection: number) {
+    const guardIndex: number = (fromSection * wallSectionSize) + fromPosition;
+
+    const movedGuard: Guard = this.wall[guardIndex];
+    if (!movedGuard.ownerId) return;
+
+    const updatedWall = [
+      ...this.wall
+    ];
+
+    updatedWall[guardIndex] = new Guard(null, -1, -1);
+    for (let g = 1; g < (wallSectionSize - fromPosition); g++) {
+      updatedWall[guardIndex + g - 1] = updatedWall[guardIndex + g];
+    };
+    updatedWall[guardIndex + wallSectionSize - 1] = new Guard(null, -1, -1);
+
+    const guardsOnToSection: number = this.guardsOnWallSection(toSection);
+    updatedWall[toSection * wallSectionSize + guardsOnToSection] = movedGuard;
 
     this.wall = new ArraySchema<Guard>(
       ...updatedWall

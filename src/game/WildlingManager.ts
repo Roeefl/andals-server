@@ -128,7 +128,9 @@ class WildlingManager {
         };
 
       case WILDLING_WHITE_WALKER:
-        break;
+        this.onWallBreach(state, clearing, lastDice);
+        state.onGuardKilled(clearingIndex, 0, true);
+        return recentWildling;
 
       default:
         break;

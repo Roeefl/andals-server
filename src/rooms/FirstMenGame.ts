@@ -27,14 +27,13 @@ import {
   MESSAGE_WILDLINGS_REMOVE_FROM_CAMP,
   MESSAGE_WILDLINGS_REMOVE_FROM_CLEARING,
   MESSAGE_REMOVE_GUARD,
+  MESSAGE_RELOCATE_GUARD,
   MESSAGE_REMOVE_ROAD,
   MESSAGE_STEAL_CARD,
   MESSAGE_COLLECT_RESOURCE_LOOT
 } from '../constants';
 
-import {
-  firstmenManifest, PURCHASE_GUARD, PURCHASE_GAME_CARD
-} from '../manifest';
+import { firstmenManifest, PURCHASE_GAME_CARD } from '../manifest';
 
 import WildlingManager from '../game/WildlingManager';
 import FirstMenGameState from '../north/FirstMenGameState';
@@ -68,28 +67,39 @@ class FirstMenGame extends BaseGame {
   };
 
   /** PRE-onGameAction | PREVIOUS actions needed only in FirstMen mode */
-  preGameAction(state: FirstMenGameState, currentPlayer: Player, messageData: any): number {
-    switch (messageData.type) {
+  preGameAction(state: FirstMenGameState, currentPlayer: Player, data: any): number {
+    switch (data.type) {
       case MESSAGE_MOVE_ROBBER:
         return state.robberPosition;
 
       case MESSAGE_SELECT_HERO_CARD:
-        const { heroType } = messageData;
+        const { heroType } = data;
         console.log("FirstMenGame -> onMessage -> heroType", heroType)
 
         currentPlayer.swappingHeroCard = false
         HeroCardManager.swapPlayerHeroCard(state, currentPlayer, heroType);
         break;
 
+      case MESSAGE_RELOCATE_GUARD:
+        const {
+          fromSection,
+          fromPosition,
+          toSection
+        } = data;
+
+        state.onGuardRelocate(fromSection, fromPosition, toSection);
+        currentPlayer.allowGuardRelocate = false;
+        break;
+
       case MESSAGE_WILDLINGS_REMOVE_FROM_CAMP:
-        const { clanName, campIndex } = messageData;
+        const { clanName, campIndex } = data;
         console.log("FirstMenGame -> onMessage -> campIndex", campIndex)
         console.log("FirstMenGame -> onMessage -> clanName", clanName)
 
         break;
 
       case MESSAGE_WILDLINGS_REMOVE_FROM_CLEARING:
-        const { clearingIndex, wildlingIndex } = messageData;
+        const { clearingIndex, wildlingIndex } = data;
         console.log("FirstMenGame -> onMessage -> wildlingIndex", wildlingIndex)
         console.log("FirstMenGame -> onMessage -> clearingIndex", clearingIndex)
 
@@ -200,6 +210,8 @@ class FirstMenGame extends BaseGame {
         break;
 
       case MESSAGE_FINISH_TURN:
+        currentPlayer.heroPrivilege = null;
+        
         if (currentPlayer.heroPrivilege === HERO_CARD_EuronGrejoy)
           currentPlayer.bankTradeRate = firstmenManifest.bankTradeRate;
         break;

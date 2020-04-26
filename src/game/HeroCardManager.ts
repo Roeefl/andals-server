@@ -20,7 +20,8 @@ import HeroCard, {
   HERO_CARD_IlynPayne,
   HERO_CARD_EuronGrejoy,
   HERO_CARD_TywinLannister,
-  HERO_CARD_Thoros
+  HERO_CARD_Thoros,
+  HERO_CARD_Stannis
 } from '../schemas/HeroCard';
 
 import { PURCHASE_GUARD, PURCHASE_GAME_CARD, CARD_KNIGHT } from '../manifest';
@@ -161,6 +162,11 @@ class HeroCardManager {
         // Instantly revive him and place him back at any wall section
         break;
 
+      case HERO_CARD_Stannis:
+        currentPlayer.allowGuardRelocate = true;
+        break;
+        // You may immediately move one of your guards to any wall section
+
       default:
         break;
     }
@@ -195,7 +201,6 @@ class HeroCardManager {
     );
 
     // currentPlayer.hasPlayedHeroCard = false;
-    currentPlayer.heroPrivilege = null;
   }
 
   higherVpOpponents(state: FirstMenGameState, currentPlayer: Player) {

@@ -70,7 +70,7 @@ const manifest: { [type: string] : HeroCardManifest } = {
     name: "Benjen Stark",
     title: "First Ranger",
     ability: "Coldhands",
-    description: "Remove 1 wildling from a clearing or a camp, return it to the Frostfangs. If you remove a wildling from a camp and there are more wildlings in the camps farther from the clearings than the wildling you removed, move them each 1 camp closer to the clearings. Then, reveal a wildling token from the pool and place it accordingly. You can do this before or after your own production roll."
+    description: "Remove 1 wildling from a clearing or a camp, and return it to the spawn. Collapse the camps if needed. Then, reveal a wildling token from the pool."
   },
   Ygritte: {
     isReady: true,
@@ -107,12 +107,6 @@ const manifest: { [type: string] : HeroCardManifest } = {
     ability: "Iron Fleet Occupation",
     description: "You may trade any resource cards with the supply at a rate of 2:1, as if you had a settlement on each of the harbor trading posts."
   },
-  Littlefinger: {
-    name: "Petyr Baelish",
-    title: "Lord Protector of the Vale",
-    ability: "Chaos is a Ladder",
-    description: "You may choose any 2 players and swap their current hero cards."
-  },
   TywinLannister: {
     isReady: true,
     name: "Tywin Lannister",
@@ -134,6 +128,12 @@ const manifest: { [type: string] : HeroCardManifest } = {
     ability: "March to the Wall",
     description: "You may immediately move one of your guards to any wall section."
   },
+  // Littlefinger: {
+  //   name: "Petyr Baelish",
+  //   title: "Lord Protector of the Vale",
+  //   ability: "Chaos is a Ladder",
+  //   description: "You may choose any 2 players and swap their current hero cards."
+  // },
   // DavosSeaworth: {
   //   name: "Davos Seaworth",
   //   title: "Admiral of the Narrow Sea",
@@ -150,9 +150,6 @@ const manifest: { [type: string] : HeroCardManifest } = {
   //   name: "Theon Greyjoy",
   //   title: "Reek",
   //   description: "What is dead may never die: "
-  // },
-  // JonSnow: {
-  //   The runt of the litter
   // }
 };
 
@@ -171,10 +168,10 @@ export const [
   HERO_CARD_QhorinHalfhand,
   HERO_CARD_IlynPayne,
   HERO_CARD_EuronGrejoy,
-  HERO_CARD_Littlefinger,
   HERO_CARD_TywinLannister,
   HERO_CARD_Thoros,
   HERO_CARD_Stannis,
+  // HERO_CARD_Littlefinger,
   // HERO_CARD_DavosSeaworth,
   // HERO_CARD_RobbStark,
 ] = heroCardTypes;

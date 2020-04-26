@@ -74,10 +74,10 @@ export const tokensPerPurchase: TokensPerPurchase = {
 }
 
 export const initialSpawnWildlingCounts: WildlingCounts = {
-  regular: 24,
+  regular: 22,
   climber: 8,
   giant: 8,
-  whiteWalker: 0
+  whiteWalker: 2
 };
 
 export const initialClearingWildlingCounts: WildlingCounts = {

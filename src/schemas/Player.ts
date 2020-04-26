@@ -116,6 +116,9 @@ class Player extends Schema {
   allowFreeGuard: boolean = false
 
   @type("boolean")
+  allowGuardRelocate: boolean = false
+
+  @type("boolean")
   isDeclaringMonopoly: boolean = false
 
   @type(["string"])
@@ -372,7 +375,7 @@ class Player extends Schema {
         .entries(this.resourceCounts)
         .every(([resource, value]) => (
           value >= buildingCosts[purchaseType][resource] &&
-          (purchaseType !== PURCHASE_GAME_CARD || this[purchaseType] > 0)
+          (purchaseType === PURCHASE_GAME_CARD || this[purchaseType] > 0)
         ));
 
       return acc;
