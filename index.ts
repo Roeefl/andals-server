@@ -1,4 +1,5 @@
 const cors = require('cors');
+require('dotenv').config();
 
 import express, { Application, Request, Response, Router } from 'express';
 import path from 'path';
@@ -9,14 +10,13 @@ import FirstMenGame from './src/rooms/FirstMenGame';
 import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from './src/specs/roomTypes';
 import { setApiRoutes } from './src/api';
 
-const port = 1337;
+const port = Number(process.env.SERVER_PORT || 1337);
 
 const app: Application = express();
 app.use(express.json());
 app.use(cors());
 
 const router: Router = express.Router();
-// router.use('/api', getAPI());
 
 app.get('/', function(req: Request, res: Response) {
   res.sendFile(path.join(__dirname + '/index.html'));
@@ -36,5 +36,14 @@ gameServer.onShutdown(() => {
   console.info('game server is going down.');
 });
 
+// app.use('/colyseus', monitor());
+// router.use('/', express.static(monitorPath));
+
+const monitorPath = path.join(__dirname + '/src/monitor/dist/index.html')
+app.get('/monitor', function(req: Request, res: Response) {
+  res.sendFile(monitorPath);
+});
+
 gameServer.listen(port);
-console.info('Server Started.');
+const serverUrl = process.env.SERVER_URL || 'ws://localhost';
+console.info(`Server Started at: ${serverUrl}`);
