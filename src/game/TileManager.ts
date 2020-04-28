@@ -3,7 +3,8 @@ import { minBy } from 'lodash';
 import GameState from '../game/GameState';
 import HexTile from '../schemas/HexTile';
 import Player from '../schemas/Player';
-import { TILE_WATER, TILE_RESOURCE, DESERT } from '../manifest';
+import { TILE_WATER } from '../manifest';
+import { ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
 
 export interface ValidStructurePosition {
   row: number
@@ -182,26 +183,40 @@ class TileManager {
   
         let intersections: number[][] = [];
   
-        // offset by +2 for EVEN rows only
-        let colOffset = 0;
+        const baseGameEvenRows = [0, 2, 4, 6];
+        const firstMenEvenRows = [0, 1, 3, 4];
+        
+        const evenRows = state.manifest.roomType === ROOM_TYPE_FIRST_MEN
+          ? firstMenEvenRows
+          : baseGameEvenRows;
+          
+        const colOffset = evenRows.includes(roadRow) ? 0 : -2;
         
         switch (roadTile) {
           // road: [6, 6], type: 1 || intersecting roads: [6, 5], [6, 7], [5, 6], [7, 6]
           case 1:
-            colOffset = roadRow % 2 === 0 ? -2 : 0;
-            intersections = [[roadRow, roadCol - 1], [roadRow, roadCol + 1], [roadRow - 1, roadCol + colOffset], [roadRow - 1, roadCol + 1 + colOffset], [roadRow + 1, roadCol]];
+            intersections = [
+              [roadRow, roadCol - 1], [roadRow, roadCol + 1],
+              [roadRow - 1, roadCol + colOffset + 1], [roadRow - 1, roadCol + colOffset + 2],
+              [roadRow + 1, roadCol]
+            ];
             break;
   
           // road: [6, 7], type: 2 || intersecting roads: [6, 6], [6, 8], [5, 5], [7, 7]
           case 2:
-            colOffset = roadRow % 2 === 0 ? 1 : 0;
-            intersections = [[roadRow, roadCol - 1], [roadRow, roadCol + 1], [roadRow - 1, roadCol - 1 + colOffset], [roadRow + 1, roadCol], [roadRow + 1, roadCol + 1]];
+            intersections = [
+              [roadRow, roadCol - 1], [roadRow, roadCol + 1],
+              [roadRow - 1, roadCol + colOffset + 1], [roadRow - 1, roadCol + colOffset + 2],
+              [roadRow + 1, roadCol], [roadRow + 1, roadCol + 1]
+            ];
             break;
   
           // road: [7, 7], type: 3 || intersecting roads: [6, 6], [6, 7], [8, 5], [8, 6]
           case 3:
-            colOffset = (roadRow <= 3 || roadRow >= 10) ? -2 : 0;
-            intersections = [[roadRow - 1, roadCol], [roadRow - 1, roadCol - 1], [roadRow + 1, roadCol + colOffset], [roadRow + 1, roadCol + 1 + colOffset]];
+            intersections = [
+              [roadRow - 1, roadCol], [roadRow - 1, roadCol - 1],
+              [roadRow + 1, roadCol + colOffset + 1], [roadRow + 1, roadCol + colOffset + 2]
+            ];
             break;
         }
   
