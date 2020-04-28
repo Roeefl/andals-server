@@ -10,9 +10,8 @@ import {
   firstmenManifest,
   resourceCardTypes,
   CARD_KNIGHT, CARD_VICTORY_POINT,
-  PURCHASE_ROAD, PURCHASE_SETTLEMENT, PURCHASE_GAME_CARD, PURCHASE_CITY,
+  PURCHASE_SETTLEMENT, PURCHASE_GAME_CARD, PURCHASE_CITY,
   initialResourceCounts,
-  PURCHASE_GUARD,
   HARBOR_GENERIC,
   baseGameManifest
 } from '../manifest';
@@ -49,8 +48,18 @@ const initialOwnedHarbors: OwnedHarbors = {
   ore: false
 };
 
-// Four sets of wooden player pieces in four different colors
-// each containing five settlements, four cities, and 15 roads.
+interface PluralPurchaseTypes {
+  [key: string]: string
+};
+
+export const pluralTypes: PluralPurchaseTypes = {
+  road: 'roads',
+  settlement: 'settlements',
+  city: 'cities',
+  guard: 'guards',
+  gameCard: 'gameCards'
+};
+
 class Player extends Schema {
   @type("string")
   playerSessionId: string
@@ -284,17 +293,13 @@ class Player extends Schema {
   }
 
   onPurchase(type: string, isSetupPhase: boolean = false, dontUpdateResourceCounts: boolean = false, flexiblePurchase?: FlexiblePurchase) {
-    if (type === PURCHASE_ROAD) {
-      this.roads--;
-    } else if (type === PURCHASE_SETTLEMENT) {
-      this.settlements--;
-      this.victoryPoints++;
-    } else if (type === PURCHASE_CITY) {
-      this.cities--;
-      this.victoryPoints++;
-    } else if (type === PURCHASE_GUARD) {
-      this.guards--;
+    if (type !== PURCHASE_GAME_CARD) {
+      const typePlural: string = pluralTypes[type];
+      this[typePlural]--;
     }
+
+    if ([PURCHASE_SETTLEMENT, PURCHASE_CITY].includes(type))
+      this.victoryPoints++;
 
     if (isSetupPhase) {
       if (type === PURCHASE_SETTLEMENT) {
@@ -355,7 +360,7 @@ class Player extends Schema {
 
     this.onPurchase(PURCHASE_GAME_CARD);
 
-    if (purchasedCard.type = CARD_VICTORY_POINT)
+    if (purchasedCard.type === CARD_VICTORY_POINT)
       this.victoryPoints++;
   }
 
@@ -373,10 +378,15 @@ class Player extends Schema {
     const updatedHasResources = firstmenManifest.purchaseTypes.reduce((acc, purchaseType) => {
       acc[purchaseType] = Object
         .entries(this.resourceCounts)
-        .every(([resource, value]) => (
-          value >= buildingCosts[purchaseType][resource] &&
-          (purchaseType === PURCHASE_GAME_CARD || this[purchaseType] > 0)
-        ));
+        .every(([resource, value]) => {
+          const purchaseTypePlural: string = pluralTypes[purchaseType];
+          const availablePieces = this[purchaseTypePlural];
+          
+          return (
+            value >= buildingCosts[purchaseType][resource] &&
+            (purchaseType === PURCHASE_GAME_CARD || availablePieces > 0)
+          );
+        });
 
       return acc;
     }, {} as HasResources);
