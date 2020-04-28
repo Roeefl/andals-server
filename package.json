@@ -4,7 +4,9 @@
   "description": "Andals.io Server Project",
   "main": "index.ts",
   "scripts": {
-    "dev": "ts-node-dev index.ts",
+    "server": "ts-node-dev index.ts",
+    "client": "npm run serve --prefix src/monitor",
+    "dev": "concurrently \"yarn server\" \"yarn client\"",
     "start": "node lib/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc --build"
@@ -18,6 +20,7 @@
   "dependencies": {
     "@colyseus/monitor": "^0.11.0",
     "@colyseus/social": "^0.10.2",
+    "axios": "^0.19.2",
     "colyseus": "^0.12.0",
     "concurrently": "^5.1.0",
     "cors": "^2.8.5",
