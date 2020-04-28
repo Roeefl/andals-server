@@ -83,6 +83,8 @@ class BaseGame extends Room<GameState> {
   onCreate(roomOptions: RoomOptions) {
     console.info("BaseGame | onCreate | roomOptions: ", roomOptions);
 
+    this.setMetadata({ roomTitle: roomOptions.roomTitle });
+
     const board = BoardManager.baseGameBoard();
     const gameCards = GameCardManager.initialShuffledDeck();
     

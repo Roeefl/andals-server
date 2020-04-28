@@ -51,6 +51,7 @@ import {
 class FirstMenGame extends BaseGame {
   onCreate(roomOptions: RoomOptions) {
     console.info("FirstMenGame | onCreate | roomOptions: ", roomOptions);
+    this.setMetadata({ roomTitle: roomOptions.roomTitle });
 
     const board = BoardManager.firstMenBoard();
     const gameCards = GameCardManager.initialShuffledDeck();
