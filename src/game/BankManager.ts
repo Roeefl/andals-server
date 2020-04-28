@@ -38,8 +38,8 @@ class BankManager {
         const adjacentStructures = TileManager.hexTileAdjacentStructures(tileRow, tileCol)
 
         state.structures
-          // @TODO: Have to resolve this bug first before re-enable it
-          // .filter(({ row, col, ownerId }) => !isFirstLoot || (row === state.players[ownerId].lastStructureBuilt.row && col === state.players[ownerId].lastStructureBuilt.col))
+          // @TODO: Have to resolve this stupid bug where some players get all 6 and some get only 3
+          .filter(({ row, col, ownerId }) => !isFirstLoot || (row === state.players[ownerId].lastStructureBuilt.row && col === state.players[ownerId].lastStructureBuilt.col))
           .forEach(({ row, col, ownerId, type }) => {
             if (adjacentStructures.some(([sRow, sCol]) => sRow === row && sCol === col)) {
               const addedValue = type === PURCHASE_CITY ? 2 : 1;
