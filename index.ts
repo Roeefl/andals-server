@@ -12,7 +12,7 @@ import { setApiRoutes } from './src/api';
 
 require('dotenv').config();
 
-const port = Number(process.env.SERVER_PORT || 1337);
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
 const app: Application = express();
 app.use(cors());
@@ -46,7 +46,7 @@ app.get('/monitor', function(req: Request, res: Response) {
 gameServer.onShutdown(() => {
   console.info('game server is going down.');
 });
-gameServer.listen(port);
+gameServer.listen(PORT);
 
 const serverUrl = process.env.SERVER_URL || 'ws://localhost';
-console.info(`Server Started at: ${serverUrl}`);
+console.info(`Server Started at: ${serverUrl}: ${PORT}`);
