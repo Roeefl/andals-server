@@ -130,7 +130,7 @@ class BaseGame extends Room<GameState> {
   }
   
   onPlayerJoin(clientSessionId: string, options: any) {
-    const color = playerColors[this.activeClients];
+    const color = options.color || playerColors[this.activeClients];
     const addedPlayer = new Player(clientSessionId, options, color, this.activeClients, this.state.manifest.bankTradeRate);
     this.state.players[clientSessionId] = addedPlayer;
     
@@ -175,7 +175,8 @@ class BaseGame extends Room<GameState> {
       // client returned! let's re-activate it.
       if (enableBotReplacement) {
         const options = {
-          nickname: currentPlayer.nickname
+          nickname: currentPlayer.nickname,
+          avatar: currentPlayer.avatar
         };
         
         this.state.players[client.sessionId] = new Player(replacementBot.playerSessionId, options, replacementBot.color, replacementBot.playerIndex, this.state.manifest.bankTradeRate);

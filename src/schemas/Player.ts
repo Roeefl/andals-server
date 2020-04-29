@@ -21,6 +21,7 @@ import { Loot, BuildingCost, FlexiblePurchase } from '../interfaces';
 export interface PlayerOptions {
   nickname: string
   color?: string
+  avatar?: number
 };
 
 interface HasResources {
@@ -72,6 +73,9 @@ class Player extends Schema {
 
   @type("string")
   nickname: string
+
+  @type("number")
+  avatar: number
 
   @type("string")
   color: string
@@ -202,13 +206,14 @@ class Player extends Schema {
   constructor(sessionId: string, options: PlayerOptions, color: string, playerIndex: number, bankTradeRate: number = baseGameManifest.bankTradeRate) {
     super();
     
-    const { nickname = 'John Doe' } = options;
+    const { nickname = 'John Doe', avatar = 1 } = options;
     // Disabled until enabling color distinction between players
     // color = '#214013'
     // } = options;
     
     // const randomInt = Math.floor(Math.random() * 9999);
     this.nickname = nickname;
+    this.avatar = avatar;
 
     this.playerSessionId = sessionId;
     this.playerIndex = playerIndex;
