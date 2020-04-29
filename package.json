@@ -9,7 +9,7 @@
     "dev": "concurrently \"yarn server\" \"yarn client\"",
     "start": "ts-node index.ts",
     "heroku-postbuild": "tsc --build",
-    "test": "echo \"Error: no test specified\" && exit 1" 
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {
     "node": "10.16.1"
@@ -18,7 +18,7 @@
   "license": "UNLICENSED",
   "homepage": "localhost:1337",
   "dependencies": {
-    "@colyseus/monitor": "^0.11.0",
+    "@colyseus/monitor": "^0.12.2",
     "@colyseus/social": "^0.10.2",
     "axios": "^0.19.2",
     "colyseus": "^0.12.0",
