@@ -11,6 +11,7 @@ import TurnManager from '../game/TurnManager';
 import GameCardManager from '../game/GameCardManager';
 import TradeManager from '../game/TradeManager';
 import DiceManager from '../game/DiceManager';
+import WildlingManager from '../game/WildlingManager';
 
 import {
   MESSAGE_GAME_LOG,
@@ -31,7 +32,6 @@ import {
   MESSAGE_MOVE_ROBBER,
   MESSAGE_STEAL_CARD,
   MESSAGE_GAME_VICTORY,
-
   MESSAGE_TRADE_WITH_BANK,
   MESSAGE_TRADE_REQUEST,
   MESSAGE_TRADE_START_AGREED,
@@ -39,7 +39,8 @@ import {
   MESSAGE_TRADE_REMOVE_CARD,
   MESSAGE_TRADE_CONFIRM,
   MESSAGE_TRADE_REFUSE,
-  MESSAGE_PLACE_GUARD
+  MESSAGE_PLACE_GUARD,
+  MESSAGE_WILDLINGS_REVEAL_TOKENS
 } from '../constants';
 
 import {
@@ -48,12 +49,14 @@ import {
   PURCHASE_SETTLEMENT,
   PURCHASE_GAME_CARD,
   playerColors,
-  PURCHASE_GUARD
+  PURCHASE_GUARD,
+  PURCHASE_CITY
 } from '../manifest';
 
 import { tileIndex } from '../utils/board';
 import { RoomOptions, Loot, FlexiblePurchase } from '../interfaces';
 import FirstMenGameState from '../north/FirstMenGameState';
+import { ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
 
 const maxReconnectionTime = 5 * 60;
 
@@ -267,7 +270,7 @@ class BaseGame extends Room<GameState> {
         currentPlayer.mustMoveRobber = false;
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
-          message: `${currentPlayer.nickname} has moved the Robber to ${tileIndex(this.state.manifest.tilemap, tile)}`
+          message: `${currentPlayer.nickname} has moved the Robber`
         });
 
         const allowStealingFrom = BoardManager.robberAdjacentPlayers(this.state);
@@ -282,7 +285,7 @@ class BaseGame extends Room<GameState> {
 
         if (!data.giveBack) {
           this.broadcastToAll(MESSAGE_GAME_LOG, {
-            message: `${currentPlayer.nickname} has stolen ${data.resource} from ${data.stealFrom}`
+            message: `${currentPlayer.nickname} has stolen ${data.resource} from ${this.state.players[data.stealFrom]}`
           });
         }
         break;
@@ -429,6 +432,11 @@ class BaseGame extends Room<GameState> {
       });
   }
 
+  onBotTokensRevealedPurchase(purchaseType: string) {
+    const tokens = WildlingManager.onBotPurchase(this.state as FirstMenGameState, purchaseType);
+    this.broadcastToAll(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens }, true);
+  }
+
   onGuardPurchase(currentPlayer: Player, section: number, position: number, flexiblePurchase: FlexiblePurchase) {
     PurchaseManager.onPurchaseGuard(this.state as FirstMenGameState, currentPlayer.playerSessionId, section, position, flexiblePurchase, currentPlayer.allowFreeGuard);
 
@@ -513,18 +521,30 @@ class BaseGame extends Room<GameState> {
     if (currentBot.hasResources.city) {
       const city = await GameBot.validCity(this.state, currentBot.playerSessionId);
 
-      if (city)
+      if (city) {
         this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, city);
+
+        if (this.state.isGameStarted && this.state.roomType === ROOM_TYPE_FIRST_MEN)
+          this.onBotTokensRevealedPurchase(PURCHASE_CITY);
+      }
     }
 
     if (currentBot.hasResources.gameCard) {
       this.onGameAction(currentBot, MESSAGE_PURCHASE_GAME_CARD);
+
+      if (this.state.isGameStarted && this.state.roomType === ROOM_TYPE_FIRST_MEN)
+        this.onBotTokensRevealedPurchase(PURCHASE_GAME_CARD);
     }
 
     if (currentBot.hasResources.settlement) {
       const settlement = await GameBot.validSettlement(this.state, currentBot.playerSessionId);
-      if (settlement)
+
+      if (settlement) {
         this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, settlement);
+
+        if (this.state.isGameStarted && this.state.roomType === ROOM_TYPE_FIRST_MEN)
+          this.onBotTokensRevealedPurchase(PURCHASE_SETTLEMENT);
+      }
     }
 
     if (currentBot.hasResources.road) {

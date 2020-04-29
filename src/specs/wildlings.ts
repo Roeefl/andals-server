@@ -71,7 +71,7 @@ export const tokensPerPurchase: TokensPerPurchase = {
   settlement: 1,
   city: 2,
   gameCard: 1
-}
+};
 
 export const initialSpawnWildlingCounts: WildlingCounts = {
   regular: 22,
