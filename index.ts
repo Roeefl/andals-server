@@ -12,7 +12,7 @@ import { setApiRoutes } from './src/api';
 
 require('dotenv').config();
 
-const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
+const PORT = Number(process.env.PORT || process.env.SERVER_PORT || 3000);
 
 const app: Application = express();
 app.use(cors());
