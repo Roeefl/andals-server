@@ -7,9 +7,9 @@
     "server": "ts-node-dev index.ts",
     "client": "npm run serve --prefix src/monitor",
     "dev": "concurrently \"yarn server\" \"yarn client\"",
-    "start": "node lib/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc --build"
+    "start": "ts-node index.js",
+    "heroku-postbuild": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {
     "node": "10.16.1"
