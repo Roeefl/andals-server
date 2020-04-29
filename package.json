@@ -6,7 +6,7 @@
   "scripts": {
     "server": "ts-node-dev index.ts",
     "client": "npm run serve --prefix src/monitor",
-    "dev": "concurrently \"yarn server\" \"yarn client\"",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
     "start": "ts-node index.ts",
     "heroku-postbuild": "tsc --build",
     "test": "echo \"Error: no test specified\" && exit 1"
