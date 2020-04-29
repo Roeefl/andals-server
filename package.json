@@ -16,7 +16,7 @@
   },
   "author": "Roeefl",
   "license": "UNLICENSED",
-  "homepage": "localhost:3000",
+  "homepage": "localhost:1337",
   "dependencies": {
     "@colyseus/monitor": "^0.12.2",
     "@colyseus/social": "^0.10.2",
