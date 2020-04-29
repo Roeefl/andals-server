@@ -1,15 +1,14 @@
 {
   "name": "andals-server",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Andals.io Server Project",
-  "main": "index.ts",
+  "main": "index.js",
   "scripts": {
     "server": "ts-node-dev index.ts",
     "client": "npm run serve --prefix src/monitor",
     "dev": "concurrently \"yarn server\" \"yarn client\"",
-    "start": "ts-node index.js",
-    "build": "tsc --build",
-    "heroku-postbuild": "npm run build",
+    "start": "ts-node index.ts",
+    "heroku-postbuild": "tsc --build",
     "test": "echo \"Error: no test specified\" && exit 1" 
   },
   "engines": {
