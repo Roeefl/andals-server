@@ -49,4 +49,4 @@ gameServer.onShutdown(() => {
 gameServer.listen(PORT);
 
 const serverUrl = process.env.SERVER_URL || 'ws://localhost';
-console.info(`Server Started at: ${serverUrl}: ${PORT}`);
+console.info(`Server Started at: ${serverUrl}:${PORT}`);

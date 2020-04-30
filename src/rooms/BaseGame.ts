@@ -146,6 +146,9 @@ class BaseGame extends Room<GameState> {
   };
 
   async onLeave(client: Client, isConsented: boolean) {
+    if (this.activeClients < this.state.maxClients)
+      this.unlock();
+
     const { enableBotReplacement } = this.state;
 
     // flag client as inactive for other users
