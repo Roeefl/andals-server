@@ -253,6 +253,7 @@ class Player extends Schema {
   }
 
   restore(fromBot: GameBot) {
+    this.avatar = fromBot.avatar;
     this.gameCards = fromBot.gameCards;
     this.rolls = fromBot.rolls;
     this.resourceCounts = fromBot.resourceCounts;
