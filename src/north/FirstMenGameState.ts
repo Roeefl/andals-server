@@ -77,15 +77,15 @@ class FirstMenGameState extends GameState {
       ...heroCards
     );
   }
-
-  wallSection(sectionIndex: number): Guard[] {
-    return this.wall.slice(sectionIndex * wallSectionSize, sectionIndex * wallSectionSize + 5);
-  }
-
+  
   get wallSections(): Guard[][] {
     return Array(wallSectionsCount)
       .fill(0)
       .map((section, s) => this.wallSection(s));
+  }
+  
+  wallSection(sectionIndex: number): Guard[] {
+    return this.wall.slice(sectionIndex * wallSectionSize, sectionIndex * wallSectionSize + 5);
   }
 
   guardsOnWallSection(sectionIndex: number) {
@@ -107,10 +107,9 @@ class FirstMenGameState extends GameState {
       owner.allowFreeGuard = true;
     };
 
-    const updatedWall = [
+    const updatedWall: Guard[] = [
       ...this.wall
     ];
-    updatedWall[killedGuardIndex] = new Guard(null, -1, -1);
 
     for (let g = 1; g < (wallSectionSize - position); g++) {
       updatedWall[killedGuardIndex + g - 1] = updatedWall[killedGuardIndex + g];
@@ -121,6 +120,8 @@ class FirstMenGameState extends GameState {
     this.wall = new ArraySchema<Guard>(
       ...updatedWall
     );
+
+    console.log(this.wall.map(({ ownerId, wallSection, position }, p) => `Wall | Position ${p} | ownerId: ${ownerId} | wallSection: ${wallSection} position ${position}`));
   }
 
   onGuardRelocate(fromSection: number, fromPosition: number, toSection: number) {
@@ -149,4 +150,3 @@ class FirstMenGameState extends GameState {
 };
 
 export default FirstMenGameState;
-

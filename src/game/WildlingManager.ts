@@ -107,7 +107,9 @@ class WildlingManager {
 
   evaluateClearing(state: FirstMenGameState, clearing: WildlingClearing, recentWildling: Wildling, lastDice?: number): Wildling | null {
     const { clearingIndex } = clearing;
+    console.log("WildlingManager -> clearingIndex", clearingIndex)
     const guardsOnWallSection = state.guardsOnWallSection(clearingIndex);
+    console.log("WildlingManager -> guardsOnWallSection", guardsOnWallSection)
 
     switch (recentWildling.type) {
       case WILDLING_CLIMBER:
@@ -125,6 +127,7 @@ class WildlingManager {
 
       case WILDLING_REGULAR:
         const regularWildlingsInClearing = clearing.wildlingsCountOfType(WILDLING_REGULAR);
+        console.log("WildlingManager -> regularWildlingsInClearing", regularWildlingsInClearing, ' >? ', guardsOnWallSection)
 
         if (regularWildlingsInClearing > guardsOnWallSection) {
           this.onWildlingsInvade(state, clearing, clearing.wildlingsOfType(WILDLING_REGULAR), lastDice);
