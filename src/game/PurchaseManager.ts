@@ -97,6 +97,7 @@ class PurchaseManager {
       : selectedCardIndex;
       
     const selectedCard: GameCard = state.gameCards[randomCardIndex];
+    console.log("onPurchaseGameCard -> selectedCard", selectedCard)
 
     const owner: Player = state.players[ownerId];
     owner.onPurchaseGameCard(selectedCard);
