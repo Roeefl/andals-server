@@ -39,7 +39,14 @@ class TradeManager {
     }
   
     const { tradingWith } = currentPlayer;
-    if (!tradingWith) return;
+    if (!tradingWith) {
+      // Might be trading with bank and cancelling trade
+      if (type === MESSAGE_TRADE_REFUSE)
+        currentPlayer.cancelTrade();
+
+      return;
+    };
+
     const otherPlayer: Player = state.players[tradingWith];
   
     if (type === MESSAGE_TRADE_REFUSE) {
