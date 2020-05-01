@@ -509,6 +509,8 @@ class Player extends Schema {
       ...this.resourceCounts,
       [resource]: this.resourceCounts[resource] + 1
     });
+
+    this.updateHasResources();
   }
 
   stolenResource(resource: string) {
@@ -516,6 +518,8 @@ class Player extends Schema {
       ...this.resourceCounts,
       [resource]: this.resourceCounts[resource] - 1
     });
+
+    this.updateHasResources();
   }
 
   gaveAllOfResourceType(resource: string) {
