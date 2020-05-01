@@ -289,7 +289,7 @@ class BaseGame extends Room<GameState> {
 
         if (!data.giveBack) {
           this.broadcastToAll(MESSAGE_GAME_LOG, {
-            message: `${currentPlayer.nickname} has stolen ${data.resource} from ${(this.state.players[data.stealFrom] || {}).nickname}`
+            message: `${currentPlayer.nickname} has stolen a resource card from ${(this.state.players[data.stealFrom] || {}).nickname}`
           });
         }
         break;
@@ -349,6 +349,11 @@ class BaseGame extends Room<GameState> {
         GameCardManager.playGameCard(currentPlayer, cardType, cardIndex);
         this.onPlayKnightCard(currentPlayer);
         this.evaluateVictoryStatus();
+
+        this.broadcastToAll(MESSAGE_PLAY_GAME_CARD, {
+          playerName: currentPlayer.nickname,
+          cardType
+        }, true);
 
         break;
 
