@@ -289,7 +289,7 @@ class BaseGame extends Room<GameState> {
 
         if (!data.giveBack) {
           this.broadcastToAll(MESSAGE_GAME_LOG, {
-            message: `${currentPlayer.nickname} has stolen ${data.resource} from ${this.state.players[data.stealFrom]}`
+            message: `${currentPlayer.nickname} has stolen ${data.resource} from ${(this.state.players[data.stealFrom] || {}).nickname}`
           });
         }
         break;
