@@ -130,7 +130,7 @@ class TurnManager {
      
     // Not turn order phase - round consists of state.maxClients turns
     state.currentTurn = (currentTurn + 1) % state.maxClients;
-    const isEndOfRound: Boolean = currentTurn === roundStarter;
+    const isEndOfRound: Boolean = state.currentTurn === roundStarter;
 
     this.resetHasPlayedStatus(state);
 
