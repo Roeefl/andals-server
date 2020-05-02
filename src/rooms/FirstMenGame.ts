@@ -220,7 +220,7 @@ class FirstMenGame extends BaseGame {
       case MESSAGE_REMOVE_ROAD:
         // Othell check
         if (currentPlayer.heroPrivilege === HERO_CARD_OthellYarwyck)
-          currentPlayer.allowFreeRoads = 2;
+          currentPlayer.allowFreeRoads = 1;
         break;
 
       case MESSAGE_REMOVE_GUARD:
