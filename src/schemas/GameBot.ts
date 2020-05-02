@@ -15,7 +15,6 @@ import { ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
 import {
   PURCHASE_ROAD,
   PURCHASE_SETTLEMENT,
-  PURCHASE_GAME_CARD,
   PURCHASE_CITY,
   resourceCardTypes,
   LUMBER
@@ -25,6 +24,8 @@ import { Loot, ResourceToSteal } from '../interfaces';
 import FirstMenGameState from '../north/FirstMenGameState';
 
 import { wallSectionsCount } from '../specs/wall';
+
+const WILDLING_DICE_MAX = 10;
 
 class GameBot extends Player {
   constructor(color: string, playerIndex: number, replacing?: Player) {
@@ -81,7 +82,7 @@ class GameBot extends Player {
     const dice = [randomDice1, randomDice2];
 
     if (roomType === ROOM_TYPE_FIRST_MEN) {
-      const wildlingDice = Math.floor(Math.random() * 12) + 1;
+      const wildlingDice = Math.floor(Math.random() * WILDLING_DICE_MAX) + 1;
       dice.push(wildlingDice);
     };
 
