@@ -228,6 +228,9 @@ class WildlingManager {
   }
 
   wildlingAdvancesToClearing(state: FirstMenGameState, clan: ClanArea, clearing: WildlingClearing, wildling: Wildling, wildlingDice?: number): Wildling | null {
+    // No wildlings to advance from camps to clearing
+    if (!clan.camps.length) return;
+
     const advancingWildling: Wildling = new Wildling(clan.camps[0].type);
     
     const updatedCamps: Wildling[] = clan.camps.slice(1);
