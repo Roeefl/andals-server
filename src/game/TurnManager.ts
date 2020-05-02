@@ -147,6 +147,7 @@ class TurnManager {
     // END OF SETUP PHASE
     state.isSetupPhase = false;
     state.isGameStarted = true;
+    state.currentTurn = state.roundStarter;
 
     broadcast(MESSAGE_GAME_LOG, 'Finished setup phase. GAME STARTING!', true);
     BankManager.setResourcesLoot(state, null, true);
