@@ -94,6 +94,25 @@ class FirstMenGameState extends GameState {
       .length;
   }
 
+  onAllGuardsKilled(sectionIndex: number) {
+    const updatedWall: Guard[] = [
+      ...this.wall
+    ];
+
+    for (let g = (wallSectionSize * sectionIndex); g < (wallSectionSize * (sectionIndex + 1)); g++) {
+      const currentGuard = this.wall[g];
+
+      const owner: Player = this.players[currentGuard.ownerId];
+      owner.guards++;
+
+      updatedWall[g] = new Guard(null, -1, -1);
+    };
+
+    this.wall = new ArraySchema<Guard>(
+      ...updatedWall
+    );
+  }
+
   onGuardKilled(sectionIndex: number, position: number = 0, isKilledByWildlings: boolean = true) {
     const killedGuardIndex: number = (sectionIndex * wallSectionSize) + position;
 
