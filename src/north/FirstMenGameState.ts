@@ -62,12 +62,7 @@ class FirstMenGameState extends GameState {
       ...initialClearings
     );
 
-    const initialWall = new Array(wallSectionsCount * wallSectionSize)
-      .fill(new Guard(null, -1, -1));
-    
-      this.wall = new ArraySchema<Guard>(
-      ...initialWall
-    );
+    this.wall = new ArraySchema<Guard>();
 
     this.wildlingTokens = new ArraySchema<WildlingToken>(
       ...wildlingTokens
@@ -78,92 +73,85 @@ class FirstMenGameState extends GameState {
     );
   }
   
-  get wallSections(): Guard[][] {
-    return Array(wallSectionsCount)
-      .fill(0)
-      .map((section, s) => this.wallSection(s));
-  }
+  // get wallSections(): Guard[][] {
+  //   return Array(wallSectionsCount)
+  //     .fill(0)
+  //     .map((section, s) => this.wallSection(s));
+  // }
   
-  wallSection(sectionIndex: number): Guard[] {
-    return this.wall.slice(sectionIndex * wallSectionSize, sectionIndex * wallSectionSize + 5);
-  }
+  // wallSection(sectionIndex: number): Guard[] {
+  //   return this.wall.slice(sectionIndex * wallSectionSize, sectionIndex * wallSectionSize + 5);
+  // }
 
   guardsOnWallSection(sectionIndex: number) {
-    return this.wallSection(sectionIndex)
-      .filter(({ ownerId }) => !!ownerId)
+    return this.wall
+      .filter(({ section }) => section === sectionIndex)
       .length;
   }
 
   onAllGuardsKilled(sectionIndex: number) {
-    const updatedWall: Guard[] = [
-      ...this.wall
-    ];
+    this.wall
+      .filter(({ section }) => section === sectionIndex)
+      .forEach(guard => {
+        const owner: Player = this.players[guard.ownerId];
+        owner.guards++;
+      });
 
-    for (let g = (wallSectionSize * sectionIndex); g < (wallSectionSize * (sectionIndex + 1)); g++) {
-      const currentGuard = this.wall[g];
-
-      const owner: Player = this.players[currentGuard.ownerId];
-      owner.guards++;
-
-      updatedWall[g] = new Guard(null, -1, -1);
-    };
-
+    const updatedWall: Guard[] = this.wall.filter(({ section }) => section !== sectionIndex);
     this.wall = new ArraySchema<Guard>(
       ...updatedWall
     );
   }
 
-  onGuardKilled(sectionIndex: number, position: number = 0, isKilledByWildlings: boolean = true) {
-    const killedGuardIndex: number = (sectionIndex * wallSectionSize) + position;
+  collapseGuardsOnSection(sectionIndex: number, startPosition: number) {
+    const updatedWall = this.wall.filter(guard => guard.section !== sectionIndex && guard.position !== startPosition);
 
-    const killedGuard: Guard = this.wall[killedGuardIndex];
-    if (!killedGuard.ownerId) return;
+    [1, 2, 3, 4].forEach(pos => {
+      const currentGuard: Guard = updatedWall.find(guard => guard.section === sectionIndex && guard.position === startPosition + pos);
+
+      if (currentGuard)
+        currentGuard.position--;
+    });
+
+    return updatedWall;
+  }
+
+  onGuardKilled(sectionIndex: number, positionIndex: number = 0, isKilledByWildlings: boolean = true) {
+    const killedGuard: Guard = this.wall.find(guard => guard.section === sectionIndex && guard.position === positionIndex);
+
+    if (!killedGuard) {
+      console.log("FirstMenGameState -> onGuardKilled | FATAL ERROR: killedGuard could not be found in this.wall for: ", sectionIndex, positionIndex);
+      return;
+    }; 
 
     const owner: Player = this.players[killedGuard.ownerId];
     owner.guards++;
 
-    if (isKilledByWildlings && owner.heroPrivilege === HERO_CARD_Thoros) {
+    if (isKilledByWildlings && owner.heroPrivilege === HERO_CARD_Thoros)
       owner.allowFreeGuard = true;
-    };
 
-    const updatedWall: Guard[] = [
-      ...this.wall
-    ];
-
-    for (let g = 1; g < (wallSectionSize - position); g++) {
-      updatedWall[killedGuardIndex + g - 1] = updatedWall[killedGuardIndex + g];
-    };
-
-    updatedWall[killedGuardIndex + wallSectionSize - 1] = new Guard(null, -1, -1);
-
+    const updatedWall: Guard[] = this.collapseGuardsOnSection(sectionIndex, positionIndex);
     this.wall = new ArraySchema<Guard>(
       ...updatedWall
     );
-
-    console.log(this.wall.map(({ ownerId, wallSection, position }, p) => `Wall | Position ${p} | ownerId: ${ownerId} | wallSection: ${wallSection} position ${position}`));
+    // console.log(this.wall.map(({ ownerId, section, position }, p) => `Wall | Position ${p} | ownerId: ${ownerId} | wallSection: ${section} position ${position}`));
   }
 
   onGuardRelocate(fromSection: number, fromPosition: number, toSection: number) {
-    const guardIndex: number = (fromSection * wallSectionSize) + fromPosition;
+    const movedGuard: Guard = this.wall.find(guard => guard.section === fromSection && guard.position === fromPosition);
 
-    const movedGuard: Guard = this.wall[guardIndex];
-    if (!movedGuard.ownerId) return;
+    if (!movedGuard) {
+      console.log("FirstMenGameState -> onGuardRelocate | FATAL ERROR: movedGuard could not be found in this.wall for: ", fromSection, fromPosition);
+      return;
+    }; 
 
-    const updatedWall = [
-      ...this.wall
-    ];
+    const nextAvailablePosition: number = this.guardsOnWallSection(toSection);
+    const relocatedGuard: Guard = new Guard(movedGuard.ownerId, toSection, nextAvailablePosition);
 
-    updatedWall[guardIndex] = new Guard(null, -1, -1);
-    for (let g = 1; g < (wallSectionSize - fromPosition); g++) {
-      updatedWall[guardIndex + g - 1] = updatedWall[guardIndex + g];
-    };
-    updatedWall[guardIndex + wallSectionSize - 1] = new Guard(null, -1, -1);
-
-    const guardsOnToSection: number = this.guardsOnWallSection(toSection);
-    updatedWall[toSection * wallSectionSize + guardsOnToSection] = movedGuard;
-
+    const updatedWall: Guard[] = this.collapseGuardsOnSection(fromSection, fromPosition);
     this.wall = new ArraySchema<Guard>(
-      ...updatedWall
+      ...updatedWall,
+      relocatedGuard
     );
   }
 };

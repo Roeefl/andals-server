@@ -1,6 +1,8 @@
 const FCG = require('fantasy-content-generator');
 const delay = require('delay');
 
+import { minBy } from 'lodash';
+
 import GameState from '../game/GameState';
 import Player, { PlayerOptions } from './Player';
 import Structure from './Structure';
@@ -22,7 +24,7 @@ import {
 import { Loot, ResourceToSteal } from '../interfaces';
 import FirstMenGameState from '../north/FirstMenGameState';
 
-import { wallSectionsCount, wallSectionSize } from '../specs/wall';
+import { wallSectionsCount } from '../specs/wall';
 
 class GameBot extends Player {
   constructor(color: string, playerIndex: number, replacing?: Player) {
@@ -136,21 +138,21 @@ class GameBot extends Player {
   static async validGuard(state: FirstMenGameState, botSessionId: string) {
     await delay(1000);
     
-    const bestPosition = {
-      section: wallSectionsCount - 1,
-      position: wallSectionSize - 1
+    const guardsOnEachSection = Array(wallSectionsCount).fill(0)
+      .map((x, sectionIndex) => ({
+        sectionIndex,
+        guardsCount: state.guardsOnWallSection(sectionIndex)
+      }));
+
+    const best = minBy(
+      guardsOnEachSection,
+      section => section.guardsCount
+    );
+
+    return {
+      section: best.sectionIndex,
+      position: best.guardsCount
     };
-
-    state.wallSections.forEach((section, s) => {
-      for (let p = 0; p < wallSectionSize; p++) {
-        if (p < bestPosition.position && !section[p].ownerId) {
-          bestPosition.section = s;
-          bestPosition.position = p;
-        }
-      }
-    });
-
-    return bestPosition;
   }
 
   static async desiredRobberTile(state: GameState, botSessionId: string) {

@@ -112,15 +112,11 @@ class PurchaseManager {
   }
 
   onPurchaseGuard(state: FirstMenGameState, ownerId: string, section: number, position: number, flexiblePurchase?: FlexiblePurchase, isFree: boolean = false) {
-    const guard = new Guard(ownerId, section, position);
-    
-    const updatedWall = [
-      ...state.wall
-    ];
-    updatedWall[section * wallSectionSize + position] = guard;
+    const addedGuard = new Guard(ownerId, section, position);
     
     state.wall = new ArraySchema<Guard>(
-      ...updatedWall
+      ...state.wall,
+      addedGuard
     );
   
    const owner: Player = state.players[ownerId];

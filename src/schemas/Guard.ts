@@ -2,19 +2,19 @@ import { type, Schema } from '@colyseus/schema';
 
 class Guard extends Schema {
   @type("string")
-  ownerId: string | null
+  ownerId: string
 
   @type("number")
-  wallSection: number
+  section: number
 
   @type("number")
   position: number
 
-  constructor(ownerId: string, wallSection: number, position: number) {
+  constructor(ownerId: string, section: number, position: number) {
     super();
     
     this.ownerId = ownerId;
-    this.wallSection = wallSection;
+    this.section = section;
     this.position = position;
   }
 };
