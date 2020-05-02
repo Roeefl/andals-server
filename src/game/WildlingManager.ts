@@ -70,16 +70,17 @@ class WildlingManager {
 
     const currentClan: ClanArea = state.clanAreas[clan];
 
+    const addedWildling = new Wildling(wildlingType);
     const updatedCamps: Wildling[] = [
       ...currentClan.camps,
-      new Wildling(wildlingType)
+      addedWildling
     ];
     
     currentClan.camps = new ArraySchema<Wildling>(
       ...updatedCamps
     );
 
-    if (currentClan.camps.length > currentClan.campfires)
+    if (currentClan.camps.length > currentClan.campfires || wildlingType === WILDLING_WHITE_WALKER)
       this.wildlingsRush(state, currentClan);
   }
 
@@ -105,15 +106,27 @@ class WildlingManager {
     this.wildlingAdvancesToClearing(state, clan, secondClearing, secondWildling);
   }
 
+  removeWildlingsFromClearing(clearing: WildlingClearing, wildlingType: string) {
+    const updatedClearing: Wildling[] = clearing.wildlings
+      .filter(({ type }) => type !== wildlingType);
+
+    clearing.wildlings = new ArraySchema<Wildling>(
+      ...updatedClearing
+    );
+  }
+
   evaluateClearing(state: FirstMenGameState, clearing: WildlingClearing, recentWildling: Wildling, lastDice?: number): Wildling | null {
     const { clearingIndex } = clearing;
     console.log("WildlingManager -> clearingIndex", clearingIndex)
+
     const guardsOnWallSection = state.guardsOnWallSection(clearingIndex);
     console.log("WildlingManager -> guardsOnWallSection", guardsOnWallSection)
 
     switch (recentWildling.type) {
       case WILDLING_CLIMBER:
         this.onWildlingsInvade(state, clearing, [recentWildling], lastDice);
+        this.removeWildlingsFromClearing(clearing, recentWildling.type);
+
         return recentWildling;
 
       case WILDLING_GIANT:
@@ -122,7 +135,10 @@ class WildlingManager {
         };
 
         state.onGuardKilled(clearingIndex, 0, true);
+
+        this.removeWildlingsFromClearing(clearing, recentWildling.type);
         state.spawnCounts[WILDLING_GIANT]++;
+
         return recentWildling;
 
       case WILDLING_REGULAR:
@@ -131,16 +147,22 @@ class WildlingManager {
 
         if (regularWildlingsInClearing > guardsOnWallSection) {
           this.onWildlingsInvade(state, clearing, clearing.wildlingsOfType(WILDLING_REGULAR), lastDice);
-
+      
           state.onGuardKilled(clearingIndex, 0, true);
           this.onWallBreach(state, clearing, lastDice);
 
+          this.removeWildlingsFromClearing(clearing, recentWildling.type);
+          
           return recentWildling;
         };
 
       case WILDLING_WHITE_WALKER:
         this.onWallBreach(state, clearing, lastDice);
-        state.onGuardKilled(clearingIndex, 0, true);
+        state.onAllGuardsKilled(clearingIndex);
+
+        this.removeWildlingsFromClearing(clearing, recentWildling.type);
+        state.spawnCounts[WILDLING_WHITE_WALKER]++;
+        
         return recentWildling;
 
       default:
@@ -206,7 +228,7 @@ class WildlingManager {
   }
 
   wildlingAdvancesToClearing(state: FirstMenGameState, clan: ClanArea, clearing: WildlingClearing, wildling: Wildling, wildlingDice?: number): Wildling | null {
-    const advancingWildling: Wildling = clan.camps[0];
+    const advancingWildling: Wildling = new Wildling(clan.camps[0].type);
     
     const updatedCamps: Wildling[] = clan.camps.slice(1);
     clan.camps = new ArraySchema<Wildling>(

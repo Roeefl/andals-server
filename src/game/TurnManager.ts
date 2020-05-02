@@ -150,6 +150,7 @@ class TurnManager {
     
     broadcast(MESSAGE_GAME_LOG, 'Finished setup phase. GAME STARTING!', true);
     BankManager.setResourcesLoot(state, null, true);
+    
     state.currentTurn = state.roundStarter;
   }
 }
