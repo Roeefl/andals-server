@@ -72,16 +72,6 @@ class FirstMenGameState extends GameState {
       ...heroCards
     );
   }
-  
-  // get wallSections(): Guard[][] {
-  //   return Array(wallSectionsCount)
-  //     .fill(0)
-  //     .map((section, s) => this.wallSection(s));
-  // }
-  
-  // wallSection(sectionIndex: number): Guard[] {
-  //   return this.wall.slice(sectionIndex * wallSectionSize, sectionIndex * wallSectionSize + 5);
-  // }
 
   guardsOnWallSection(sectionIndex: number) {
     return this.wall
@@ -104,13 +94,11 @@ class FirstMenGameState extends GameState {
   }
 
   collapseGuardsOnSection(sectionIndex: number, startPosition: number) {
-    const updatedWall = this.wall.filter(guard => guard.section !== sectionIndex && guard.position !== startPosition);
+    const updatedWall = this.wall.filter(guard => guard.section !== sectionIndex || guard.position !== startPosition);
 
     [1, 2, 3, 4].forEach(pos => {
       const currentGuard: Guard = updatedWall.find(guard => guard.section === sectionIndex && guard.position === startPosition + pos);
-
-      if (currentGuard)
-        currentGuard.position--;
+      if (currentGuard) currentGuard.position--;
     });
 
     return updatedWall;
