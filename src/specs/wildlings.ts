@@ -77,12 +77,12 @@ export const initialSpawnWildlingCounts: WildlingCounts = {
   regular: 22,
   climber: 8,
   giant: 8,
-  whiteWalker: 1
+  // whiteWalker: 0
 };
 
 export const initialClearingWildlingCounts: WildlingCounts = {
   regular: 0,
   climber: 0,
   giant: 0,
-  whiteWalker: 0
+  // whiteWalker: 0
 };

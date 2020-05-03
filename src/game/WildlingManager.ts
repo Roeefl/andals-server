@@ -156,14 +156,14 @@ class WildlingManager {
           return recentWildling;
         };
 
-      case WILDLING_WHITE_WALKER:
-        this.onWallBreach(state, clearing, lastDice, false);
-        state.onAllGuardsKilled(clearingIndex);
+      // case WILDLING_WHITE_WALKER:
+      //   this.onWallBreach(state, clearing, lastDice, false);
+      //   state.onAllGuardsKilled(clearingIndex);
 
-        this.removeWildlingsFromClearing(clearing, recentWildling.type);
-        state.spawnCounts[WILDLING_WHITE_WALKER]++;
+      //   this.removeWildlingsFromClearing(clearing, recentWildling.type);
+      //   state.spawnCounts[WILDLING_WHITE_WALKER]++;
         
-        return recentWildling;
+      //   return recentWildling;
 
       default:
         break;
