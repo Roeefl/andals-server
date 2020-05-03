@@ -157,7 +157,7 @@ class WildlingManager {
         };
 
       case WILDLING_WHITE_WALKER:
-        this.onWallBreach(state, clearing, lastDice);
+        this.onWallBreach(state, clearing, lastDice, false);
         state.onAllGuardsKilled(clearingIndex);
 
         this.removeWildlingsFromClearing(clearing, recentWildling.type);
@@ -172,11 +172,11 @@ class WildlingManager {
     return null;
   }
 
-  onWallBreach(state: FirstMenGameState, breachedClearing: WildlingClearing, lastDice?: number): void {
+  onWallBreach(state: FirstMenGameState, breachedClearing: WildlingClearing, lastDice?: number, invade: boolean = true): void {
     state.wallBreaches++;
     
     // Then, one at a time, each of the wildlings on that clearing jumps over the Wall.
-    this.onWildlingsInvade(state, breachedClearing, breachedClearing.wildlings, lastDice);
+    if (invade) this.onWildlingsInvade(state, breachedClearing, breachedClearing.wildlings, lastDice);
   }
   
   // blocks the first hex not occupied by a wildling directly south of the wall section.
