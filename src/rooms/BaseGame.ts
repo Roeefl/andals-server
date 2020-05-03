@@ -614,7 +614,8 @@ class BaseGame extends Room<GameState> {
     });
 
     this.broadcastToAll(MESSAGE_GAME_LOG, {
-      message: 'Starting turn order phase'
+      message: 'Starting turn order phase',
+      isTurnOrder: true
     }, true);
 
     this.state.isGameReady = true;

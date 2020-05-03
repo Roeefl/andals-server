@@ -65,7 +65,7 @@ class TurnManager {
       this.initializeSetupPhase(state);
 
       broadcast(MESSAGE_GAME_LOG, { message: 'Finished turn order phase' });
-      broadcast(MESSAGE_GAME_LOG, { message: 'Starting setup phase' }, true);
+      broadcast(MESSAGE_GAME_LOG, { message: 'Starting setup phase', isSetup: true }, true);
       broadcast(MESSAGE_GAME_LOG, { message: `${nickname} is first to play`});
       return;
     }
@@ -105,7 +105,7 @@ class TurnManager {
         else {
           this.initializeGuardPhase(state);
           state.setupPhaseTurns++;
-          broadcast(MESSAGE_GAME_LOG, { message: 'Place your guards on the wall' }, true);
+          broadcast(MESSAGE_GAME_LOG, { message: 'Place your guards on the wall', isPlaceGuards: true }, true);
         }
 
         return;
@@ -153,7 +153,7 @@ class TurnManager {
     state.isSetupPhase = false;
     state.isGameStarted = true;
     
-    broadcast(MESSAGE_GAME_LOG, { message: 'Finished setup phase. GAME STARTING!' }, true);
+    broadcast(MESSAGE_GAME_LOG, { message: 'Finished setup phase. Game is starting!', isGameStart: true }, true);
     BankManager.setResourcesLoot(state, null, true);
 
     // not sure if this should be under 'auto pickup' or not
