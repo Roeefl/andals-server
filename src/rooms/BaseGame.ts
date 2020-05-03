@@ -67,11 +67,6 @@ class BaseGame extends Room<GameState> {
       .length;
   }
 
-  get allPlayers() {
-    const players: Player[] = Object.values(this.state.players);
-    return players; 
-  }
-
   get allBots() {
     return Object
       .values(this.state.players)
@@ -80,7 +75,7 @@ class BaseGame extends Room<GameState> {
 
   get currentPlayer() {
     const { currentTurn } = this.state;
-    return this.allPlayers[currentTurn];
+    return this.state.allPlayers[currentTurn];
   }
 
   onCreate(roomOptions: RoomOptions) {
@@ -224,7 +219,8 @@ class BaseGame extends Room<GameState> {
 
       case MESSAGE_ROLL_DICE:
         const { dice = [3, 3] } = data;
-        DiceManager.onDiceRoll(this.state, dice, currentPlayer);
+        const isRobbing = DiceManager.onDiceRoll(this.state, dice, currentPlayer);
+        console.log("onGameAction -> isRobbing", isRobbing)
 
         this.broadcastToAll(MESSAGE_ROLL_DICE, {
           playerName: currentPlayer.nickname,
@@ -234,10 +230,14 @@ class BaseGame extends Room<GameState> {
         if (this.state.isGameStarted)
           this.allBotsCollectLoot();
 
+        if (isRobbing)
+          this.allBotsRobbed();
+
         break;
 
       case MESSAGE_COLLECT_ALL_LOOT:
         this.broadcastToAll(MESSAGE_COLLECT_ALL_LOOT, {
+          playerSessionId: currentPlayer.playerSessionId,
           playerName: currentPlayer.nickname,
           loot: currentPlayer.availableLoot
         });
@@ -247,6 +247,7 @@ class BaseGame extends Room<GameState> {
 
       case MESSAGE_COLLECT_RESOURCE_LOOT:
         this.broadcastToAll(MESSAGE_COLLECT_RESOURCE_LOOT, {
+          playerSessionId: currentPlayer.playerSessionId,
           playerName: currentPlayer.nickname,
           resource: data.resource
         });
@@ -277,11 +278,8 @@ class BaseGame extends Room<GameState> {
           message: `${currentPlayer.nickname} has moved the Robber`
         });
 
-        const allowStealingFrom = BoardManager.robberAdjacentPlayers(this.state);
-        currentPlayer.allowStealingFrom = new ArraySchema<string>(
-          ...allowStealingFrom
-        );
-        
+        const allowStealingFrom: string[] = BoardManager.robberAdjacentPlayers(this.state);
+        TradeManager.allowStealingFrom(this.state, currentPlayer, allowStealingFrom);
         break;
 
       case MESSAGE_STEAL_CARD:
@@ -397,14 +395,10 @@ class BaseGame extends Room<GameState> {
 
       case MESSAGE_FINISH_TURN:
         TurnManager.finishTurn(this.state, currentPlayer,
-          (broadcastType: string, broadcastMessage: string, isEssential: boolean = false) => this.broadcastToAll(broadcastType, { message: broadcastMessage }, isEssential)
+          (broadcastType: string, broadcastData: any, isEssential: boolean = false) => this.broadcastToAll(broadcastType, broadcastData, isEssential)
         );
+
         await this.advanceBot(this.currentPlayer as GameBot);
-
-        // In case any player did not pick up his loot - give it to him 
-        if (this.state.autoPickupEnabled)
-          this.autoPickupLoot();
-
         break;
 
       case MESSAGE_PLACE_GUARD:
@@ -426,19 +420,6 @@ class BaseGame extends Room<GameState> {
       default:
         break;
     }
-  }
-
-  autoPickupLoot() {
-    this.allPlayers
-      .filter(player => player.totalAvailableLoot > 0)
-      .forEach(player => {
-        this.broadcastToAll(MESSAGE_COLLECT_ALL_LOOT, {
-          playerName: player.nickname,
-          loot: player.availableLoot
-        });
-
-        player.onCollectLoot();
-      });
   }
 
   onBotTokensRevealedPurchase(purchaseType: string) {
@@ -571,6 +552,19 @@ class BaseGame extends Room<GameState> {
     allBots
       .filter(bot => bot.totalAvailableLoot > 0)
       .forEach(bot => this.onGameAction(bot, MESSAGE_COLLECT_ALL_LOOT));
+  }
+
+  allBotsRobbed() {
+    console.log("allBotsRobbed -> allBotsRobbed")
+    const allBots: GameBot[] = this.allBots;
+
+    allBots
+      .filter(bot => bot.totalResourceCounts > 7)
+      .forEach(currentBot => {
+        console.log("allBotsRobbed -> currentBot", currentBot.totalResourceCounts)
+        const discardedCounts: Loot = currentBot.discardedCounts();
+        this.onGameAction(currentBot, MESSAGE_DISCARD_HALF_DECK, { discardedCounts });
+      });
   }
 
   async botsAdjustTrade(tradingWith: string, type: string) {

@@ -149,6 +149,11 @@ class GameState extends Schema {
     );
   }
 
+  get allPlayers(): Player[] {
+    const players: Player[] = Object.values(this.players);
+    return players; 
+  }
+
   get lootableHextiles() {
     return this.board
       .filter(({ type, resource, occupiedBy = null }, index) => (

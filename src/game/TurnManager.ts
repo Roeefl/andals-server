@@ -2,7 +2,7 @@ import GameState from '../game/GameState';
 import Player from '../schemas/Player';
 import BankManager from '../game/BankManager';
 
-import { MESSAGE_GAME_LOG, MESSAGE_TURN_ORDER } from '../constants';
+import { MESSAGE_GAME_LOG, MESSAGE_TURN_ORDER, MESSAGE_COLLECT_ALL_LOOT } from '../constants';
 import { ROOM_TYPE_BASE_GAME } from '../specs/roomTypes';
 
 class TurnManager {
@@ -27,7 +27,7 @@ class TurnManager {
       });
   }
 
-  finishTurn(state: GameState, player: Player, broadcast: (type: string, message: string, isEssential?: boolean) => void) {
+  finishTurn(state: GameState, player: Player, broadcast: (type: string, data: any, isEssential?: boolean) => void) {
     const {
       isSetupPhase,
       isTurnOrderPhase,
@@ -64,9 +64,9 @@ class TurnManager {
 
       this.initializeSetupPhase(state);
 
-      broadcast(MESSAGE_GAME_LOG, 'Finished turn order phase');
-      broadcast(MESSAGE_GAME_LOG, 'Starting setup phase', true);
-      broadcast(MESSAGE_GAME_LOG, `${nickname} is first to play`);
+      broadcast(MESSAGE_GAME_LOG, { message: 'Finished turn order phase' });
+      broadcast(MESSAGE_GAME_LOG, { message: 'Starting setup phase' }, true);
+      broadcast(MESSAGE_GAME_LOG, { message: `${nickname} is first to play`});
       return;
     }
 
@@ -80,7 +80,7 @@ class TurnManager {
         // Give last player in the round another turn
         state.setupPhaseTurns++;
 
-        broadcast( MESSAGE_GAME_LOG, `${player.nickname} is last in the setup phase and plays a double turn`);
+        broadcast( MESSAGE_GAME_LOG, { message: `${player.nickname} is last in the setup phase and plays a double turn` });
         return;
       }
 
@@ -92,7 +92,7 @@ class TurnManager {
 
         state.setupPhaseTurns++;
 
-        broadcast(MESSAGE_GAME_LOG, `${player.nickname} finished his turn`);
+        broadcast(MESSAGE_GAME_LOG, { message: `${player.nickname} finished his turn` });
         return;
       }
 
@@ -105,7 +105,7 @@ class TurnManager {
         else {
           this.initializeGuardPhase(state);
           state.setupPhaseTurns++;
-          broadcast(MESSAGE_GAME_LOG, 'Place your guards on the wall', true);
+          broadcast(MESSAGE_GAME_LOG, { message: 'Place your guards on the wall' }, true);
         }
 
         return;
@@ -124,7 +124,7 @@ class TurnManager {
       state.currentTurn = (currentTurn + 1) % state.maxClients;
       state.setupPhaseTurns++;
 
-      broadcast(MESSAGE_GAME_LOG, `${player.nickname} finished his turn`);
+      broadcast(MESSAGE_GAME_LOG, { message: `${player.nickname} finished his turn` });
       return;
     }
      
@@ -134,24 +134,46 @@ class TurnManager {
 
     this.resetHasPlayedStatus(state);
 
+    // In case any player did not pick up his loot - give it to him - IF autoPickupEnabled setting is set to true
+    if (state.autoPickupEnabled)
+      this.onAllPlayersPickupLoot(state, broadcast);
+
     if (!state.isTurnOrderPhase)
-      broadcast(MESSAGE_TURN_ORDER, `${player.nickname} finished his turn`);
-    
+      broadcast(MESSAGE_TURN_ORDER, { message: `${player.nickname} finished his turn` });
+      
+
     if (isEndOfRound) {
-      broadcast(MESSAGE_GAME_LOG, `Round ${currentRound} complete. Starting Round ${currentRound + 1}`);
+      broadcast(MESSAGE_GAME_LOG, { message: `Round ${currentRound} complete. Starting Round ${currentRound + 1}` });
       state.currentRound++;
     }
   }
 
-  startGame(state: GameState, broadcast: (type: string, message: string, isEssential?: boolean) => void) {
+  startGame(state: GameState, broadcast: (type: string, data: any, isEssential?: boolean) => void) {
     // END OF SETUP PHASE
     state.isSetupPhase = false;
     state.isGameStarted = true;
     
-    broadcast(MESSAGE_GAME_LOG, 'Finished setup phase. GAME STARTING!', true);
+    broadcast(MESSAGE_GAME_LOG, { message: 'Finished setup phase. GAME STARTING!' }, true);
     BankManager.setResourcesLoot(state, null, true);
-    
+
+    // not sure if this should be under 'auto pickup' or not
+    this.onAllPlayersPickupLoot(state, broadcast);
+
     state.currentTurn = state.roundStarter;
+  }
+
+  onAllPlayersPickupLoot(state: GameState, broadcast: (type: string, data: any, isEssential?: boolean) => void) {
+    state.allPlayers
+      .filter(player => player.totalAvailableLoot > 0)
+      .forEach(player => {
+        broadcast(MESSAGE_COLLECT_ALL_LOOT, {
+          playerSessionId: player.playerSessionId,
+          playerName: player.nickname,
+          loot: player.availableLoot
+        });
+
+        player.onCollectLoot();
+      });
   }
 }
 
