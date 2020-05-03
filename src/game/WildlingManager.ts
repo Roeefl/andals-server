@@ -7,7 +7,7 @@ import ClanArea from '../schemas/ClanArea';
 import WildlingClearing from '../schemas/WildlingClearing';
 import Wildling from '../schemas/Wildling';
 
-import { totalTokens, clanNames, wildlingTypes, clansManifest, trailRoutes, WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT, WILDLING_WHITE_WALKER, tokensPerPurchase } from '../specs/wildlings';
+import { totalTokens, clanNames, wildlingTypes, clansManifest, trailRoutes, WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT, tokensPerPurchase } from '../specs/wildlings';
 import { ClanManifest } from '../interfaces';
 import { MESSAGE_WILDLINGS_ADVANCE_CLEARING, MESSAGE_WILDLINGS_WALL_BATTLE } from '../constants';
 
@@ -80,7 +80,7 @@ class WildlingManager {
       ...updatedCamps
     );
 
-    if (currentClan.camps.length > currentClan.campfires || wildlingType === WILDLING_WHITE_WALKER)
+    if (currentClan.camps.length > currentClan.campfires) //  || wildlingType === WILDLING_WHITE_WALKER)
       this.wildlingsRush(state, currentClan);
   }
 

@@ -135,7 +135,7 @@ class HeroCard extends Schema {
   order: number
   
   @type("boolean")
-  wasPlayed: boolean = false
+  wasPlayed: boolean
 
   @type("string")
   ownerId: string | null
@@ -147,6 +147,7 @@ class HeroCard extends Schema {
     this.order = manifest[type].order || 0;
     this.name = manifest[type].name;
     this.ownerId = null;
+    this.wasPlayed = false;
   }
 
   static implemented() {
