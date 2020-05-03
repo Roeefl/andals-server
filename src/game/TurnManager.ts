@@ -2,7 +2,7 @@ import GameState from '../game/GameState';
 import Player from '../schemas/Player';
 import BankManager from '../game/BankManager';
 
-import { MESSAGE_GAME_LOG } from '../constants';
+import { MESSAGE_GAME_LOG, MESSAGE_TURN_ORDER } from '../constants';
 import { ROOM_TYPE_BASE_GAME } from '../specs/roomTypes';
 
 class TurnManager {
@@ -135,7 +135,7 @@ class TurnManager {
     this.resetHasPlayedStatus(state);
 
     if (!state.isTurnOrderPhase)
-      broadcast(MESSAGE_GAME_LOG, `${player.nickname} finished his turn`);
+      broadcast(MESSAGE_TURN_ORDER, `${player.nickname} finished his turn`);
     
     if (isEndOfRound) {
       broadcast(MESSAGE_GAME_LOG, `Round ${currentRound} complete. Starting Round ${currentRound + 1}`);
