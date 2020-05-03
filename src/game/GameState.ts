@@ -153,20 +153,25 @@ class GameState extends Schema {
     const players: Player[] = Object.values(this.players);
     return players; 
   }
-
+  
   get lootableHextiles() {
     return this.board
       .filter(({ type, resource, occupiedBy = null }, index) => (
         type === TILE_RESOURCE &&
         !!resource && resource !== DESERT &&
         index !== this.robberPosition && !occupiedBy
-      ));
+        ));
   }
 
   otherPlayersSessionIds(currentPlayer: Player) {
     return Object
       .keys(this.players)
       .filter(sessionId => sessionId !== currentPlayer.playerSessionId);
+  }
+
+  otherPlayers(currentPlayer: Player): Player[] {
+    return this.allPlayers
+      .filter(player => player.playerSessionId !== currentPlayer.playerSessionId);
   }
 };
 

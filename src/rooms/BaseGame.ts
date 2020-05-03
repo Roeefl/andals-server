@@ -286,9 +286,16 @@ class BaseGame extends Room<GameState> {
         TradeManager.onStealCard(this.state, currentPlayer, data.stealFrom, data.resource);
 
         if (!data.giveBack) {
-          this.broadcastToAll(MESSAGE_GAME_LOG, {
-            message: `${currentPlayer.nickname} has stolen a resource card from ${(this.state.players[data.stealFrom] || {}).nickname}`
-          });
+          const stoleFrom = this.state.players[data.stealFrom];
+          
+          if (stoleFrom) {
+            this.broadcastToAll(MESSAGE_STEAL_CARD, {
+              playerSessionId: currentPlayer.playerSessionId,
+              playerName: currentPlayer.nickname,
+              stoleFrom: stoleFrom.nickname,
+              stolenResource: data.resource
+            });
+          }
         }
         break;
 
@@ -435,8 +442,8 @@ class BaseGame extends Room<GameState> {
 
     this.evaluateVictoryStatus();
   
-    this.broadcastToAll(MESSAGE_GAME_LOG, {
-      message: `${currentPlayer.nickname} has placed a Guard in [Section ${section}, Position ${position}]`
+    this.broadcastToAll(MESSAGE_PLACE_GUARD, {
+      message: `${currentPlayer.nickname} has placed a Guard on the wall`
     }, this.state.isGameStarted);
 
     currentPlayer.allowFreeGuard = false;
@@ -482,7 +489,15 @@ class BaseGame extends Room<GameState> {
     const botDice: number[] = await GameBot.rollDice(this.state.roomType);
     this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
 
-    await currentBot.think(2000);
+    await currentBot.think(1500);
+
+    // Do not advance as long as any other player still has not discarded his deck (on robber)
+    const otherPlayers: Player[] = this.state.otherPlayers(currentBot);
+    let anyPlayerStillDiscarding = otherPlayers.some(player => player.mustDiscardHalfDeck);
+    while (anyPlayerStillDiscarding) {
+      await currentBot.think(2000);
+      anyPlayerStillDiscarding = otherPlayers.some(player => player.mustDiscardHalfDeck);
+    }
 
     if (currentBot.mustMoveRobber) {
       const tile = await GameBot.desiredRobberTile(this.state, currentBot.playerSessionId);
