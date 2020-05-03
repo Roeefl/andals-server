@@ -7,7 +7,7 @@ import DiceRoll from '../schemas/DiceRoll';
 import BankManager from '../game/BankManager';
 
 class DiceManager {
-  onDiceRoll(state: GameState, dice: number[], currentPlayer: Player) {
+  onDiceRoll(state: GameState, dice: number[], currentPlayer: Player): boolean {
     state.dice = new ArraySchema<Number>(...dice);
     state.isDiceRolled = true;
   
@@ -22,10 +22,12 @@ class DiceManager {
       ...updatedRolls
     );
     
-    if (!state.isGameStarted) return;
+    if (!state.isGameStarted) return false;
 
-    // If a player has more than seven cards, that player must discard half of them.    
-    if (roll.value === 7) {
+    // If a player has more than seven cards, that player must discard half of them.
+    const isRobbing = roll.value === 7;  
+    
+    if (isRobbing) {
       Object
         .keys(state.players)
         .forEach(sessionId => {
@@ -38,10 +40,11 @@ class DiceManager {
         });
 
       currentPlayer.mustMoveRobber = true;
-      return;
+    } else {
+      BankManager.setResourcesLoot(state, roll.value);
     }
     
-    BankManager.setResourcesLoot(state, roll.value);
+    return isRobbing;
   }
 }
 
