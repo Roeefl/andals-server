@@ -93,15 +93,15 @@ class TradeManager {
     otherPlayer.stolenResource(resource);
 
     if (currentPlayer.heroPrivilege === HERO_CARD_JeorMormont) {
-      currentPlayer.allowStealingFrom = new ArraySchema<string>(
-        ...currentPlayer.allowStealingFrom.filter(sessionId => sessionId !== stealFrom)
-      );
+      const remainingPlayers = currentPlayer.allowStealingFrom.filter(sessionId => sessionId !== stealFrom);
+      this.allowStealingFrom(state, currentPlayer, remainingPlayers);
+
       if (!currentPlayer.allowStealingFrom.length)
         currentPlayer.isVisibleSteal = false;
-
       return;
     }
 
+    this.allowStealingFrom(state, currentPlayer, []);
     currentPlayer.allowStealingFrom = new ArraySchema<string>();
     currentPlayer.isVisibleSteal = false;
   }
@@ -132,6 +132,17 @@ class TradeManager {
 
     currentPlayer.performTrade(playerIsReceiving);
     currentPlayer.resetTradeCounts();
+  }
+
+  allowStealingFrom(state: GameState, currentPlayer: Player, fromPlayersSessionIds: string[]) {
+    const onlyStealablePlayers = fromPlayersSessionIds.filter(sessionId => {
+      const player: Player = state.players[sessionId];
+      return player.totalResourceCounts > 0;
+    });
+
+    currentPlayer.allowStealingFrom = new ArraySchema<string>(
+      ...onlyStealablePlayers
+    );
   }
 }
 

@@ -5,6 +5,8 @@ import FirstMenGameState from '../north/FirstMenGameState';
 import Player from '../schemas/Player';
 import GameCard from '../schemas/GameCard';
 
+import TradeManager from './TradeManager';
+
 import HeroCard, {
   HERO_CARD_JeorMormont,
   HERO_CARD_BowenMarsh,
@@ -75,9 +77,9 @@ class HeroCardManager {
         break;
       
       case HERO_CARD_ManceRayder:
-        currentPlayer.allowStealingFrom = new ArraySchema<string>(
-          ...this.higherVpOpponents(state, currentPlayer)
-        );
+        const higherVpOpponents: string[] = this.higherVpOpponents(state, currentPlayer);
+        TradeManager.allowStealingFrom(state, currentPlayer, higherVpOpponents);
+
         currentPlayer.isVisibleSteal = true;
         break;
 
@@ -106,10 +108,9 @@ class HeroCardManager {
         // Demand 1 resource card each from all players.
         // The cards must be of the same resource type.
         // For each resource card you receive, give the respective player 1 resource card of your choice in return.
-
-        currentPlayer.allowStealingFrom = new ArraySchema<string>(
-          ...state.otherPlayersSessionIds(currentPlayer)
-        );
+        const allOtherPlayers: string[] = state.otherPlayersSessionIds(currentPlayer);
+        TradeManager.allowStealingFrom(state, currentPlayer, allOtherPlayers);
+        
         currentPlayer.isVisibleSteal = true;
 
         break;
@@ -203,7 +204,7 @@ class HeroCardManager {
     // currentPlayer.hasPlayedHeroCard = false;
   }
 
-  higherVpOpponents(state: FirstMenGameState, currentPlayer: Player) {
+  higherVpOpponents(state: FirstMenGameState, currentPlayer: Player): string[] {
     return Object
       .values(state.players)
       .filter(player => player.victoryPoints > currentPlayer.victoryPoints)
