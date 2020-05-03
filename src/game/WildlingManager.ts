@@ -16,10 +16,17 @@ class WildlingManager {
     return Array(totalTokens)
       .fill(0)
       .map(x => {
-        const randomType = Math.floor(Math.random() * wildlingTypes.length);
+        const randomTypeIndex = Math.floor(Math.random() * (wildlingTypes.length + 2));
+        const adjustedIndex = randomTypeIndex < wildlingTypes.length
+          ? randomTypeIndex
+          : 0;
+          
+        const wildlingType = wildlingTypes[adjustedIndex];
+  
         const randomClan = Math.floor(Math.random() * clanNames.length);
+        const clanType = clanNames[randomClan];
 
-        return new WildlingToken(wildlingTypes[randomType], clanNames[randomClan]);
+        return new WildlingToken(wildlingType, clanType);
       });
   }
 
@@ -132,9 +139,9 @@ class WildlingManager {
       case WILDLING_GIANT:
         if (!guardsOnWallSection) {
           this.onWallBreach(state, clearing, lastDice);
-        };
-
-        state.onGuardKilled(clearingIndex, 0, true);
+        } else {
+          state.onGuardKilled(clearingIndex, 0, true);
+        }
 
         this.removeWildlingsFromClearing(clearing, recentWildling.type);
         state.spawnCounts[WILDLING_GIANT]++;
@@ -146,11 +153,11 @@ class WildlingManager {
         console.log("WildlingManager -> regularWildlingsInClearing", regularWildlingsInClearing, ' >? ', guardsOnWallSection)
 
         if (regularWildlingsInClearing > guardsOnWallSection) {
+          if (guardsOnWallSection > 0)
+            state.onGuardKilled(clearingIndex, 0, true);
+            
+          state.wallBreaches++;
           this.onWildlingsInvade(state, clearing, clearing.wildlingsOfType(WILDLING_REGULAR), lastDice);
-      
-          state.onGuardKilled(clearingIndex, 0, true);
-          this.onWallBreach(state, clearing, lastDice);
-
           this.removeWildlingsFromClearing(clearing, recentWildling.type);
           
           return recentWildling;
@@ -176,7 +183,8 @@ class WildlingManager {
     state.wallBreaches++;
     
     // Then, one at a time, each of the wildlings on that clearing jumps over the Wall.
-    if (invade) this.onWildlingsInvade(state, breachedClearing, breachedClearing.wildlings, lastDice);
+    if (invade)
+      this.onWildlingsInvade(state, breachedClearing, breachedClearing.wildlings, lastDice);
   }
   
   // blocks the first hex not occupied by a wildling directly south of the wall section.
