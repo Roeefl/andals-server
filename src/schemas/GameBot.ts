@@ -26,6 +26,7 @@ import FirstMenGameState from '../north/FirstMenGameState';
 import { wallSectionsCount } from '../specs/wall';
 
 const WILDLING_DICE_MAX = 10;
+const AVATARS_COUNT = 20;
 
 class GameBot extends Player {
   constructor(color: string, playerIndex: number, replacing?: Player) {
@@ -51,6 +52,7 @@ class GameBot extends Player {
 
     super(sessionId, options, botColor, botIndex);
     this.isBot = true;
+    this.avatar = Math.floor(Math.random() * AVATARS_COUNT);
 
     if (replacing) {
       this.gameCards = replacing.gameCards;
