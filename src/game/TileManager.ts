@@ -214,8 +214,8 @@ class TileManager {
           // road: [7, 7], type: 3 || intersecting roads: [6, 6], [6, 7], [8, 5], [8, 6]
           case 3:
             intersections = [
-              [roadRow - 1, roadCol], [roadRow - 1, roadCol - 1],
-              [roadRow + 1, roadCol + colOffset + 1], [roadRow + 1, roadCol + colOffset + 2]
+              [roadRow - 1, roadCol - 1], [roadRow - 1, roadCol],
+              [roadRow + 1, roadCol - 2], [roadRow + 1, roadCol - 1]
             ];
             break;
         }
