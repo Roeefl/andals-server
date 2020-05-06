@@ -473,6 +473,12 @@ class Player extends Schema {
     this.isWaitingTradeRequest = false;
   }
 
+  postTradeCleanup() {
+    this.tradingWith = null;
+    this.isAgreeToTrade = false;
+    this.requestingResource = null;
+  }
+
   cancelTrade() {
     const updatedResourceCounts = resourceCardTypes.reduce((acc, name) => {
       acc[name] = this.resourceCounts[name] + this.tradeCounts[name];
@@ -485,7 +491,7 @@ class Player extends Schema {
 
     this.resetTradeCounts();
     this.resetTradeStatus();
-    this.tradingWith = null; 
+    this.postTradeCleanup();
   }
 
   performTrade(otherPlayerTradeCounts: Loot) {
@@ -499,6 +505,9 @@ class Player extends Schema {
     });
 
     this.updateHasResources();
+
+    this.resetTradeCounts();
+    this.postTradeCleanup();
   }
 
   discardResources(discardedCounts: Loot = {}) {

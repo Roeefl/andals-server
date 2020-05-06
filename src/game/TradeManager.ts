@@ -90,15 +90,6 @@ class TradeManager {
   onExecuteTrade(player1: Player, player2: Player) {
     player1.performTrade(player2.tradeCounts);
     player2.performTrade(player1.tradeCounts);
-  
-    player1.resetTradeCounts();
-    player2.resetTradeCounts();
-  
-    player1.tradingWith = null;
-    player2.tradingWith = null;
-
-    player1.requestingResource = null;
-    player2.requestingResource = null;
   }
 
   onStealCard(state: GameState, currentPlayer: Player, stealFrom: string, resource: string) {
