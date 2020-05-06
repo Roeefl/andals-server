@@ -14,18 +14,28 @@ import {
 } from '../constants';
 
 class TradeManager {
+  facilitateTrade(player1: Player, player2: Player, isAgreed: Boolean = true, offeredResource?: string) {
+    // Already in a trade
+    if (player1.tradingWith || player2.tradingWith) return;
+
+    player1.resetTradeStatus();
+    player2.resetTradeStatus();
+
+    if (!isAgreed) return;
+
+    player1.tradingWith = player2.playerSessionId;
+    player2.tradingWith = player1.playerSessionId;
+
+    if (offeredResource)
+      player1.updateTradeCounts(offeredResource);
+  }
+
   onStartEndTrade(state: GameState, type: string, currentPlayer: Player, withWho?: string, isAgreed?: boolean) {
     if (type === MESSAGE_TRADE_START_AGREED) {
       const { pendingTrade } = currentPlayer;
       const otherPlayer: Player = state.players[pendingTrade];
-  
-      currentPlayer.resetTradeStatus();
-      otherPlayer.resetTradeStatus();
-  
-      if (!isAgreed) return;
-  
-      currentPlayer.tradingWith = otherPlayer.playerSessionId;
-      otherPlayer.tradingWith = currentPlayer.playerSessionId;
+
+      this.facilitateTrade(currentPlayer, otherPlayer, isAgreed);
       return;
     }
   

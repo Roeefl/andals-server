@@ -33,6 +33,8 @@ import {
   MESSAGE_STEAL_CARD,
   MESSAGE_GAME_VICTORY,
   MESSAGE_TRADE_WITH_BANK,
+  MESSAGE_TRADE_REQUEST_RESOURCE,
+  MESSAGE_TRADE_REQUEST_RESOURCE_AGREE,
   MESSAGE_TRADE_REQUEST,
   MESSAGE_TRADE_START_AGREED,
   MESSAGE_TRADE_ADD_CARD,
@@ -40,7 +42,7 @@ import {
   MESSAGE_TRADE_CONFIRM,
   MESSAGE_TRADE_REFUSE,
   MESSAGE_PLACE_GUARD,
-  MESSAGE_WILDLINGS_REVEAL_TOKENS
+  MESSAGE_WILDLINGS_REVEAL_TOKENS,
 } from '../constants';
 
 import {
@@ -67,13 +69,13 @@ class BaseGame extends Room<GameState> {
       .length;
   }
 
-  get allBots() {
+  get allBots(): GameBot[] {
     return Object
       .values(this.state.players)
       .filter(player => player.isBot);
   }
 
-  get currentPlayer() {
+  get currentTurnPlayer() {
     const { currentTurn } = this.state;
     return this.state.allPlayers[currentTurn];
   }
@@ -331,7 +333,8 @@ class BaseGame extends Room<GameState> {
         currentPlayer.flexiblePurchase = null;
 
         this.broadcastToAll(MESSAGE_GAME_LOG, {
-          message: `${currentPlayer.nickname} built a ${structureType}`
+          message: `${currentPlayer.nickname} built a ${structureType}`,
+          notify: `${structureType}Placed`
         }, this.state.isGameStarted);
         break;
 
@@ -380,9 +383,32 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_TRADE_WITH_BANK:
+      case MESSAGE_TRADE_REQUEST_RESOURCE:
         const { requestedResource } = data;
-        BankManager.returnToBank(this.state, currentPlayer.tradeCounts);
-        TradeManager.onBankTrade(currentPlayer, requestedResource);
+
+        if (type === MESSAGE_TRADE_WITH_BANK) {
+          BankManager.returnToBank(this.state, currentPlayer.tradeCounts);
+          TradeManager.onBankTrade(currentPlayer, requestedResource);
+        }
+
+        if (type === MESSAGE_TRADE_REQUEST_RESOURCE) {
+          this.broadcast({
+            type: MESSAGE_TRADE_REQUEST_RESOURCE,
+            sender: currentPlayer.nickname,
+            senderSessionId: currentPlayer.playerSessionId,
+            requestedResource
+          });
+
+          const botsWithRequestedResource: GameBot[] = this.allBots.filter(bot => bot.resourceCounts[requestedResource] > 0);
+          if (botsWithRequestedResource.length) {
+            this.onGameAction(botsWithRequestedResource[0], MESSAGE_TRADE_REQUEST_RESOURCE_AGREE, { offeredResource: requestedResource });
+          }
+        }
+        break;
+
+      case MESSAGE_TRADE_REQUEST_RESOURCE_AGREE:
+        const { offeredResource } = data;
+        TradeManager.facilitateTrade(currentPlayer, this.currentTurnPlayer, true, offeredResource);
         break;
             
       case MESSAGE_TRADE_REQUEST:
@@ -405,7 +431,7 @@ class BaseGame extends Room<GameState> {
           (broadcastType: string, broadcastData: any, isEssential: boolean = false) => this.broadcastToAll(broadcastType, broadcastData, isEssential)
         );
 
-        await this.advanceBot(this.currentPlayer as GameBot);
+        await this.advanceBot(this.currentTurnPlayer as GameBot);
         break;
 
       case MESSAGE_PLACE_GUARD:
@@ -562,18 +588,14 @@ class BaseGame extends Room<GameState> {
   }
 
   allBotsCollectLoot() {
-    const allBots: GameBot[] = this.allBots;
-
-    allBots
+    this.allBots
       .filter(bot => bot.totalAvailableLoot > 0)
       .forEach(bot => this.onGameAction(bot, MESSAGE_COLLECT_ALL_LOOT));
   }
 
   allBotsRobbed() {
     console.log("allBotsRobbed -> allBotsRobbed")
-    const allBots: GameBot[] = this.allBots;
-
-    allBots
+    this.allBots
       .filter(bot => bot.totalResourceCounts > 7)
       .forEach(currentBot => {
         console.log("allBotsRobbed -> currentBot", currentBot.totalResourceCounts)
@@ -630,7 +652,7 @@ class BaseGame extends Room<GameState> {
 
     this.broadcastToAll(MESSAGE_GAME_LOG, {
       message: 'Starting turn order phase',
-      isTurnOrder: true
+      notify: 'isTurnOrder'
     }, true);
 
     this.state.isGameReady = true;
@@ -640,10 +662,9 @@ class BaseGame extends Room<GameState> {
     if (!this.state.withBots) return;
 
     // Game has bots
-    const bots: GameBot[] = this.allBots;
-    if (!bots.length) return;
+    if (!this.allBots.length) return;
 
-    const [firstBot] = bots;
+    const [firstBot] = this.allBots;
     if (firstBot.playerIndex !== 0) return;
 
     await this.advanceBot(firstBot);
