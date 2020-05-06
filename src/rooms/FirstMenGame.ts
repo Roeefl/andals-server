@@ -79,6 +79,7 @@ class FirstMenGame extends BaseGame {
 
         currentPlayer.swappingHeroCard = false
         HeroCardManager.swapPlayerHeroCard(state, currentPlayer, heroType);
+        WildlingManager.onTokensRevealed(state, 1);
         break;
 
       case MESSAGE_RELOCATE_GUARD:
@@ -174,9 +175,7 @@ class FirstMenGame extends BaseGame {
           heroCard: currentPlayer.currentHeroCard
         }, true);
         
-        HeroCardManager.playHeroCard(state, currentPlayer, heroType, isDiscard);
-        // WildlingManager.onTokensRevealed(state, 1);
-        
+        HeroCardManager.playHeroCard(state, currentPlayer, heroType, isDiscard);        
         break;
 
       case MESSAGE_TRADE_WITH_BANK:
