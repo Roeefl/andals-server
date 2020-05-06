@@ -94,6 +94,9 @@ class TradeManager {
   
     player1.tradingWith = null;
     player2.tradingWith = null;
+
+    player1.requestingResource = null;
+    player2.requestingResource = null;
   }
 
   onStealCard(state: GameState, currentPlayer: Player, stealFrom: string, resource: string) {

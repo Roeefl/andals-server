@@ -392,6 +392,11 @@ class BaseGame extends Room<GameState> {
         }
 
         if (type === MESSAGE_TRADE_REQUEST_RESOURCE) {
+          if (currentPlayer.tradingWith) {
+            currentPlayer.requestingResource = requestedResource;
+            break;
+          }
+
           this.broadcast({
             type: MESSAGE_TRADE_REQUEST_RESOURCE,
             sender: currentPlayer.nickname,

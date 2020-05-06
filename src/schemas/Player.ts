@@ -149,6 +149,9 @@ class Player extends Schema {
   @type("string")
   tradingWith: string | null = null
 
+  @type("string")
+  requestingResource: string | null = null
+
   @type({ map: "number" })
   tradeCounts: Loot
 
@@ -160,6 +163,12 @@ class Player extends Schema {
 
   @type("boolean")
   isWaitingTradeRequest: boolean = false
+
+  @type("boolean")
+  allowDirectTrade: boolean = false;
+
+  @type("number")
+  bankTradeRate: number
 
   @type({ map: "boolean" })
   hasResources: MapSchema<Boolean> 
@@ -187,12 +196,6 @@ class Player extends Schema {
 
   @type("boolean")
   swappingHeroCard: boolean = false;
-
-  @type("boolean")
-  allowDirectTrade: boolean = false;
-
-  @type("number")
-  bankTradeRate: number
   
   @type("boolean")
   allowRemoveRoad: boolean = false;
