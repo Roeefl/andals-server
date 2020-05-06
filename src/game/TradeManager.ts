@@ -9,6 +9,7 @@ import { Loot } from '../interfaces';
 import {
   MESSAGE_TRADE_REQUEST,
   MESSAGE_TRADE_START_AGREED,
+  MESSAGE_TRADE_AGREE,
   MESSAGE_TRADE_CONFIRM,
   MESSAGE_TRADE_REFUSE
 } from '../constants';
@@ -65,23 +66,24 @@ class TradeManager {
       return;
     }
   
-    if (type === MESSAGE_TRADE_CONFIRM) {
-      currentPlayer.isTradeConfirmed = !currentPlayer.isTradeConfirmed;
+    if (type === MESSAGE_TRADE_AGREE) {
+      currentPlayer.isAgreeToTrade = !currentPlayer.isAgreeToTrade;
+    }
   
-      if (otherPlayer.isTradeConfirmed) {
+    if (type === MESSAGE_TRADE_CONFIRM) {
+      if (otherPlayer.isAgreeToTrade)
         this.onExecuteTrade(currentPlayer, otherPlayer);
-      }
     }
   }
 
   onUpdateTrade(state: GameState, player: Player, resource: string, isRemoveCard?: boolean) {
     player.updateTradeCounts(resource, isRemoveCard);
-    player.isTradeConfirmed = false;
+    player.isAgreeToTrade = false;
 
     const { tradingWith } = player;
     if (tradingWith) {
       const otherPlayer: Player = state.players[tradingWith];
-      otherPlayer.isTradeConfirmed = false;
+      otherPlayer.isAgreeToTrade = false;
     }
   }
   

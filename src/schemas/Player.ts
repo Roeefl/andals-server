@@ -159,7 +159,7 @@ class Player extends Schema {
   pendingTrade: string = ''
 
   @type("boolean")
-  isTradeConfirmed: boolean = false
+  isAgreeToTrade: boolean = false
 
   @type("boolean")
   isWaitingTradeRequest: boolean = false

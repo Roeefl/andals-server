@@ -39,6 +39,7 @@ import {
   MESSAGE_TRADE_START_AGREED,
   MESSAGE_TRADE_ADD_CARD,
   MESSAGE_TRADE_REMOVE_CARD,
+  MESSAGE_TRADE_AGREE,
   MESSAGE_TRADE_CONFIRM,
   MESSAGE_TRADE_REFUSE,
   MESSAGE_PLACE_GUARD,
@@ -420,6 +421,7 @@ class BaseGame extends Room<GameState> {
       case MESSAGE_TRADE_START_AGREED:
       case MESSAGE_TRADE_REFUSE:
       case MESSAGE_TRADE_CONFIRM:
+      case MESSAGE_TRADE_AGREE:
         const { isAgreed, withWho } = data;
         TradeManager.onStartEndTrade(this.state, type, currentPlayer, withWho, isAgreed);
 
@@ -614,7 +616,7 @@ class BaseGame extends Room<GameState> {
     if (!tradingBot.isBot) return;
 
     if (tradingPlayer.totalTradeCounts === tradingBot.totalTradeCounts) {
-      this.onGameAction(tradingBot, MESSAGE_TRADE_CONFIRM);
+      this.onGameAction(tradingBot, MESSAGE_TRADE_AGREE);
       return;
     };
 
@@ -625,7 +627,7 @@ class BaseGame extends Room<GameState> {
     if (!selectedResource) return;
     
     this.onGameAction(tradingBot, type, selectedResource);
-    this.onGameAction(tradingBot, MESSAGE_TRADE_CONFIRM);
+    this.onGameAction(tradingBot, MESSAGE_TRADE_AGREE);
   }
 
   onChatMessage(sender: Player, message: string) {
