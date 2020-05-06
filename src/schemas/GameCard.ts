@@ -45,6 +45,9 @@ class GameCard extends Schema {
   @type("string")
   description: string
 
+  @type("number")
+  purchasedRound: number = -1
+
   @type("boolean")
   wasPlayed: boolean = false
 
