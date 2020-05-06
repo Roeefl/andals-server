@@ -378,7 +378,7 @@ class BaseGame extends Room<GameState> {
         TradeManager.onUpdateTrade(this.state, currentPlayer, resource, type === MESSAGE_TRADE_REMOVE_CARD);
         
         if (currentPlayer.tradingWith)
-          this.botsAdjustTrade(currentPlayer.tradingWith, type);
+          this.botsAdjustTrade(currentPlayer, currentPlayer.tradingWith, type);
 
         break;
 
@@ -604,13 +604,19 @@ class BaseGame extends Room<GameState> {
       });
   }
 
-  async botsAdjustTrade(tradingWith: string, type: string) {
+  async botsAdjustTrade(tradingPlayer: Player, tradingWith: string, type: string) {
     const tradingBot: GameBot = this.state.players[tradingWith];
     if (!tradingBot.isBot) return;
+
+    if (tradingPlayer.totalTradeCounts === tradingBot.totalTradeCounts) {
+      this.onGameAction(tradingBot, MESSAGE_TRADE_CONFIRM);
+      return;
+    };
 
     const selectedResource = type === MESSAGE_TRADE_ADD_CARD
       ? await tradingBot.bestAddedTradeResource()
       : await tradingBot.bestRemovedTradeResource();
+      
     if (!selectedResource) return;
     
     this.onGameAction(tradingBot, type, selectedResource);

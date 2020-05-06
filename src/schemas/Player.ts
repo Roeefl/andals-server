@@ -278,6 +278,11 @@ class Player extends Schema {
     return counts.reduce((d1, d2) => d1 + d2, 0);
   }
 
+  get totalTradeCounts() {
+    const counts: number[] = Object.values(this.tradeCounts);
+    return counts.reduce((d1, d2) => d1 + d2, 0);
+  }
+
   initializeSetupPhase() {
     this.hasResources = new MapSchema<Boolean>({
       road: false,
