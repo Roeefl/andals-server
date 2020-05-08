@@ -114,11 +114,11 @@ class BaseGame extends Room<GameState> {
     this.lock();
   }
 
-  broadcastToAll(type: string, data: Object = {}, isEssential: boolean = false) {
+  broadcastToAll(type: string, data: Object = {}, isAttention: boolean = false) {
     this.broadcast({
       sender: this.state.roomTitle,
       type,
-      isEssential,
+      isAttention,
       ...data
     });
   }
@@ -227,6 +227,7 @@ class BaseGame extends Room<GameState> {
 
         this.broadcastToAll(MESSAGE_ROLL_DICE, {
           playerName: currentPlayer.nickname,
+          playerColor: currentPlayer.color,
           dice
         }, (this.state.isGameStarted && dice.length >=2 && (dice[0] + dice[1] === 7)));
         
@@ -242,6 +243,7 @@ class BaseGame extends Room<GameState> {
         this.broadcastToAll(MESSAGE_COLLECT_ALL_LOOT, {
           playerSessionId: currentPlayer.playerSessionId,
           playerName: currentPlayer.nickname,
+          playerColor: currentPlayer.color,
           loot: currentPlayer.availableLoot
         });
 
@@ -252,6 +254,7 @@ class BaseGame extends Room<GameState> {
         this.broadcastToAll(MESSAGE_COLLECT_RESOURCE_LOOT, {
           playerSessionId: currentPlayer.playerSessionId,
           playerName: currentPlayer.nickname,
+          playerColor: currentPlayer.color,
           resource: data.resource
         });
 
@@ -263,6 +266,7 @@ class BaseGame extends Room<GameState> {
 
         this.broadcastToAll(MESSAGE_DISCARD_HALF_DECK, {
           playerName: currentPlayer.nickname,
+          playerColor: currentPlayer.color,
           discardedCounts
         });
         
@@ -295,6 +299,7 @@ class BaseGame extends Room<GameState> {
             this.broadcastToAll(MESSAGE_STEAL_CARD, {
               playerSessionId: currentPlayer.playerSessionId,
               playerName: currentPlayer.nickname,
+              playerColor: currentPlayer.color,
               stoleFrom: stoleFrom.nickname,
               stolenResource: data.resource
             });
@@ -310,16 +315,19 @@ class BaseGame extends Room<GameState> {
         else 
           currentPlayer.allowFreeRoads--;
 
-        this.broadcastToAll(MESSAGE_GAME_LOG, {
-          message: `${currentPlayer.nickname} has built a road at [${data.row}, ${data.col}]`
+        this.broadcastToAll(MESSAGE_PLACE_STRUCTURE, {
+          playerName: currentPlayer.nickname,
+          message: `has built a road at [${data.row}, ${data.col}]`,
+          playerColor: currentPlayer.color
         });
         break;
 
       case MESSAGE_REMOVE_ROAD:
         PurchaseManager.onRemoveRoad(this.state, data, currentPlayer.playerSessionId);
 
-        this.broadcastToAll(MESSAGE_GAME_LOG, {
-          message: `${currentPlayer.nickname} has removed a road at [${data.row}, ${data.col}]`
+        this.broadcastToAll(MESSAGE_PLACE_STRUCTURE, {
+          playerName: currentPlayer.nickname,
+          message: `has removed a road at [${data.row}, ${data.col}]`
         });
 
         currentPlayer.allowRemoveRoad = false;
@@ -333,8 +341,10 @@ class BaseGame extends Room<GameState> {
 
         currentPlayer.flexiblePurchase = null;
 
-        this.broadcastToAll(MESSAGE_GAME_LOG, {
-          message: `${currentPlayer.nickname} built a ${structureType}`,
+        this.broadcastToAll(MESSAGE_PLACE_STRUCTURE, {
+          playerName: currentPlayer.nickname,
+          message: `has built a ${structureType}`,
+          playerColor: currentPlayer.color,
           notify: `${structureType}Placed`
         }, this.state.isGameStarted);
         break;
@@ -361,6 +371,7 @@ class BaseGame extends Room<GameState> {
 
         this.broadcastToAll(MESSAGE_PLAY_GAME_CARD, {
           playerName: currentPlayer.nickname,
+          playerColor: currentPlayer.color,
           cardType
         }, true);
 
@@ -435,7 +446,7 @@ class BaseGame extends Room<GameState> {
 
       case MESSAGE_FINISH_TURN:
         TurnManager.finishTurn(this.state, currentPlayer,
-          (broadcastType: string, broadcastData: any, isEssential: boolean = false) => this.broadcastToAll(broadcastType, broadcastData, isEssential)
+          (broadcastType: string, broadcastData: any, isAttention: boolean = false) => this.broadcastToAll(broadcastType, broadcastData, isAttention)
         );
 
         await this.advanceBot(this.currentTurnPlayer as GameBot);
@@ -695,7 +706,8 @@ class BaseGame extends Room<GameState> {
 
         if (player.victoryPoints >= 10) {
           this.broadcastToAll(MESSAGE_GAME_VICTORY, {
-            playerName: player.nickname
+            playerName: player.nickname,
+            playerColor: player.color,
           }, true);
 
           this.state.isVictory = true;

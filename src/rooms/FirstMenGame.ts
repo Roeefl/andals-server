@@ -161,7 +161,7 @@ class FirstMenGame extends BaseGame {
         
         const wildlingDice: number = dice[2];
         WildlingManager.wildlingsAdvance(state, wildlingDice,
-          (broadcastType: string, data: any, isEssential: boolean = false) => this.broadcastToAll(broadcastType, data, isEssential));
+          (broadcastType: string, data: any, isAttention: boolean = false) => this.broadcastToAll(broadcastType, data, isAttention));
 
         this.evaluateWildlingVictory();
         break;
@@ -172,6 +172,7 @@ class FirstMenGame extends BaseGame {
 
         this.broadcastToAll(MESSAGE_PLAY_HERO_CARD, {
           playerName: currentPlayer.nickname,
+          playerColor: currentPlayer.color,
           heroCard: currentPlayer.currentHeroCard
         }, true);
         
@@ -287,7 +288,8 @@ class FirstMenGame extends BaseGame {
       // @TODO: If still tied, the tied player with the oldest guard on the wall wins (guard on the lowest number in any wall section).
 
       this.broadcastToAll(MESSAGE_GAME_VICTORY, {
-        playerName: winner.nickname
+        playerName: winner.nickname,
+        playerColor: winner.color
       }, true);
     }
   }

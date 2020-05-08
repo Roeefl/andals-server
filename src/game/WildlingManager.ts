@@ -211,7 +211,7 @@ class WildlingManager {
   }
 
   // Advance through trails on matching rolls
-  wildlingsAdvance(state: FirstMenGameState, wildlingDice: number, broadcast: (type: string, data: any, isEssential?: boolean) => void) {
+  wildlingsAdvance(state: FirstMenGameState, wildlingDice: number, broadcast: (type: string, data: any, isAttention?: boolean) => void) {
     state.wildlingClearings
       .filter(({ trails }) => trails.includes(wildlingDice))
       .forEach(clearing => {

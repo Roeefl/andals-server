@@ -27,7 +27,7 @@ class TurnManager {
       });
   }
 
-  finishTurn(state: GameState, player: Player, broadcast: (type: string, data: any, isEssential?: boolean) => void) {
+  finishTurn(state: GameState, player: Player, broadcast: (type: string, data: any, isAttention?: boolean) => void) {
     const {
       isSetupPhase,
       isTurnOrderPhase,
@@ -92,7 +92,7 @@ class TurnManager {
 
         state.setupPhaseTurns++;
 
-        broadcast(MESSAGE_GAME_LOG, { message: `${player.nickname} finished his turn` });
+        broadcast(MESSAGE_TURN_ORDER, { message: `${player.nickname} finished his turn`, playerColor: player.color });
         return;
       }
 
@@ -124,7 +124,7 @@ class TurnManager {
       state.currentTurn = (currentTurn + 1) % state.maxClients;
       state.setupPhaseTurns++;
 
-      broadcast(MESSAGE_GAME_LOG, { message: `${player.nickname} finished his turn` });
+      broadcast(MESSAGE_TURN_ORDER, { message: `${player.nickname} finished his turn`, playerColor: player.color });
       return;
     }
      
@@ -139,8 +139,7 @@ class TurnManager {
       this.onAllPlayersPickupLoot(state, broadcast);
 
     if (!state.isTurnOrderPhase)
-      broadcast(MESSAGE_TURN_ORDER, { message: `${player.nickname} finished his turn` });
-      
+      broadcast(MESSAGE_TURN_ORDER, { message: `${player.nickname} finished his turn`, playerColor: player.color });
 
     if (isEndOfRound) {
       broadcast(MESSAGE_GAME_LOG, { message: `Round ${currentRound} complete. Starting Round ${currentRound + 1}` });
@@ -148,7 +147,7 @@ class TurnManager {
     }
   }
 
-  startGame(state: GameState, broadcast: (type: string, data: any, isEssential?: boolean) => void) {
+  startGame(state: GameState, broadcast: (type: string, data: any, isAttention?: boolean) => void) {
     // END OF SETUP PHASE
     state.isSetupPhase = false;
     state.isGameStarted = true;
@@ -162,13 +161,14 @@ class TurnManager {
     state.currentTurn = state.roundStarter;
   }
 
-  onAllPlayersPickupLoot(state: GameState, broadcast: (type: string, data: any, isEssential?: boolean) => void) {
+  onAllPlayersPickupLoot(state: GameState, broadcast: (type: string, data: any, isAttention?: boolean) => void) {
     state.allPlayers
       .filter(player => player.totalAvailableLoot > 0)
       .forEach(player => {
         broadcast(MESSAGE_COLLECT_ALL_LOOT, {
           playerSessionId: player.playerSessionId,
           playerName: player.nickname,
+          playerColor: player.color,
           loot: player.availableLoot
         });
 
