@@ -7,7 +7,18 @@ import ClanArea from '../schemas/ClanArea';
 import WildlingClearing from '../schemas/WildlingClearing';
 import Wildling from '../schemas/Wildling';
 
-import { totalTokens, clanNames, wildlingTypes, clansManifest, trailRoutes, WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT, tokensPerPurchase } from '../specs/wildlings';
+import {
+  totalTokens,
+  clanNames,
+  wildlingTypes,
+  clansManifest,
+  trailRoutes,
+  tokensPerPurchase,
+  WILDLING_REGULAR,
+  WILDLING_CLIMBER,
+  WILDLING_GIANT,
+  WILDLING_WHITE_WALKER
+} from '../specs/wildlings';
 import { ClanManifest } from '../interfaces';
 import { MESSAGE_WILDLINGS_ADVANCE_CLEARING, MESSAGE_WILDLINGS_WALL_BATTLE } from '../constants';
 
@@ -22,7 +33,7 @@ class WildlingManager {
           : 0;
           
         const wildlingType = wildlingTypes[adjustedIndex];
-  
+          
         const randomClan = Math.floor(Math.random() * clanNames.length);
         const clanType = clanNames[randomClan];
 
@@ -87,7 +98,7 @@ class WildlingManager {
       ...updatedCamps
     );
 
-    if (currentClan.camps.length > currentClan.campfires) //  || wildlingType === WILDLING_WHITE_WALKER)
+    if (currentClan.camps.length > currentClan.campfires || wildlingType === WILDLING_WHITE_WALKER)
       this.wildlingsRush(state, currentClan);
   }
 
@@ -163,14 +174,14 @@ class WildlingManager {
           return recentWildling;
         };
 
-      // case WILDLING_WHITE_WALKER:
-      //   this.onWallBreach(state, clearing, lastDice, false);
-      //   state.onAllGuardsKilled(clearingIndex);
+      case WILDLING_WHITE_WALKER:
+        this.onWallBreach(state, clearing, lastDice, false);
+        state.onAllGuardsKilled(clearingIndex);
 
-      //   this.removeWildlingsFromClearing(clearing, recentWildling.type);
-      //   state.spawnCounts[WILDLING_WHITE_WALKER]++;
+        this.removeWildlingsFromClearing(clearing, recentWildling.type);
+        state.spawnCounts[WILDLING_WHITE_WALKER]++;
         
-      //   return recentWildling;
+        return recentWildling;
 
       default:
         break;
