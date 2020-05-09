@@ -28,7 +28,7 @@ class TileManager {
   //     [row - 1, col - 1], [row - 1, col],
   //     [row, col - 1], [row, col + 1],
   //     [row + 1, col - 1], [row + 1, col]
-  //   ].filter(([hexRow, hexCol]) => hexRow >= 0 && hexRow < hexTileMap.length && hexCol >= 0 && hexCol <= hexTileMap[0].length);
+  //   ].filter(([hexRow, hexCol]) => hexRow >= 0 && hexRow < hexTilemap.length && hexCol >= 0 && hexCol <= hexTilemap[0].length);
   // }
 
   hexTileAdjacentStructures(row: number, col: number) {

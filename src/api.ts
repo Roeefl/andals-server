@@ -4,6 +4,11 @@ import express, { Application } from 'express';
 import buildingCosts from './specs/buildingCosts';
 import { clansManifest } from './specs/wildlings';
 
+import {
+  baseGameManifest,
+  firstmenManifest
+} from './manifest';
+
 const DEFAULT_COLUMNS: string[] = [
   'roomId',
   'processId',
@@ -73,5 +78,14 @@ export function setApiRoutes(app: Application) {
     }
   });
 
-  // return api;
+  app.get('/api/gameManifests', async (req: express.Request, res: express.Response) => {
+    try {
+      res.json({
+        baseGame: baseGameManifest,
+        firstMen: firstmenManifest
+      }); 
+    } catch (err) {
+      onError(res, err);
+    }
+  });
 };

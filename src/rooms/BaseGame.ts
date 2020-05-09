@@ -226,6 +226,7 @@ class BaseGame extends Room<GameState> {
         console.log("onGameAction -> isRobbing", isRobbing)
 
         this.broadcastToAll(MESSAGE_ROLL_DICE, {
+          senderSessionId: currentPlayer.playerSessionId,
           playerName: currentPlayer.nickname,
           playerColor: currentPlayer.color,
           dice
@@ -530,10 +531,12 @@ class BaseGame extends Room<GameState> {
       return;
     }
 
+    await currentBot.think(1000);
+
     const botDice: number[] = await GameBot.rollDice(this.state.roomType);
     this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
 
-    await currentBot.think(1500);
+    await currentBot.think(1000);
 
     // Do not advance as long as any other player still has not discarded his deck (on robber)
     const otherPlayers: Player[] = this.state.otherPlayers(currentBot);
@@ -544,16 +547,19 @@ class BaseGame extends Room<GameState> {
     }
 
     if (currentBot.mustMoveRobber) {
+      await currentBot.think(1000);
       const tile = await GameBot.desiredRobberTile(this.state, currentBot.playerSessionId);
       this.onGameAction(currentBot, MESSAGE_MOVE_ROBBER, { tile });
     }
 
     if (currentBot.mustDiscardHalfDeck) {
+      await currentBot.think(1000);
       const discardedCounts: Loot = currentBot.discardedCounts();
       this.onGameAction(currentBot, MESSAGE_DISCARD_HALF_DECK, { discardedCounts });
     }
   
     if (currentBot.allowStealingFrom.length) {
+      await currentBot.think(1000);
       const stealData = currentBot.stealCard(this.state);
       
       if (stealData)

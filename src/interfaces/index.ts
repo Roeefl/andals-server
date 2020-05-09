@@ -33,7 +33,7 @@ export interface FlexiblePurchase {
 export interface GameManifest {
   roomType: string
   purchaseTypes: string[]
-  tilemap: number[][]
+  hexTilemap: number[][]
   structureTilemap: number[][]
   roadTilemap: number[][]
   boardLayout: string[]

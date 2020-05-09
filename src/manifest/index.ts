@@ -1,13 +1,13 @@
 import { Loot, GameManifest } from '../interfaces';
 import { ROOM_TYPE_BASE_GAME, ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
 
-import baseGameHexTileMap from '../tilemaps/baseGame/hexes';
-import baseGameStructureTileMap from '../tilemaps/baseGame/structures';
-import baseGameRoadTileMap from '../tilemaps/baseGame/roads';
+import baseGameHexTilemap from '../tilemaps/baseGame/hexes';
+import baseGameStructureTilemap from '../tilemaps/baseGame/structures';
+import baseGameRoadTilemap from '../tilemaps/baseGame/roads';
 
-import firstMenHexTileMap from '../tilemaps/firstMen/hexes';
-import firstMenStructureTileMap from '../tilemaps/firstMen/structures';
-import firstMenRoadTileMap from '../tilemaps/firstMen/roads';
+import firstMenHexTilemap from '../tilemaps/firstMen/hexes';
+import firstMenStructureTilemap from '../tilemaps/firstMen/structures';
+import firstMenRoadTilemap from '../tilemaps/firstMen/roads';
 
 export const resourceTypes: string[] = ['lumber', 'brick', 'sheep', 'wheat', 'ore', 'desert', 'water', 'harborGeneric'];
 export const [LUMBER, BRICK, SHEEP, WHEAT, ORE, DESERT, WATER, HARBOR_GENERIC] = resourceTypes;
@@ -132,9 +132,9 @@ const firstmenHarborIndices = [33, 34, 35, 36, 37];
 export const baseGameManifest: GameManifest = {
   roomType: ROOM_TYPE_BASE_GAME,
   purchaseTypes: purchaseTypes.filter(type => type !== PURCHASE_GUARD),
-  tilemap: baseGameHexTileMap,
-  structureTilemap: baseGameStructureTileMap,
-  roadTilemap: baseGameRoadTileMap,
+  hexTilemap: baseGameHexTilemap,
+  structureTilemap: baseGameStructureTilemap,
+  roadTilemap: baseGameRoadTilemap,
   boardLayout: baseGameBoardLayout,
   boardValues: baseGameBoardValues,
   boardHarbors: baseGameHarbors,
@@ -145,9 +145,9 @@ export const baseGameManifest: GameManifest = {
 export const firstmenManifest: GameManifest = {
   roomType: ROOM_TYPE_FIRST_MEN,
   purchaseTypes,
-  tilemap: firstMenHexTileMap,
-  structureTilemap: firstMenStructureTileMap,
-  roadTilemap: firstMenRoadTileMap,
+  hexTilemap: firstMenHexTilemap,
+  structureTilemap: firstMenStructureTilemap,
+  roadTilemap: firstMenRoadTilemap,
   boardLayout: firstmenBoardLayout,
   boardValues: firstmenBoardValues,
   boardHarbors: firstmenHarbors,
