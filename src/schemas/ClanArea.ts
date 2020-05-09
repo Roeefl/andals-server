@@ -16,7 +16,7 @@ class ClanArea extends Schema {
     super();
 
     this.clanType = clanType;
-    this.campfires = 4;
+    this.campfires = 5;
     this.camps = new ArraySchema<Wildling>();
   }
 };
