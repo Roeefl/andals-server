@@ -1,4 +1,3 @@
-import { ArraySchema } from '@colyseus/schema';
 import { Room, Client } from 'colyseus';
 import Player from '../schemas/Player';
 import GameBot from '../schemas/GameBot';
@@ -12,6 +11,7 @@ import GameCardManager from '../game/GameCardManager';
 import TradeManager from '../game/TradeManager';
 import DiceManager from '../game/DiceManager';
 import WildlingManager from '../game/WildlingManager';
+import HeroCardManager from '../game/HeroCardManager';
 
 import {
   MESSAGE_GAME_LOG,
@@ -44,6 +44,7 @@ import {
   MESSAGE_TRADE_REFUSE,
   MESSAGE_PLACE_GUARD,
   MESSAGE_WILDLINGS_REVEAL_TOKENS,
+  MESSAGE_PLAY_HERO_CARD,
 } from '../constants';
 
 import {
@@ -56,7 +57,6 @@ import {
   PURCHASE_CITY
 } from '../manifest';
 
-import { tileIndex } from '../utils/board';
 import { RoomOptions, Loot, FlexiblePurchase } from '../interfaces';
 import FirstMenGameState from '../north/FirstMenGameState';
 import { ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
@@ -497,6 +497,7 @@ class BaseGame extends Room<GameState> {
   async advanceBot(currentBot: GameBot) {
     if (!currentBot.isBot) return;
 
+    /** TURN ORDER PHASE */
     if (this.state.isTurnOrderPhase) {
       const botDice: number[] = await GameBot.rollDice(this.state.roomType);
       this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
@@ -505,6 +506,7 @@ class BaseGame extends Room<GameState> {
       return;
     }
     
+    /** SETUP PHASE */
     if (this.state.isSetupPhase) {
       if (this.state.setupPhaseTurns > this.state.maxClients * 2 - 1) {
         // in Guard placement round
@@ -531,6 +533,7 @@ class BaseGame extends Room<GameState> {
       return;
     }
 
+    /** REGULAR TURN */
     await currentBot.think(1000);
 
     const botDice: number[] = await GameBot.rollDice(this.state.roomType);
@@ -538,7 +541,7 @@ class BaseGame extends Room<GameState> {
 
     await currentBot.think(1000);
 
-    // Do not advance as long as any other player still has not discarded his deck (on robber)
+    /** Do not advance as long as any other player still has not discarded his deck (on robber) */
     const otherPlayers: Player[] = this.state.otherPlayers(currentBot);
     let anyPlayerStillDiscarding = otherPlayers.some(player => player.mustDiscardHalfDeck);
     while (anyPlayerStillDiscarding) {
@@ -546,6 +549,7 @@ class BaseGame extends Room<GameState> {
       anyPlayerStillDiscarding = otherPlayers.some(player => player.mustDiscardHalfDeck);
     }
 
+    /** FORCED GAME ACTIONS */
     if (currentBot.mustMoveRobber) {
       await currentBot.think(1000);
       const tile = await GameBot.desiredRobberTile(this.state, currentBot.playerSessionId);
@@ -566,13 +570,7 @@ class BaseGame extends Room<GameState> {
         this.onGameAction(currentBot, MESSAGE_STEAL_CARD, stealData);
     }
 
-    if (currentBot.hasResources.guard) {
-      const guard = await GameBot.validGuard(this.state as FirstMenGameState, currentBot.playerSessionId);
-
-      if (guard)
-        this.onGameAction(currentBot, MESSAGE_PLACE_GUARD, guard);
-    }
-    
+    /** PURCHASEABLES IN PRIORITY ORDER */
     if (currentBot.hasResources.city) {
       const city = await GameBot.validCity(this.state, currentBot.playerSessionId);
 
@@ -582,13 +580,6 @@ class BaseGame extends Room<GameState> {
         if (this.state.isGameStarted && this.state.roomType === ROOM_TYPE_FIRST_MEN)
           this.onBotTokensRevealedPurchase(PURCHASE_CITY);
       }
-    }
-
-    if (currentBot.hasResources.gameCard) {
-      this.onGameAction(currentBot, MESSAGE_PURCHASE_GAME_CARD);
-
-      if (this.state.isGameStarted && this.state.roomType === ROOM_TYPE_FIRST_MEN)
-        this.onBotTokensRevealedPurchase(PURCHASE_GAME_CARD);
     }
 
     if (currentBot.hasResources.settlement) {
@@ -602,13 +593,47 @@ class BaseGame extends Room<GameState> {
       }
     }
 
+    if (currentBot.hasResources.guard) {
+      const guard = await GameBot.validGuard(this.state as FirstMenGameState, currentBot.playerSessionId);
+
+      if (guard)
+        this.onGameAction(currentBot, MESSAGE_PLACE_GUARD, guard);
+    }
+
+    if (currentBot.hasResources.gameCard) {
+      this.onGameAction(currentBot, MESSAGE_PURCHASE_GAME_CARD);
+
+      if (this.state.isGameStarted && this.state.roomType === ROOM_TYPE_FIRST_MEN)
+        this.onBotTokensRevealedPurchase(PURCHASE_GAME_CARD);
+    }
+
     if (currentBot.hasResources.road) {
       const road = await GameBot.validRoad(this.state, currentBot);
       if (road)
         this.onGameAction(currentBot, MESSAGE_PLACE_ROAD, road);
     }
 
+    if (!currentBot.hasPlayedHeroCard) {
+      const shouldPlayHero = Math.floor(Math.random() * 2);
+
+      if (shouldPlayHero)
+        this.onBotPlayHeroCard(currentBot);
+    }
+
     this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
+  }
+
+  onBotPlayHeroCard(currentBot: GameBot) {
+    const { type: heroType } = currentBot.currentHeroCard;
+    const isDiscard = true;
+
+    this.broadcastToAll(MESSAGE_PLAY_HERO_CARD, {
+      playerName: currentBot.nickname,
+      playerColor: currentBot.color,
+      heroCard: currentBot.currentHeroCard
+    }, true);
+    
+    HeroCardManager.playHeroCard(this.state as FirstMenGameState, currentBot, heroType, isDiscard);        
   }
 
   allBotsCollectLoot() {

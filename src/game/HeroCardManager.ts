@@ -200,8 +200,6 @@ class HeroCardManager {
     state.heroCards = new ArraySchema<HeroCard>(
       ...updatedHeroCards
     );
-
-    // currentPlayer.hasPlayedHeroCard = false;
   }
 
   higherVpOpponents(state: FirstMenGameState, currentPlayer: Player): string[] {

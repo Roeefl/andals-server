@@ -168,7 +168,7 @@ class FirstMenGame extends BaseGame {
         
       case MESSAGE_PLAY_HERO_CARD:
         const { heroType, isDiscard = false } = data;
-        console.log("FirstMenGame -> onMessage -> heroType", heroType, isDiscard)
+        console.log("FirstMenGame -> onMessage -> heroType, isDiscard", heroType, isDiscard)
 
         this.broadcastToAll(MESSAGE_PLAY_HERO_CARD, {
           playerName: currentPlayer.nickname,
