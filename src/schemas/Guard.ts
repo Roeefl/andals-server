@@ -1,8 +1,12 @@
 import { type, Schema } from '@colyseus/schema';
+import { PURCHASE_GUARD } from '../manifest';
 
 class Guard extends Schema {
   @type("string")
   ownerId: string
+
+  @type("string")
+  type: string
 
   @type("number")
   section: number
@@ -14,6 +18,7 @@ class Guard extends Schema {
     super();
     
     this.ownerId = ownerId;
+    this.type = PURCHASE_GUARD;
     this.section = section;
     this.position = position;
   }
