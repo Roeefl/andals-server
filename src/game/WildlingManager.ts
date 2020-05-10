@@ -133,6 +133,30 @@ class WildlingManager {
     );
   }
 
+  removeWildlingFromClearing(state: FirstMenGameState, clearingIndex: number, wildlingIndex: number) {
+    const clearing = state.wildlingClearings[clearingIndex];
+
+    const updatedClearing: Wildling[] = clearing.wildlings
+      .filter((w, index) => index !== wildlingIndex);
+
+    clearing.wildlings = new ArraySchema<Wildling>(
+      ...updatedClearing
+    );
+  }
+
+  removeWildlingFromCamp(state: FirstMenGameState, clanName: string, campIndex: number) {
+    const clan: ClanArea = state.clanAreas[clanName];
+
+    const removedWildlingType = clan.camps[campIndex].type;
+    
+    const updatedCamps: Wildling[] = clan.camps.filter((w, index) => index !== campIndex);
+    clan.camps = new ArraySchema<Wildling>(
+      ...updatedCamps
+    );
+
+    state.spawnCounts[removedWildlingType]++;
+  }
+
   evaluateClearing(state: FirstMenGameState, clearing: WildlingClearing, recentWildling: Wildling, lastDice?: number): Wildling | null {
     const { clearingIndex } = clearing;
     console.log("WildlingManager -> clearingIndex", clearingIndex)

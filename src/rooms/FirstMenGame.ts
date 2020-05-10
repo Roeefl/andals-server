@@ -95,16 +95,12 @@ class FirstMenGame extends BaseGame {
 
       case MESSAGE_WILDLINGS_REMOVE_FROM_CAMP:
         const { clanName, campIndex } = data;
-        console.log("FirstMenGame -> onMessage -> campIndex", campIndex)
-        console.log("FirstMenGame -> onMessage -> clanName", clanName)
-
+        WildlingManager.removeWildlingFromCamp(state, clanName, campIndex);
         break;
 
       case MESSAGE_WILDLINGS_REMOVE_FROM_CLEARING:
         const { clearingIndex, wildlingIndex } = data;
-        console.log("FirstMenGame -> onMessage -> wildlingIndex", wildlingIndex)
-        console.log("FirstMenGame -> onMessage -> clearingIndex", clearingIndex)
-
+        WildlingManager.removeWildlingFromClearing(state, clearingIndex, wildlingIndex);
         break;
       
       default:
@@ -173,7 +169,7 @@ class FirstMenGame extends BaseGame {
         this.broadcastToAll(MESSAGE_PLAY_HERO_CARD, {
           playerName: currentPlayer.nickname,
           playerColor: currentPlayer.color,
-          heroCard: currentPlayer.currentHeroCard
+          heroCardType: currentPlayer.currentHeroCard.type
         }, true);
         
         HeroCardManager.playHeroCard(state, currentPlayer, heroType, isDiscard);        
@@ -191,6 +187,13 @@ class FirstMenGame extends BaseGame {
           if (lastRobberTile.resource) {
             currentPlayer.addResource(lastRobberTile.resource);
             BankManager.loseResource(state, lastRobberTile.resource);
+
+            this.broadcastToAll(MESSAGE_COLLECT_RESOURCE_LOOT, {
+              playerSessionId: currentPlayer.playerSessionId,
+              playerName: currentPlayer.nickname,
+              playerColor: currentPlayer.color,
+              resource: data.resource
+            });    
           }
         }
 
