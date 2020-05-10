@@ -435,6 +435,16 @@ class BaseGame extends Room<GameState> {
       case MESSAGE_TRADE_CONFIRM:
       case MESSAGE_TRADE_AGREE:
         const { isAgreed, withWho } = data;
+
+        if (type === MESSAGE_TRADE_CONFIRM) {
+          const otherPlayer: Player = this.state.players[currentPlayer.tradingWith];
+
+          this.broadcastToAll(MESSAGE_TRADE_CONFIRM, {
+            player1: currentPlayer.nickname,
+            player2: otherPlayer.nickname
+          }, true);
+        }
+
         TradeManager.onStartEndTrade(this.state, type, currentPlayer, withWho, isAgreed);
 
         if (type === MESSAGE_TRADE_REQUEST && withWho) {
