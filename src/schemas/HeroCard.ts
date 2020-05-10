@@ -133,6 +133,9 @@ class HeroCard extends Schema {
   
   @type("number")
   order: number
+
+  @type("number")
+  purchasedRound: number = -1
   
   @type("boolean")
   wasPlayed: boolean

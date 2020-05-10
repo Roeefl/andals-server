@@ -187,10 +187,12 @@ class HeroCardManager {
     const swappedHeroCard = currentPlayer.currentHeroCard;
     swappedHeroCard.ownerId = null;
     swappedHeroCard.wasPlayed = false;
+    swappedHeroCard.purchasedRound = -1;
 
     currentPlayer.currentHeroCard = desiredHeroCard;
     desiredHeroCard.ownerId = currentPlayer.playerSessionId;
     desiredHeroCard.wasPlayed = false;
+    desiredHeroCard.purchasedRound = state.currentRound;
 
     const updatedHeroCards: HeroCard[] = [
       ...state.heroCards.filter(({ type }) => type !== desiredHeroCard.type),
