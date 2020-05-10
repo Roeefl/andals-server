@@ -34,7 +34,7 @@ import {
   MESSAGE_GAME_VICTORY,
   MESSAGE_TRADE_WITH_BANK,
   MESSAGE_TRADE_REQUEST_RESOURCE,
-  MESSAGE_TRADE_REQUEST_RESOURCE_AGREE,
+  MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND,
   MESSAGE_TRADE_REQUEST,
   MESSAGE_TRADE_START_AGREED,
   MESSAGE_TRADE_ADD_CARD,
@@ -419,14 +419,27 @@ class BaseGame extends Room<GameState> {
 
           const botsWithRequestedResource: GameBot[] = this.allBots.filter(bot => bot.resourceCounts[requestedResource] > 0);
           if (botsWithRequestedResource.length) {
-            this.onGameAction(botsWithRequestedResource[0], MESSAGE_TRADE_REQUEST_RESOURCE_AGREE, { offeredResource: requestedResource });
+            this.onGameAction(botsWithRequestedResource[0], MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND, { offeredResource: requestedResource, isAgreed: true });
           }
         }
         break;
 
-      case MESSAGE_TRADE_REQUEST_RESOURCE_AGREE:
+      case MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND:
         const { offeredResource } = data;
-        TradeManager.facilitateTrade(currentPlayer, this.currentTurnPlayer, true, offeredResource);
+        
+        if (data.isAgreed) {
+          TradeManager.facilitateTrade(currentPlayer, this.currentTurnPlayer, true, offeredResource);
+
+          this.broadcast({
+            type: MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND,
+            isTradeStarted: true
+          });
+        } else {
+          this.broadcast({
+            type: MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND,
+            whoRefused: currentPlayer.playerSessionId
+          });
+        }
         break;
             
       case MESSAGE_TRADE_REQUEST:
