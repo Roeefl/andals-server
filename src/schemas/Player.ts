@@ -505,9 +505,6 @@ class Player extends Schema {
     });
 
     this.updateHasResources();
-
-    this.resetTradeCounts();
-    this.postTradeCleanup();
   }
 
   discardResources(discardedCounts: Loot = {}) {

@@ -71,8 +71,7 @@ class TradeManager {
     }
   
     if (type === MESSAGE_TRADE_CONFIRM) {
-      if (otherPlayer.isAgreeToTrade)
-        this.onExecuteTrade(currentPlayer, otherPlayer);
+      if (otherPlayer.isAgreeToTrade) this.onExecuteTrade(currentPlayer, otherPlayer);
     }
   }
 
@@ -90,6 +89,12 @@ class TradeManager {
   onExecuteTrade(player1: Player, player2: Player) {
     player1.performTrade(player2.tradeCounts);
     player2.performTrade(player1.tradeCounts);
+
+    player1.resetTradeCounts();
+    player2.resetTradeCounts();
+
+    player1.postTradeCleanup();
+    player2.postTradeCleanup();
   }
 
   onStealCard(state: GameState, currentPlayer: Player, stealFrom: string, resource: string) {
@@ -138,6 +143,7 @@ class TradeManager {
 
     currentPlayer.performTrade(playerIsReceiving);
     currentPlayer.resetTradeCounts();
+    currentPlayer.postTradeCleanup();
   }
 
   allowStealingFrom(state: GameState, currentPlayer: Player, fromPlayersSessionIds: string[]) {
