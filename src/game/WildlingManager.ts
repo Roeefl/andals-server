@@ -22,6 +22,11 @@ import {
 import { ClanManifest } from '../interfaces';
 import { MESSAGE_WILDLINGS_ADVANCE_CLEARING, MESSAGE_WILDLINGS_WALL_BATTLE } from '../constants';
 
+interface WildlingsAdvanceSummary {
+  invader: Wildling | null
+  guardsKilled: number
+}
+
 class WildlingManager {
   shuffleTokens(): WildlingToken[] {
     return Array(totalTokens)
@@ -157,55 +162,65 @@ class WildlingManager {
     state.spawnCounts[removedWildlingType]++;
   }
 
-  evaluateClearing(state: FirstMenGameState, clearing: WildlingClearing, recentWildling: Wildling, lastDice?: number): Wildling | null {
+  evaluateClearing(state: FirstMenGameState, clearing: WildlingClearing, recentWildling: Wildling, lastDice?: number): WildlingsAdvanceSummary  {
     const { clearingIndex } = clearing;
     console.log("WildlingManager -> clearingIndex", clearingIndex)
 
     const guardsOnWallSection = state.guardsOnWallSection(clearingIndex);
     console.log("WildlingManager -> guardsOnWallSection", guardsOnWallSection)
+    
+    let guardsKilled = 0;
 
     switch (recentWildling.type) {
       case WILDLING_CLIMBER:
         this.onWildlingsInvade(state, clearing, [recentWildling], lastDice);
         this.removeWildlingsFromClearing(clearing, recentWildling.type);
 
-        return recentWildling;
+        return { invader: recentWildling, guardsKilled: 0 };
 
       case WILDLING_GIANT:
         if (!guardsOnWallSection) {
           this.onWallBreach(state, clearing, lastDice);
         } else {
           state.onGuardKilled(clearingIndex, 0, true);
+          ++guardsKilled;
         }
 
         this.removeWildlingsFromClearing(clearing, recentWildling.type);
         state.spawnCounts[WILDLING_GIANT]++;
 
-        return recentWildling;
+        return { invader: null, guardsKilled };
 
       case WILDLING_REGULAR:
         const regularWildlingsInClearing = clearing.wildlingsCountOfType(WILDLING_REGULAR);
         console.log("WildlingManager -> regularWildlingsInClearing", regularWildlingsInClearing, ' >? ', guardsOnWallSection)
 
-        if (regularWildlingsInClearing > guardsOnWallSection) {
-          if (guardsOnWallSection > 0)
-            state.onGuardKilled(clearingIndex, 0, true);
-            
-          state.wallBreaches++;
-          this.onWildlingsInvade(state, clearing, clearing.wildlingsOfType(WILDLING_REGULAR), lastDice);
-          this.removeWildlingsFromClearing(clearing, recentWildling.type);
+        if (regularWildlingsInClearing <= guardsOnWallSection)
+          return { invader: null, guardsKilled: 0 };
+
+        // More regular widllings than guards - BREACH!
+        state.wallBreaches++;
+
+        if (guardsOnWallSection > 0) {
+          state.onGuardKilled(clearingIndex, 0, true);
+          ++guardsKilled
+        }
           
-          return recentWildling;
-        };
+        this.onWildlingsInvade(state, clearing, clearing.wildlingsOfType(WILDLING_REGULAR), lastDice);
+        this.removeWildlingsFromClearing(clearing, recentWildling.type);
+        
+        return { invader: recentWildling, guardsKilled };
 
       case WILDLING_WHITE_WALKER:
         this.onWallBreach(state, clearing, lastDice, false);
+
+        guardsKilled = guardsKilled + guardsOnWallSection;
         state.onAllGuardsKilled(clearingIndex);
 
         this.removeWildlingsFromClearing(clearing, recentWildling.type);
         state.spawnCounts[WILDLING_WHITE_WALKER]++;
-        
-        return recentWildling;
+
+        return { invader: null, guardsKilled };
 
       default:
         break;
@@ -259,18 +274,22 @@ class WildlingManager {
 
           if (clan.camps.length) {
             const [firstWildling] = clan.camps;
-            const invader = this.wildlingAdvancesToClearing(state, clan, clearing, firstWildling, wildlingDice);
+
+            const wildlingsAdvanceSummary: WildlingsAdvanceSummary = this.wildlingAdvancesToClearing(state, clan, clearing, firstWildling, wildlingDice);
+            const { invader, guardsKilled } = wildlingsAdvanceSummary;
             
-            if (invader)
-              broadcast(MESSAGE_WILDLINGS_WALL_BATTLE, { invader }, true);
-            else
-              broadcast(MESSAGE_WILDLINGS_ADVANCE_CLEARING, { wildling: firstWildling }, true);
+            if (invader) {
+              broadcast(MESSAGE_WILDLINGS_WALL_BATTLE, { invader, guardsKilled }, true);
+            }
+            else {
+              broadcast(MESSAGE_WILDLINGS_ADVANCE_CLEARING, { wildling: firstWildling, guardsKilled }, true);
+            }
           }
         };
       });
   }
 
-  wildlingAdvancesToClearing(state: FirstMenGameState, clan: ClanArea, clearing: WildlingClearing, wildling: Wildling, wildlingDice?: number): Wildling | null {
+  wildlingAdvancesToClearing(state: FirstMenGameState, clan: ClanArea, clearing: WildlingClearing, wildling: Wildling, wildlingDice?: number): WildlingsAdvanceSummary {
     // No wildlings to advance from camps to clearing
     if (!clan.camps.length) return;
 
