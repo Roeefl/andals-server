@@ -6,10 +6,11 @@ import { minBy } from 'lodash';
 import GameState from '../game/GameState';
 import Player, { PlayerOptions } from './Player';
 import Structure from './Structure';
-import TileManager, { ValidStructurePosition, ValidHextile } from '../game/TileManager';
+import TileManager, { ValidStructurePosition } from '../game/TileManager';
 import { generateSessionId } from '../utils/sessionId';
 import { absoluteIndex } from '../utils/board';
 
+import buildingCosts from '../specs/buildingCosts';
 import { ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
 
 import {
@@ -17,10 +18,11 @@ import {
   PURCHASE_SETTLEMENT,
   PURCHASE_CITY,
   resourceCardTypes,
-  LUMBER
+  LUMBER,
+  PURCHASE_GUARD
 } from '../manifest';
 
-import { Loot, ResourceToSteal } from '../interfaces';
+import { Loot, ResourceToSteal, BuildingCost, FlexiblePurchase } from '../interfaces';
 import FirstMenGameState from '../north/FirstMenGameState';
 
 import { wallSectionsCount } from '../specs/wall';
@@ -138,7 +140,7 @@ class GameBot extends Player {
     };
   }
 
-  static async validGuard(state: FirstMenGameState, botSessionId: string) {
+  static async validGuard(state: FirstMenGameState, currentBot: Player) {
     await delay(1000);
     
     const guardsOnEachSection = Array(wallSectionsCount).fill(0)
@@ -152,9 +154,32 @@ class GameBot extends Player {
       section => section.guardsCount
     );
 
+    const additionalData: FlexiblePurchase = {
+      swapWhich: undefined,
+      swapWith: undefined
+    };
+
+    if (currentBot.flexiblePurchase === PURCHASE_GUARD) {
+        const costs: BuildingCost = buildingCosts.guard;
+        
+        const missingResource = Object
+          .entries(currentBot.resourceCounts)
+          .filter(([resource]) => costs[resource] > 0)
+          .find(([resource, value]) => value < 1);
+
+        if (missingResource) {
+          const [missingResourceName] = missingResource;
+          additionalData.swapWhich = missingResourceName;
+
+          const { resource } = GameBot.bestResource(currentBot.resourceCounts);
+          additionalData.swapWith = resource;
+        }
+    }
+
     return {
       section: best.sectionIndex,
-      position: best.guardsCount
+      position: best.guardsCount,
+      ...additionalData
     };
   }
 
@@ -201,7 +226,7 @@ class GameBot extends Player {
 
   }
 
-  bestResource(resourceCounts: Loot) {
+  static bestResource(resourceCounts: Loot) {
     const highestResource = {
       resource: LUMBER,
       value: 0
@@ -222,12 +247,12 @@ class GameBot extends Player {
 
   async bestAddedTradeResource() {
     await delay(500);
-    return this.bestResource(this.resourceCounts);
+    return GameBot.bestResource(this.resourceCounts);
   }
 
   async bestRemovedTradeResource() {
     await delay(500);
-    return this.bestResource(this.tradeCounts);
+    return GameBot.bestResource(this.tradeCounts);
   }
 };
 

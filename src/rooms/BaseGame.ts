@@ -510,7 +510,7 @@ class BaseGame extends Room<GameState> {
     if (this.state.isSetupPhase) {
       if (this.state.setupPhaseTurns > this.state.maxClients * 2 - 1) {
         // in Guard placement round
-        const guard = await GameBot.validGuard(this.state as FirstMenGameState, currentBot.playerSessionId);
+        const guard = await GameBot.validGuard(this.state as FirstMenGameState, currentBot);
         
         this.onGameAction(currentBot, MESSAGE_PLACE_GUARD, guard);
         this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
@@ -570,6 +570,11 @@ class BaseGame extends Room<GameState> {
         this.onGameAction(currentBot, MESSAGE_STEAL_CARD, stealData);
     }
 
+    /** HERO CARD CHECK */
+    if (currentBot.currentHeroCard.wasPlayed) {
+      HeroCardManager.swapPlayerHeroCard(this.state as FirstMenGameState, currentBot);
+    }
+
     /** PURCHASEABLES IN PRIORITY ORDER */
     if (currentBot.hasResources.city) {
       const city = await GameBot.validCity(this.state, currentBot.playerSessionId);
@@ -594,7 +599,7 @@ class BaseGame extends Room<GameState> {
     }
 
     if (currentBot.hasResources.guard) {
-      const guard = await GameBot.validGuard(this.state as FirstMenGameState, currentBot.playerSessionId);
+      const guard = await GameBot.validGuard(this.state as FirstMenGameState, currentBot);
 
       if (guard)
         this.onGameAction(currentBot, MESSAGE_PLACE_GUARD, guard);
@@ -625,15 +630,14 @@ class BaseGame extends Room<GameState> {
 
   onBotPlayHeroCard(currentBot: GameBot) {
     const { type: heroType } = currentBot.currentHeroCard;
-    const isDiscard = true;
 
     this.broadcastToAll(MESSAGE_PLAY_HERO_CARD, {
       playerName: currentBot.nickname,
       playerColor: currentBot.color,
-      heroCard: currentBot.currentHeroCard
+      heroCardType: currentBot.currentHeroCard.type
     }, true);
     
-    HeroCardManager.playHeroCard(this.state as FirstMenGameState, currentBot, heroType, isDiscard);        
+    HeroCardManager.playHeroCard(this.state as FirstMenGameState, currentBot, heroType);
   }
 
   allBotsCollectLoot() {
