@@ -19,7 +19,6 @@ import {
   MESSAGE_FINISH_TURN,
   MESSAGE_PLACE_STRUCTURE,
   MESSAGE_PURCHASE_GAME_CARD,
-  MESSAGE_WILDLINGS_REVEAL_TOKENS,
   MESSAGE_ROLL_DICE,
   MESSAGE_PLAY_HERO_CARD,
   MESSAGE_SELECT_HERO_CARD,
@@ -84,7 +83,7 @@ class FirstMenGame extends BaseGame {
         const { heroType } = data;
         console.log("FirstMenGame -> onMessage -> heroType", heroType)
 
-        currentPlayer.swappingHeroCard = false
+        currentPlayer.swappingHeroCard = false;
         HeroCardManager.swapPlayerHeroCard(state, currentPlayer, heroType);
         this.wildlingManager.onTokensRevealed(state, 1);
         break;
@@ -137,10 +136,8 @@ class FirstMenGame extends BaseGame {
 
         const { structureType = PURCHASE_GAME_CARD } = data;
         const tokensToPlay = tokensPerPurchase[structureType || PURCHASE_GAME_CARD];
-        const tokens = state.wildlingTokens.slice(0, tokensToPlay);
 
         this.wildlingManager.onTokensRevealed(state, tokensToPlay);
-        this.broadcastService.broadcast(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens }, true);
 
         if (data.type === MESSAGE_PURCHASE_GAME_CARD && currentPlayer.heroPrivilege === HERO_CARD_Melisandre) {
           currentPlayer.flexiblePurchase = null;

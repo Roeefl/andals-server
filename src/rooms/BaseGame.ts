@@ -46,7 +46,6 @@ import {
   MESSAGE_TRADE_CONFIRM,
   MESSAGE_TRADE_REFUSE,
   MESSAGE_PLACE_GUARD,
-  MESSAGE_WILDLINGS_REVEAL_TOKENS,
   MESSAGE_PLAY_HERO_CARD,
 } from '../constants';
 
@@ -509,11 +508,6 @@ class BaseGame extends Room<GameState> {
     })
   }
 
-  onBotTokensRevealedPurchase(purchaseType: string) {
-    const tokens = this.wildlingManager.onBotPurchase(this.state as FirstMenGameState, purchaseType);
-    this.broadcastService.broadcast(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens }, true);
-  }
-
   onGuardPurchase(currentPlayer: Player, section: number, position: number, flexiblePurchase: FlexiblePurchase) {
     PurchaseManager.onPurchaseGuard(this.state as FirstMenGameState, currentPlayer.playerSessionId, section, position, flexiblePurchase, currentPlayer.allowFreeGuard);
 
@@ -626,7 +620,7 @@ class BaseGame extends Room<GameState> {
         this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, city);
 
         if (this.state.isGameStarted && this.state.roomType === ROOM_TYPE_FIRST_MEN)
-          this.onBotTokensRevealedPurchase(PURCHASE_CITY);
+          this.wildlingManager.onBotPurchase(this.state as FirstMenGameState, PURCHASE_CITY);
       }
     }
 
@@ -637,7 +631,7 @@ class BaseGame extends Room<GameState> {
         this.onGameAction(currentBot, MESSAGE_PLACE_STRUCTURE, settlement);
 
         if (this.state.isGameStarted && this.state.roomType === ROOM_TYPE_FIRST_MEN)
-          this.onBotTokensRevealedPurchase(PURCHASE_SETTLEMENT);
+        this.wildlingManager.onBotPurchase(this.state as FirstMenGameState, PURCHASE_SETTLEMENT);
       }
     }
 
@@ -652,7 +646,7 @@ class BaseGame extends Room<GameState> {
       this.onGameAction(currentBot, MESSAGE_PURCHASE_GAME_CARD);
 
       if (this.state.isGameStarted && this.state.roomType === ROOM_TYPE_FIRST_MEN)
-        this.onBotTokensRevealedPurchase(PURCHASE_GAME_CARD);
+      this.wildlingManager.onBotPurchase(this.state as FirstMenGameState, PURCHASE_GAME_CARD);
     }
 
     if (currentBot.hasResources.road) {
