@@ -7,10 +7,13 @@ import Player from '../schemas/Player';
 import HexTile from '../schemas/HexTile';
 import DiceRoll from '../schemas/DiceRoll';
 
+import TurnManager from '../game/TurnManager';
 import BoardManager from '../game/BoardManager';
 import GameCardManager from '../game/GameCardManager';
 import HeroCardManager from '../game/HeroCardManager';
 import BankManager from '../game/BankManager';
+
+import BroadcastService from '../services/broadcast';
 
 import {
   MESSAGE_FINISH_TURN,
@@ -53,10 +56,14 @@ class FirstMenGame extends BaseGame {
     console.info("FirstMenGame | onCreate | roomOptions: ", roomOptions);
     this.setMetadata({ roomTitle: roomOptions.roomTitle });
 
+    this.broadcastService = new BroadcastService(this, roomOptions.roomTitle);
+    this.turnManager = new TurnManager(this.broadcastService);
+    this.wildlingManager = new WildlingManager(this.broadcastService);
+
     const board = BoardManager.firstMenBoard();
     const gameCards = GameCardManager.initialShuffledDeck();
 
-    const wildlingTokens = WildlingManager.shuffleTokens();
+    const wildlingTokens = this.wildlingManager.shuffleTokens();
     const heroCards = HeroCardManager.shuffle();
     
     const gameState = new FirstMenGameState(firstmenManifest, board, gameCards, roomOptions, wildlingTokens, heroCards);
@@ -79,7 +86,7 @@ class FirstMenGame extends BaseGame {
 
         currentPlayer.swappingHeroCard = false
         HeroCardManager.swapPlayerHeroCard(state, currentPlayer, heroType);
-        WildlingManager.onTokensRevealed(state, 1);
+        this.wildlingManager.onTokensRevealed(state, 1);
         break;
 
       case MESSAGE_RELOCATE_GUARD:
@@ -95,12 +102,12 @@ class FirstMenGame extends BaseGame {
 
       case MESSAGE_WILDLINGS_REMOVE_FROM_CAMP:
         const { clanName, campIndex } = data;
-        WildlingManager.removeWildlingFromCamp(state, clanName, campIndex);
+        this.wildlingManager.removeWildlingFromCamp(state, clanName, campIndex);
         break;
 
       case MESSAGE_WILDLINGS_REMOVE_FROM_CLEARING:
         const { clearingIndex, wildlingIndex } = data;
-        WildlingManager.removeWildlingFromClearing(state, clearingIndex, wildlingIndex);
+        this.wildlingManager.removeWildlingFromClearing(state, clearingIndex, wildlingIndex);
         break;
       
       default:
@@ -132,8 +139,8 @@ class FirstMenGame extends BaseGame {
         const tokensToPlay = tokensPerPurchase[structureType || PURCHASE_GAME_CARD];
         const tokens = state.wildlingTokens.slice(0, tokensToPlay);
 
-        WildlingManager.onTokensRevealed(state, tokensToPlay);
-        this.broadcastToAll(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens }, true);
+        this.wildlingManager.onTokensRevealed(state, tokensToPlay);
+        this.broadcastService.broadcast(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens }, true);
 
         if (data.type === MESSAGE_PURCHASE_GAME_CARD && currentPlayer.heroPrivilege === HERO_CARD_Melisandre) {
           currentPlayer.flexiblePurchase = null;
@@ -156,9 +163,7 @@ class FirstMenGame extends BaseGame {
         if (!state.isGameStarted || dice.length < 2) break;
         
         const wildlingDice: number = dice[2];
-        WildlingManager.wildlingsAdvance(state, wildlingDice,
-          (broadcastType: string, data: any, isAttention: boolean = false) => this.broadcastToAll(broadcastType, data, isAttention));
-
+        this.wildlingManager.wildlingsAdvance(state, wildlingDice);
         this.evaluateWildlingVictory();
         break;
         
@@ -166,7 +171,7 @@ class FirstMenGame extends BaseGame {
         const { heroType, isDiscard = false } = data;
         console.log("FirstMenGame -> onMessage -> heroType, isDiscard", heroType, isDiscard)
 
-        this.broadcastToAll(MESSAGE_PLAY_HERO_CARD, {
+        this.broadcastService.broadcast(MESSAGE_PLAY_HERO_CARD, {
           playerName: currentPlayer.nickname,
           playerColor: currentPlayer.color,
           heroCardType: currentPlayer.currentHeroCard.type
@@ -188,7 +193,7 @@ class FirstMenGame extends BaseGame {
             currentPlayer.addResource(lastRobberTile.resource);
             BankManager.loseResource(state, lastRobberTile.resource);
 
-            this.broadcastToAll(MESSAGE_COLLECT_RESOURCE_LOOT, {
+            this.broadcastService.broadcast(MESSAGE_COLLECT_RESOURCE_LOOT, {
               playerSessionId: currentPlayer.playerSessionId,
               playerName: currentPlayer.nickname,
               playerColor: currentPlayer.color,
@@ -290,7 +295,7 @@ class FirstMenGame extends BaseGame {
 
       // @TODO: If still tied, the tied player with the oldest guard on the wall wins (guard on the lowest number in any wall section).
 
-      this.broadcastToAll(MESSAGE_GAME_VICTORY, {
+      this.broadcastService.broadcast(MESSAGE_GAME_VICTORY, {
         playerName: winner.nickname,
         playerColor: winner.color
       }, true);
