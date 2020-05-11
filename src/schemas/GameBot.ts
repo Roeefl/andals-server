@@ -106,7 +106,7 @@ class GameBot extends Player {
     };
   }
 
-  static async validRoad(state: GameState, currentBot: Player) {
+  static async validRoad(state: GameState, currentBot: GameBot) {
     await delay(1500);
 
     const validRoads: ValidStructurePosition[] = TileManager.validRoads(state, currentBot);
@@ -140,7 +140,31 @@ class GameBot extends Player {
     };
   }
 
-  static async validGuard(state: FirstMenGameState, currentBot: Player) {
+  missingResourceForPurchase() {
+    const missingResourcePerPurchaseType = Object
+      .entries(buildingCosts)
+      .map(([purchaseType, costs]) => {
+        const hasSomeResources = Object.entries(this.resourceCounts)
+          .filter(([resource]) => costs[resource] > 0)
+          .some(([resource, value]) => value >= costs[resource]);
+
+          if (!hasSomeResources) return { purchaseType, hasSomeResources: false };
+
+          const missingResource = Object.entries(this.resourceCounts)
+            .filter(([resource]) => costs[resource] > 0)
+            .find(([resource, value]) => value < costs[resource]);
+
+          return {
+            purchaseType,
+            hasSomeResources,
+            missingResource
+          };
+      });
+
+    return missingResourcePerPurchaseType.find(({ hasSomeResources, missingResource }) => hasSomeResources && !!missingResource);
+  }
+
+  static async validGuard(state: FirstMenGameState, currentBot: GameBot) {
     await delay(1000);
     
     const guardsOnEachSection = Array(wallSectionsCount).fill(0)
@@ -161,21 +185,26 @@ class GameBot extends Player {
 
     if (currentBot.flexiblePurchase === PURCHASE_GUARD) {
         const costs: BuildingCost = buildingCosts.guard;
+        console.log("GameBot -> validGuard -> costs", costs)
         
         const missingResource = Object
           .entries(currentBot.resourceCounts)
           .filter(([resource]) => costs[resource] > 0)
-          .find(([resource, value]) => value < 1);
+          .find(([resource, value]) => value < costs[resource]);
+        console.log("GameBot -> validGuard -> missingResource", missingResource)
 
         if (missingResource) {
+          console.log("GameBot -> validGuard -> missingResource", missingResource)
           const [missingResourceName] = missingResource;
+          console.log("GameBot -> validGuard -> missingResourceName", missingResourceName)
           additionalData.swapWhich = missingResourceName;
-
           const { resource } = GameBot.bestResource(currentBot.resourceCounts);
           additionalData.swapWith = resource;
         }
-    }
-
+      }
+      
+    console.log("GameBot -> validGuard -> additionalData", additionalData)
+      
     return {
       section: best.sectionIndex,
       position: best.guardsCount,

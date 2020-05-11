@@ -3,6 +3,7 @@ import Player from '../schemas/Player';
 import GameBot from '../schemas/GameBot';
 
 import GameState from '../game/GameState';
+import FirstMenGameState from '../north/FirstMenGameState';
 import BoardManager from '../game/BoardManager';
 import PurchaseManager from '../game/PurchaseManager';
 import BankManager from '../game/BankManager';
@@ -12,6 +13,8 @@ import TradeManager from '../game/TradeManager';
 import DiceManager from '../game/DiceManager';
 import WildlingManager from '../game/WildlingManager';
 import HeroCardManager from '../game/HeroCardManager';
+
+import BroadcastService from '../services/broadcast';
 
 import {
   MESSAGE_GAME_LOG,
@@ -59,12 +62,15 @@ import {
 } from '../manifest';
 
 import { RoomOptions, Loot, FlexiblePurchase } from '../interfaces';
-import FirstMenGameState from '../north/FirstMenGameState';
 import { ROOM_TYPE_FIRST_MEN } from '../specs/roomTypes';
 
 const maxReconnectionTime = 5 * 60;
 
 class BaseGame extends Room<GameState> {
+  broadcastService: BroadcastService
+  turnManager: TurnManager
+  wildlingManager: WildlingManager
+
   get activeClients() {
     return Object
       .keys(this.state.players)
@@ -86,6 +92,10 @@ class BaseGame extends Room<GameState> {
     console.info("BaseGame | onCreate | roomOptions: ", roomOptions);
 
     this.setMetadata({ roomTitle: roomOptions.roomTitle });
+
+    this.broadcastService = new BroadcastService(this, roomOptions.roomTitle);
+    this.turnManager = new TurnManager(this.broadcastService);
+    this.wildlingManager = new WildlingManager(this.broadcastService);
 
     const board = BoardManager.baseGameBoard();
     const gameCards = GameCardManager.initialShuffledDeck();
@@ -115,15 +125,6 @@ class BaseGame extends Room<GameState> {
     this.lock();
   }
 
-  broadcastToAll(type: string, data: Object = {}, isAttention: boolean = false) {
-    this.broadcast({
-      sender: this.state.roomTitle,
-      type,
-      isAttention,
-      ...data
-    });
-  }
-
   onJoin(client: Client, options: any) {
     this.onPlayerJoin(client.sessionId, options)
   }
@@ -132,13 +133,11 @@ class BaseGame extends Room<GameState> {
     const color = options.color || playerColors[this.activeClients];
     const addedPlayer = new Player(clientSessionId, options, color, this.activeClients, this.state.manifest.bankTradeRate);
     this.state.players[clientSessionId] = addedPlayer;
-    
-    this.broadcast({
-      type: MESSAGE_GAME_LOG,
+  
+    this.broadcastService.broadcast(MESSAGE_GAME_LOG, {
       sender: this.state.roomTitle,
       message: `${addedPlayer.nickname || clientSessionId} has joined the room.`
     });
-    //, { except: client }
 
     if (this.activeClients >= this.state.maxClients)
       this.lock();
@@ -185,11 +184,13 @@ class BaseGame extends Room<GameState> {
         this.state.players[client.sessionId].restore(replacementBot);
       } else {
         this.state.players[client.sessionId].isConnected = true;
-
+        
         this.broadcast({
           type: MESSAGE_GAME_LOG,
           sender: this.state.roomTitle,
           message: `${currentPlayer.nickname || client.sessionId} has reconnected!`
+        }, {
+          except: client
         });
       }
     } catch (e) {
@@ -225,7 +226,7 @@ class BaseGame extends Room<GameState> {
         const { dice = [3, 3, 10] } = data;
         const isRobbing = DiceManager.onDiceRoll(this.state, dice, currentPlayer);
 
-        this.broadcastToAll(MESSAGE_ROLL_DICE, {
+        this.broadcastService.broadcast(MESSAGE_ROLL_DICE, {
           senderSessionId: currentPlayer.playerSessionId,
           playerName: currentPlayer.nickname,
           playerColor: currentPlayer.color,
@@ -240,7 +241,7 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_COLLECT_ALL_LOOT:
-        this.broadcastToAll(MESSAGE_COLLECT_ALL_LOOT, {
+        this.broadcastService.broadcast(MESSAGE_COLLECT_ALL_LOOT, {
           playerSessionId: currentPlayer.playerSessionId,
           playerName: currentPlayer.nickname,
           playerColor: currentPlayer.color,
@@ -251,7 +252,7 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_COLLECT_RESOURCE_LOOT:
-        this.broadcastToAll(MESSAGE_COLLECT_RESOURCE_LOOT, {
+        this.broadcastService.broadcast(MESSAGE_COLLECT_RESOURCE_LOOT, {
           playerSessionId: currentPlayer.playerSessionId,
           playerName: currentPlayer.nickname,
           playerColor: currentPlayer.color,
@@ -264,7 +265,7 @@ class BaseGame extends Room<GameState> {
       case MESSAGE_DISCARD_HALF_DECK:
         const { discardedCounts = {} } = data;
 
-        this.broadcastToAll(MESSAGE_DISCARD_HALF_DECK, {
+        this.broadcastService.broadcast(MESSAGE_DISCARD_HALF_DECK, {
           playerName: currentPlayer.nickname,
           playerColor: currentPlayer.color,
           discardedCounts
@@ -281,7 +282,7 @@ class BaseGame extends Room<GameState> {
         this.state.robberPosition = tile;
         currentPlayer.mustMoveRobber = false;
 
-        this.broadcastToAll(MESSAGE_GAME_LOG, {
+        this.broadcastService.broadcast(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} has moved the Robber`
         });
 
@@ -296,7 +297,7 @@ class BaseGame extends Room<GameState> {
           const stoleFrom = this.state.players[data.stealFrom];
           
           if (stoleFrom) {
-            this.broadcastToAll(MESSAGE_STEAL_CARD, {
+            this.broadcastService.broadcast(MESSAGE_STEAL_CARD, {
               playerSessionId: currentPlayer.playerSessionId,
               playerName: currentPlayer.nickname,
               playerColor: currentPlayer.color,
@@ -315,7 +316,7 @@ class BaseGame extends Room<GameState> {
         else 
           currentPlayer.allowFreeRoads--;
 
-        this.broadcastToAll(MESSAGE_PLACE_STRUCTURE, {
+        this.broadcastService.broadcast(MESSAGE_PLACE_STRUCTURE, {
           playerName: currentPlayer.nickname,
           message: `has built a road at [${data.row}, ${data.col}]`,
           playerColor: currentPlayer.color
@@ -325,7 +326,7 @@ class BaseGame extends Room<GameState> {
       case MESSAGE_REMOVE_ROAD:
         PurchaseManager.onRemoveRoad(this.state, data, currentPlayer.playerSessionId);
 
-        this.broadcastToAll(MESSAGE_PLACE_STRUCTURE, {
+        this.broadcastService.broadcast(MESSAGE_PLACE_STRUCTURE, {
           playerName: currentPlayer.nickname,
           message: `has removed a road at [${data.row}, ${data.col}]`
         });
@@ -341,7 +342,7 @@ class BaseGame extends Room<GameState> {
 
         currentPlayer.flexiblePurchase = null;
 
-        this.broadcastToAll(MESSAGE_PLACE_STRUCTURE, {
+        this.broadcastService.broadcast(MESSAGE_PLACE_STRUCTURE, {
           playerName: currentPlayer.nickname,
           message: `has built a ${structureType}`,
           playerColor: currentPlayer.color,
@@ -357,7 +358,7 @@ class BaseGame extends Room<GameState> {
 
         this.evaluateVictoryStatus();
 
-        this.broadcastToAll(MESSAGE_GAME_LOG, {
+        this.broadcastService.broadcast(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} purchased a development card`
         }, this.state.isGameStarted);
 
@@ -374,7 +375,7 @@ class BaseGame extends Room<GameState> {
         
         this.evaluateVictoryStatus();
 
-        this.broadcastToAll(MESSAGE_PLAY_GAME_CARD, {
+        this.broadcastService.broadcast(MESSAGE_PLAY_GAME_CARD, {
           playerName: currentPlayer.nickname,
           playerColor: currentPlayer.color,
           cardType
@@ -414,8 +415,7 @@ class BaseGame extends Room<GameState> {
             break;
           }
 
-          this.broadcast({
-            type: MESSAGE_TRADE_REQUEST_RESOURCE,
+          this.broadcastService.broadcast(MESSAGE_TRADE_REQUEST_RESOURCE, {
             sender: currentPlayer.nickname,
             senderSessionId: currentPlayer.playerSessionId,
             requestedResource
@@ -431,13 +431,11 @@ class BaseGame extends Room<GameState> {
         if (data.isAgreed) {
           TradeManager.facilitateTrade(currentPlayer, this.currentTurnPlayer, true, offeredResource);
 
-          this.broadcast({
-            type: MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND,
+          this.broadcastService.broadcast(MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND, {
             isTradeStarted: true
           });
         } else {
-          this.broadcast({
-            type: MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND,
+          this.broadcastService.broadcast(MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND, {
             whoRefused: currentPlayer.playerSessionId
           });
         }
@@ -453,7 +451,7 @@ class BaseGame extends Room<GameState> {
         if (type === MESSAGE_TRADE_CONFIRM) {
           const otherPlayer: Player = this.state.players[currentPlayer.tradingWith];
 
-          this.broadcastToAll(MESSAGE_TRADE_CONFIRM, {
+          this.broadcastService.broadcast(MESSAGE_TRADE_CONFIRM, {
             player1: currentPlayer.nickname,
             player2: otherPlayer.nickname
           }, true);
@@ -470,10 +468,7 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_FINISH_TURN:
-        TurnManager.finishTurn(this.state, currentPlayer,
-          (broadcastType: string, broadcastData: any, isAttention: boolean = false) => this.broadcastToAll(broadcastType, broadcastData, isAttention)
-        );
-
+        this.turnManager.finishTurn(this.state, currentPlayer);
         await this.advanceBot(this.currentTurnPlayer as GameBot);
         break;
 
@@ -515,8 +510,8 @@ class BaseGame extends Room<GameState> {
   }
 
   onBotTokensRevealedPurchase(purchaseType: string) {
-    const tokens = WildlingManager.onBotPurchase(this.state as FirstMenGameState, purchaseType);
-    this.broadcastToAll(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens }, true);
+    const tokens = this.wildlingManager.onBotPurchase(this.state as FirstMenGameState, purchaseType);
+    this.broadcastService.broadcast(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens }, true);
   }
 
   onGuardPurchase(currentPlayer: Player, section: number, position: number, flexiblePurchase: FlexiblePurchase) {
@@ -527,7 +522,7 @@ class BaseGame extends Room<GameState> {
 
     this.evaluateVictoryStatus();
   
-    this.broadcastToAll(MESSAGE_PLACE_GUARD, {
+    this.broadcastService.broadcast(MESSAGE_PLACE_GUARD, {
       message: `${currentPlayer.nickname} has placed a Guard on the wall`
     }, this.state.isGameStarted);
 
@@ -573,6 +568,10 @@ class BaseGame extends Room<GameState> {
       return;
     }
 
+    while (currentBot.tradingWith) {
+      await currentBot.think(1500);
+    }
+
     /** REGULAR TURN */
     await currentBot.think(1000);
 
@@ -580,8 +579,7 @@ class BaseGame extends Room<GameState> {
     this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
     
     const wildlingDice: number = botDice[2];
-    WildlingManager.wildlingsAdvance(this.state as FirstMenGameState, wildlingDice,
-      (broadcastType: string, data: any, isAttention: boolean = false) => this.broadcastToAll(broadcastType, data, isAttention));
+    this.wildlingManager.wildlingsAdvance(this.state as FirstMenGameState, wildlingDice);
 
     await currentBot.think(1000);
 
@@ -617,7 +615,7 @@ class BaseGame extends Room<GameState> {
     /** HERO CARD CHECK */
     if (currentBot.currentHeroCard.wasPlayed) {
       HeroCardManager.swapPlayerHeroCard(this.state as FirstMenGameState, currentBot);
-      WildlingManager.onTokensRevealed(this.state as FirstMenGameState, 1);
+      this.wildlingManager.onTokensRevealed(this.state as FirstMenGameState, 1);
     }
 
     /** PURCHASEABLES IN PRIORITY ORDER */
@@ -664,11 +662,17 @@ class BaseGame extends Room<GameState> {
     }
 
     if (!currentBot.hasPlayedHeroCard) {
-      const shouldPlayHero = Math.floor(Math.random() * 2);
+      const shouldPlayHero = Math.floor(Math.random() * 4);
 
-      if (shouldPlayHero)
+      if (shouldPlayHero === 0)
         this.onBotPlayHeroCard(currentBot);
     }
+
+    // const missingResourceForPurchase = currentBot.missingResourceForPurchase();
+    // if (missingResourceForPurchase) {
+    //   this.onGameAction(currentBot, MESSAGE_TRADE_REQUEST_RESOURCE, { requestedResource: missingResourceForPurchase.missingResource });
+    //   this.advanceBot(currentBot);
+    // }
 
     this.onGameAction(currentBot, MESSAGE_FINISH_TURN);
   }
@@ -676,7 +680,7 @@ class BaseGame extends Room<GameState> {
   onBotPlayHeroCard(currentBot: GameBot) {
     const { type: heroType } = currentBot.currentHeroCard;
 
-    this.broadcastToAll(MESSAGE_PLAY_HERO_CARD, {
+    this.broadcastService.broadcast(MESSAGE_PLAY_HERO_CARD, {
       playerName: currentBot.nickname,
       playerColor: currentBot.color,
       heroCardType: currentBot.currentHeroCard.type
@@ -722,7 +726,7 @@ class BaseGame extends Room<GameState> {
   }
 
   onChatMessage(sender: Player, message: string) {
-    this.broadcastToAll(MESSAGE_CHAT, {
+    this.broadcastService.broadcast(MESSAGE_CHAT, {
       sender: sender.nickname,
       senderSessionId: sender.playerSessionId,
       message
@@ -732,14 +736,10 @@ class BaseGame extends Room<GameState> {
   async onPlayerReady(player: Player) {
     player.isReady = !player.isReady;
 
-    this.broadcast({
-      type: MESSAGE_GAME_LOG,
+    this.broadcastService.broadcast(MESSAGE_GAME_LOG, {
       sender: this.state.roomTitle,
       message: `${player.nickname} is ${player.isReady ? '' : 'not'} ready`
     });
-    // }, {
-      // except: client
-    // });
 
     if (this.activeClients < this.state.maxClients) return;
 
@@ -750,11 +750,11 @@ class BaseGame extends Room<GameState> {
     if (!isAllReady) return;
 
     // All players are ready - initialize turn Order phase
-    this.broadcastToAll(MESSAGE_GAME_LOG, {
+    this.broadcastService.broadcast(MESSAGE_GAME_LOG, {
       message: 'All Players Ready'
     });
 
-    this.broadcastToAll(MESSAGE_GAME_LOG, {
+    this.broadcastService.broadcast(MESSAGE_GAME_LOG, {
       message: 'Starting turn order phase',
       notify: 'isTurnOrder'
     }, true);
@@ -785,7 +785,7 @@ class BaseGame extends Room<GameState> {
         const player: Player = this.state.players[sessionId];
 
         if (player.victoryPoints >= 10) {
-          this.broadcastToAll(MESSAGE_GAME_VICTORY, {
+          this.broadcastService.broadcast(MESSAGE_GAME_VICTORY, {
             playerName: player.nickname,
             playerColor: player.color,
           }, true);

@@ -7,6 +7,8 @@ import ClanArea from '../schemas/ClanArea';
 import WildlingClearing from '../schemas/WildlingClearing';
 import Wildling from '../schemas/Wildling';
 
+import BroadcastService from '../services/broadcast';
+
 import {
   totalTokens,
   clanNames,
@@ -28,6 +30,12 @@ interface WildlingsAdvanceSummary {
 }
 
 class WildlingManager {
+  broadcastService: BroadcastService
+
+  constructor(broadcastService: BroadcastService) {
+    this.broadcastService = broadcastService;
+  }
+
   shuffleTokens(): WildlingToken[] {
     return Array(totalTokens)
       .fill(0)
@@ -261,7 +269,7 @@ class WildlingManager {
   }
 
   // Advance through trails on matching rolls
-  wildlingsAdvance(state: FirstMenGameState, wildlingDice: number, broadcast: (type: string, data: any, isAttention?: boolean) => void) {
+  wildlingsAdvance(state: FirstMenGameState, wildlingDice: number) {
     state.wildlingClearings
       .filter(({ trails }) => trails.includes(wildlingDice))
       .forEach(clearing => {
@@ -279,10 +287,10 @@ class WildlingManager {
             const { invader, guardsKilled } = wildlingsAdvanceSummary;
             
             if (invader) {
-              broadcast(MESSAGE_WILDLINGS_WALL_BATTLE, { invader, guardsKilled }, true);
+              this.broadcastService.broadcast(MESSAGE_WILDLINGS_WALL_BATTLE, { invader, guardsKilled }, true);
             }
             else {
-              broadcast(MESSAGE_WILDLINGS_ADVANCE_CLEARING, { wildling: firstWildling, guardsKilled }, true);
+              this.broadcastService.broadcast(MESSAGE_WILDLINGS_ADVANCE_CLEARING, { wildling: firstWildling, guardsKilled }, true);
             }
           }
         };
@@ -313,4 +321,4 @@ class WildlingManager {
   }
 }
 
-export default new WildlingManager();
+export default WildlingManager;
