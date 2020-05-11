@@ -54,7 +54,8 @@ import {
   PURCHASE_GAME_CARD,
   playerColors,
   PURCHASE_GUARD,
-  PURCHASE_CITY
+  PURCHASE_CITY,
+  CARD_KNIGHT
 } from '../manifest';
 
 import { RoomOptions, Loot, FlexiblePurchase } from '../interfaces';
@@ -221,9 +222,8 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_ROLL_DICE:
-        const { dice = [3, 3] } = data;
+        const { dice = [3, 3, 10] } = data;
         const isRobbing = DiceManager.onDiceRoll(this.state, dice, currentPlayer);
-        console.log("onGameAction -> isRobbing", isRobbing)
 
         this.broadcastToAll(MESSAGE_ROLL_DICE, {
           senderSessionId: currentPlayer.playerSessionId,
@@ -237,7 +237,6 @@ class BaseGame extends Room<GameState> {
 
         if (isRobbing)
           this.allBotsRobbed();
-
         break;
 
       case MESSAGE_COLLECT_ALL_LOOT:
@@ -366,8 +365,13 @@ class BaseGame extends Room<GameState> {
 
       case MESSAGE_PLAY_GAME_CARD:
         const { cardType, cardIndex } = data;
+        console.log("onGameAction -> MESSAGE_PLAY_GAME_CARD", cardType, cardIndex)
+
         GameCardManager.playGameCard(currentPlayer, cardType, cardIndex);
-        this.onPlayKnightCard(currentPlayer);
+
+        if (cardType === CARD_KNIGHT)
+          this.onPlayKnightCard(currentPlayer);
+        
         this.evaluateVictoryStatus();
 
         this.broadcastToAll(MESSAGE_PLAY_GAME_CARD, {
@@ -417,10 +421,7 @@ class BaseGame extends Room<GameState> {
             requestedResource
           });
 
-          const botsWithRequestedResource: GameBot[] = this.allBots.filter(bot => bot.resourceCounts[requestedResource] > 0);
-          if (botsWithRequestedResource.length) {
-            this.onGameAction(botsWithRequestedResource[0], MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND, { offeredResource: requestedResource, isAgreed: true });
-          }
+          this.onBotsRespondToTradeRequest(requestedResource);
         }
         break;
 
@@ -497,6 +498,22 @@ class BaseGame extends Room<GameState> {
     }
   }
 
+  onBotsRespondToTradeRequest(requestedResource: string) {
+    const botWithRequestedResource: GameBot = this.allBots.find(bot => bot.resourceCounts[requestedResource] > 0);
+    
+    if (botWithRequestedResource) {
+      this.onGameAction(botWithRequestedResource, MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND, { offeredResource: requestedResource, isAgreed: true });
+    }
+
+    // === Other bots ===
+
+    const botsWithoutRequestedResource: GameBot[] = this.allBots.filter(bot => !bot.resourceCounts[requestedResource]);
+
+    botsWithoutRequestedResource.forEach(bot => {
+      this.onGameAction(bot, MESSAGE_TRADE_REQUEST_RESOURCE_RESPOND, { isAgreed: false });
+    })
+  }
+
   onBotTokensRevealedPurchase(purchaseType: string) {
     const tokens = WildlingManager.onBotPurchase(this.state as FirstMenGameState, purchaseType);
     this.broadcastToAll(MESSAGE_WILDLINGS_REVEAL_TOKENS, { tokens }, true);
@@ -561,6 +578,10 @@ class BaseGame extends Room<GameState> {
 
     const botDice: number[] = await GameBot.rollDice(this.state.roomType);
     this.onGameAction(currentBot, MESSAGE_ROLL_DICE, { dice: botDice });
+    
+    const wildlingDice: number = botDice[2];
+    WildlingManager.wildlingsAdvance(this.state as FirstMenGameState, wildlingDice,
+      (broadcastType: string, data: any, isAttention: boolean = false) => this.broadcastToAll(broadcastType, data, isAttention));
 
     await currentBot.think(1000);
 
@@ -596,6 +617,7 @@ class BaseGame extends Room<GameState> {
     /** HERO CARD CHECK */
     if (currentBot.currentHeroCard.wasPlayed) {
       HeroCardManager.swapPlayerHeroCard(this.state as FirstMenGameState, currentBot);
+      WildlingManager.onTokensRevealed(this.state as FirstMenGameState, 1);
     }
 
     /** PURCHASEABLES IN PRIORITY ORDER */
