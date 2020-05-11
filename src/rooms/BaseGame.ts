@@ -47,6 +47,7 @@ import {
   MESSAGE_TRADE_REFUSE,
   MESSAGE_PLACE_GUARD,
   MESSAGE_PLAY_HERO_CARD,
+  MESSAGE_SWAPPED_HERO_CARD,
 } from '../constants';
 
 import {
@@ -610,6 +611,12 @@ class BaseGame extends Room<GameState> {
     if (currentBot.currentHeroCard.wasPlayed) {
       HeroCardManager.swapPlayerHeroCard(this.state as FirstMenGameState, currentBot);
       this.wildlingManager.onTokensRevealed(this.state as FirstMenGameState, 1);
+
+      this.broadcastService.broadcast(MESSAGE_SWAPPED_HERO_CARD, {
+        playerName: currentBot.nickname,
+        playerColor: currentBot.color,
+        newHeroCardType: currentBot.currentHeroCard.type
+      });
     }
 
     /** PURCHASEABLES IN PRIORITY ORDER */

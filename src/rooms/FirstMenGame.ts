@@ -22,6 +22,7 @@ import {
   MESSAGE_ROLL_DICE,
   MESSAGE_PLAY_HERO_CARD,
   MESSAGE_SELECT_HERO_CARD,
+  MESSAGE_SWAPPED_HERO_CARD,
   MESSAGE_GAME_VICTORY,
   MESSAGE_TRADE_WITH_BANK,
   MESSAGE_MOVE_ROBBER,
@@ -86,6 +87,12 @@ class FirstMenGame extends BaseGame {
         currentPlayer.swappingHeroCard = false;
         HeroCardManager.swapPlayerHeroCard(state, currentPlayer, heroType);
         this.wildlingManager.onTokensRevealed(state, 1);
+
+        this.broadcastService.broadcast(MESSAGE_SWAPPED_HERO_CARD, {
+          playerName: currentPlayer.nickname,
+          playerColor: currentPlayer.color,
+          newHeroCardType: currentPlayer.currentHeroCard.type
+        });
         break;
 
       case MESSAGE_RELOCATE_GUARD:
