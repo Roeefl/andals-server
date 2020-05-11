@@ -121,6 +121,9 @@ class Player extends Schema {
   
   @type("boolean")
   mustMoveRobber: boolean = false
+
+  @type("boolean")
+  activeGameCard: string = null
   
   @type("number")
   allowFreeRoads: number = 0

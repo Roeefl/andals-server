@@ -29,15 +29,17 @@ class GameCardManager {
     );
   }
 
-  playGameCard(player: Player, cardType: String, cardIndex: number) {
+  playGameCard(player: Player, cardType: string, cardIndex: number) {
     player.hasPlayedGameCard = true;
 
     const card: GameCard = player.gameCards[cardIndex];
     card.wasPlayed = true;
+
+    player.activeGameCard = cardType;
     
     switch (cardType) {
       case CARD_KNIGHT:
-        player.mustMoveRobber = true;
+        // player.mustMoveRobber = true;
         break;
 
       case CARD_ROAD_BUILDING:
