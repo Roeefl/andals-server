@@ -610,13 +610,14 @@ class BaseGame extends Room<GameState> {
     /** HERO CARD CHECK */
     if (currentBot.currentHeroCard.wasPlayed) {
       HeroCardManager.swapPlayerHeroCard(this.state as FirstMenGameState, currentBot);
-      this.wildlingManager.onTokensRevealed(this.state as FirstMenGameState, 1);
-
+      
       this.broadcastService.broadcast(MESSAGE_SWAPPED_HERO_CARD, {
         playerName: currentBot.nickname,
         playerColor: currentBot.color,
         newHeroCardType: currentBot.currentHeroCard.type
       });
+      
+      this.wildlingManager.onTokensRevealed(this.state as FirstMenGameState, 1);
     }
 
     /** PURCHASEABLES IN PRIORITY ORDER */

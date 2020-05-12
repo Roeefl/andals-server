@@ -86,13 +86,14 @@ class FirstMenGame extends BaseGame {
 
         currentPlayer.swappingHeroCard = false;
         HeroCardManager.swapPlayerHeroCard(state, currentPlayer, heroType);
-        this.wildlingManager.onTokensRevealed(state, 1);
-
+        
         this.broadcastService.broadcast(MESSAGE_SWAPPED_HERO_CARD, {
           playerName: currentPlayer.nickname,
           playerColor: currentPlayer.color,
           newHeroCardType: currentPlayer.currentHeroCard.type
         });
+        
+        this.wildlingManager.onTokensRevealed(state, 1);
         break;
 
       case MESSAGE_RELOCATE_GUARD:
