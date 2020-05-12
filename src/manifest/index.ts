@@ -97,24 +97,24 @@ const baseGameHarborIndices = [
 
 // ======================= GoT Manifest =================================
 const firstmenBoardLayout: string[] = [
-  ...new Array(4).fill(LUMBER),
-  ...new Array(4).fill(SHEEP),
-  ...new Array(4).fill(WHEAT),
-  ...new Array(4).fill(BRICK),
-  ...new Array(5).fill(ORE)
+  ...new Array(5).fill(LUMBER),
+  ...new Array(5).fill(SHEEP),
+  ...new Array(6).fill(WHEAT),
+  ...new Array(5).fill(BRICK),
+  ...new Array(6).fill(ORE)
 ];
 
 const firstmenBoardValues: number[] = [
-  2,
+  2, 2,
   3, 3,
-  4, 4,
+  4, 4, 4,
   5, 5, 5,
   6, 6, 6,
   8, 8, 8,
-  9, 9,
-  10, 10,
-  11, 11,
-  12
+  9, 9, 9,
+  10, 10, 10,
+  11, 11, 11,
+  12, 12
 ];
 
 const firstmenHarbors: string[] = [
@@ -125,7 +125,7 @@ const firstmenHarbors: string[] = [
   ORE
 ];
 
-const firstmenHarborIndices = [33, 34, 35, 36, 37];
+const firstmenHarborIndices = [42, 43, 44, 45, 46];
 
 // ======================= /GoT Manifest =================================
 
