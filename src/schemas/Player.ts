@@ -289,6 +289,17 @@ class Player extends Schema {
     return counts.reduce((d1, d2) => d1 + d2, 0);
   }
 
+  randomEligibleStealResource(): string {
+    const eligibleResources = Object
+      .entries(this.resourceCounts)
+      .filter(([resource, value]) => value > 0);
+
+    const randomIndex = Math.floor(Math.random() * eligibleResources.length);
+    const [chosenResource] = eligibleResources[randomIndex];
+    
+    return chosenResource;
+  }
+
   initializeSetupPhase() {
     this.hasResources = new MapSchema<Boolean>({
       road: false,
