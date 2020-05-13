@@ -122,7 +122,7 @@ class Player extends Schema {
   @type("boolean")
   mustMoveRobber: boolean = false
 
-  @type("boolean")
+  @type("string")
   activeGameCard: string = null
   
   @type("number")
