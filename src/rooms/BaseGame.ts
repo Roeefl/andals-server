@@ -318,7 +318,7 @@ class BaseGame extends Room<GameState> {
 
         this.broadcastService.broadcast(MESSAGE_PLACE_STRUCTURE, {
           playerName: currentPlayer.nickname,
-          message: `has built a road at [${data.row}, ${data.col}]`,
+          message: 'has built a road',
           playerColor: currentPlayer.color
         });
         break;
@@ -328,7 +328,7 @@ class BaseGame extends Room<GameState> {
 
         this.broadcastService.broadcast(MESSAGE_PLACE_STRUCTURE, {
           playerName: currentPlayer.nickname,
-          message: `has removed a road at [${data.row}, ${data.col}]`
+          message: 'has removed a road'
         });
 
         currentPlayer.allowRemoveRoad = false;
@@ -469,7 +469,10 @@ class BaseGame extends Room<GameState> {
 
       case MESSAGE_FINISH_TURN:
         this.turnManager.finishTurn(this.state, currentPlayer);
-        await this.advanceBot(this.currentTurnPlayer as GameBot);
+        
+        if (this.currentTurnPlayer.isBot) {
+          await this.advanceBot(this.currentTurnPlayer as GameBot);
+        }
         break;
 
       case MESSAGE_PLACE_GUARD:
