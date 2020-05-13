@@ -519,7 +519,7 @@ class BaseGame extends Room<GameState> {
   
     this.broadcastService.broadcast(MESSAGE_PLACE_GUARD, {
       message: `${currentPlayer.nickname} has placed a Guard on the wall`
-    }, this.state.isGameStarted);
+    });
 
     currentPlayer.allowFreeGuard = false;
   }
