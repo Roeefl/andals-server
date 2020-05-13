@@ -97,11 +97,13 @@ class TradeManager {
     player2.postTradeCleanup();
   }
 
-  onStealCard(state: GameState, currentPlayer: Player, stealFrom: string, resource: string) {
+  onStealCard(state: GameState, currentPlayer: Player, stealFrom: string, resource?: string): string {
     const otherPlayer: Player = state.players[stealFrom];
+
+    const stolenResource = resource || otherPlayer.randomEligibleStealResource();
     
-    currentPlayer.addResource(resource);
-    otherPlayer.stolenResource(resource);
+    currentPlayer.addResource(stolenResource);
+    otherPlayer.stolenResource(stolenResource);
 
     if (currentPlayer.heroPrivilege === HERO_CARD_JeorMormont) {
       const remainingPlayers = currentPlayer.allowStealingFrom.filter(sessionId => sessionId !== stealFrom);
@@ -109,12 +111,15 @@ class TradeManager {
 
       if (!currentPlayer.allowStealingFrom.length)
         currentPlayer.isVisibleSteal = false;
-      return;
+
+      return stolenResource;
     }
 
     this.allowStealingFrom(state, currentPlayer, []);
     currentPlayer.allowStealingFrom = new ArraySchema<string>();
     currentPlayer.isVisibleSteal = false;
+
+    return stolenResource;
   }
 
   onMonopoly(state: GameState, monopolyPlayer: Player, resource: string) {

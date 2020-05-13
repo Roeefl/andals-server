@@ -291,7 +291,7 @@ class BaseGame extends Room<GameState> {
         break;
 
       case MESSAGE_STEAL_CARD:
-        TradeManager.onStealCard(this.state, currentPlayer, data.stealFrom, data.resource);
+        const stolenResource = TradeManager.onStealCard(this.state, currentPlayer, data.stealFrom, data.resource);
 
         if (!data.giveBack) {
           const stoleFrom = this.state.players[data.stealFrom];
@@ -302,7 +302,7 @@ class BaseGame extends Room<GameState> {
               playerName: currentPlayer.nickname,
               playerColor: currentPlayer.color,
               stoleFrom: stoleFrom.nickname,
-              stolenResource: data.resource
+              stolenResource
             });
           }
         }
