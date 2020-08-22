@@ -12,7 +12,7 @@ import BroadcastService from '../services/broadcast';
 import {
   totalTokens,
   clanNames,
-  wildlingTypes,
+  wildlingTokensPool,
   clansManifest,
   trailRoutes,
   tokensPerPurchase,
@@ -35,12 +35,8 @@ class WildlingManager {
     return Array(totalTokens)
       .fill(0)
       .map(x => {
-        const randomTypeIndex = Math.floor(Math.random() * (wildlingTypes.length + 2));
-        const adjustedIndex = randomTypeIndex < wildlingTypes.length
-          ? randomTypeIndex
-          : 0;
-          
-        const wildlingType = wildlingTypes[adjustedIndex];
+        const randomType = Math.floor(Math.random() * wildlingTokensPool.length);
+        const wildlingType = wildlingTokensPool[randomType];
           
         const randomClan = Math.floor(Math.random() * clanNames.length);
         const clanType = clanNames[randomClan];

@@ -281,6 +281,9 @@ class BaseGame extends Room<GameState> {
         const { tile = 0 } = data;
         this.state.robberPosition = tile;
         currentPlayer.mustMoveRobber = false;
+        
+        if (currentPlayer.activeGameCard === CARD_KNIGHT)
+          currentPlayer.activeGameCard = null;
 
         this.broadcastService.broadcast(MESSAGE_GAME_LOG, {
           message: `${currentPlayer.nickname} has moved the Robber`
@@ -311,10 +314,15 @@ class BaseGame extends Room<GameState> {
       case MESSAGE_PLACE_ROAD:
         PurchaseManager.onPurchaseRoad(this.state, data, currentPlayer.playerSessionId);
         
-        if (!currentPlayer.allowFreeRoads)
+        if (!currentPlayer.allowFreeRoads) {
           BankManager.onBankPayment(this.state, PURCHASE_ROAD);
-        else 
+        }
+        else {
           currentPlayer.allowFreeRoads--;
+          
+          if (currentPlayer.allowFreeRoads === 0)
+            currentPlayer.activeGameCard = null;
+        }
 
         this.broadcastService.broadcast(MESSAGE_PLACE_STRUCTURE, {
           playerName: currentPlayer.nickname,
@@ -385,6 +393,7 @@ class BaseGame extends Room<GameState> {
 
       case MESSAGE_SELECT_MONOPOLY_RESOURCE:
         currentPlayer.isDeclaringMonopoly = false;
+        currentPlayer.activeGameCard = null;
 
         const { selectedResource } = data;
         TradeManager.onMonopoly(this.state, currentPlayer, selectedResource);

@@ -62,8 +62,24 @@ export const clearings: WildlingClearing[] = [
   }
 ];
 
-export const wildlingTypes = ['regular', 'climber', 'giant', 'whiteWalker'];
+const wildlingTypes = ['regular', 'climber', 'giant', 'whiteWalker'];
 export const [WILDLING_REGULAR, WILDLING_CLIMBER, WILDLING_GIANT, WILDLING_WHITE_WALKER] = wildlingTypes;
+
+export const wildlingTokensPool = [
+  WILDLING_REGULAR,
+  WILDLING_REGULAR,
+  WILDLING_REGULAR,
+  WILDLING_REGULAR,
+  WILDLING_REGULAR,
+  WILDLING_REGULAR,
+  WILDLING_CLIMBER,
+  WILDLING_CLIMBER,
+  WILDLING_CLIMBER,
+  WILDLING_GIANT,
+  WILDLING_GIANT,
+  WILDLING_GIANT,
+  WILDLING_WHITE_WALKER
+];
 
 export const totalTokens = 48;
 

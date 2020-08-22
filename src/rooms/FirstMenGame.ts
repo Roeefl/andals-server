@@ -202,7 +202,7 @@ class FirstMenGame extends BaseGame {
               playerSessionId: currentPlayer.playerSessionId,
               playerName: currentPlayer.nickname,
               playerColor: currentPlayer.color,
-              resource: data.resource
+              resource: lastRobberTile.resource
             });    
           }
         }

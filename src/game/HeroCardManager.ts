@@ -18,7 +18,6 @@ import HeroCard, {
   HERO_CARD_BenjenStark,
   HERO_CARD_Ygritte,
   HERO_CARD_Yoren,
-  HERO_CARD_QhorinHalfhand,
   HERO_CARD_IlynPayne,
   HERO_CARD_EuronGrejoy,
   HERO_CARD_TywinLannister,
@@ -70,10 +69,6 @@ class HeroCardManager {
     switch (type) {
       case HERO_CARD_BowenMarsh:
         currentPlayer.bankTradeRate = 1;
-        break;
-
-      case HERO_CARD_QhorinHalfhand:
-        currentPlayer.mustMoveRobber = true;
         break;
       
       case HERO_CARD_ManceRayder:
